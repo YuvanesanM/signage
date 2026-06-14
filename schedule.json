@@ -1,11 +1,15 @@
 {
   "sessions": [
     {
-      "name": "Demo Session",
-      "zone": "podcast",
-      "start": "10:00",
-      "end": "11:00",
-      "date": ""
+      "name": "Photo Shoot — Kavya",
+      "zone": "photography",
+      "start": "14:00",
+      "end": "16:00",
+      "days": [
+        "mon",
+        "wed",
+        "fri"
+      ]
     }
   ]
 }
