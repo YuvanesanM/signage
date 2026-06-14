@@ -1,3 +1,10 @@
 {
-  "sessions": []
+  "sessions": [
+    {
+      "name": "JJ",
+      "zone": "podcast",
+      "start": "00:23",
+      "end": "00:24"
+    }
+  ]
 }
