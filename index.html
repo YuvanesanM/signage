@@ -297,9 +297,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 // ═══════════════════════════════════════════════════
 //  CONFIG — edit these to match your GitHub repo
 // ═══════════════════════════════════════════════════
-const GITHUB_USER = 'yuvanesanm';
-const GITHUB_REPO = 'ryst-signage';
-const SCHEDULE_FILE = 'schedule.json';
+const PROXY_URL    = 'https://ryst-signage-proxy.onrender.com'; // update after Render deploy
 const POLL_INTERVAL = 30000; // poll every 30 seconds
 
 // ═══════════════════════════════════════════════════
@@ -357,8 +355,7 @@ let currentPhase = 'idle';
 // ═══════════════════════════════════════════════════
 async function fetchSchedule(){
   try {
-    const url = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${SCHEDULE_FILE}?_=${Date.now()}`;
-    const res = await fetch(url);
+    const res = await fetch(PROXY_URL+'/public-schedule?_='+Date.now());
     if(!res.ok) { console.warn('Schedule fetch failed:', res.status); return; }
     const data = await res.json();
     processSchedule(data);
