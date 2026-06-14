@@ -348,8 +348,6 @@ function parseTimeToday(hhmm){
 let activeSession = null; // {name, zone, startMs, endMs}
 let lastEtag = '';
 let warningShown = false;
-let reviewToggle = false;
-let reviewInterval = null;
 let currentPhase = 'idle';
 
 // ═══════════════════════════════════════════════════
@@ -357,11 +355,11 @@ let currentPhase = 'idle';
 // ═══════════════════════════════════════════════════
 async function fetchSchedule(){
   try {
-    const res = await fetch(PROXY_URL+'/public-schedule?_='+Date.now());
-    if(!res.ok) { console.warn('Schedule fetch failed:', res.status); return; }
+    const res = await fetch(PROXY_URL+'/public-schedule?_='+Date.now(),{signal:AbortSignal.timeout(8000)});
+    if(!res.ok) { activeSession=null; return; }
     const data = await res.json();
     processSchedule(data);
-  } catch(e){ console.warn('Schedule fetch error:', e); }
+  } catch(e){ activeSession=null; }
 }
 
 function processSchedule(data){
@@ -382,8 +380,8 @@ function processSchedule(data){
   for(const s of sessions){
     const startMs = parseTimeToday(s.start).getTime();
     const endMs = parseTimeToday(s.end || '').getTime() || startMs + (parseInt(s.duration||60))*60000;
-    // Show welcome if within 60 min before start
-    if(nowMs < startMs && startMs - nowMs <= 3600000){
+    // Show welcome if within 30 min before start
+    if(nowMs < startMs && startMs - nowMs <= 1800000){
       found = {name:s.name||'Valued Guest', zone:s.zone||'podcast', startMs, endMs};
       break;
     }
@@ -425,19 +423,9 @@ function setPhase(phase){
     ov.classList.remove('show');
   },400);
   PILL.className='phase-pill';
-  if(reviewInterval&&phase!=='review'&&phase!=='thankyou'){ clearInterval(reviewInterval); reviewInterval=null; }
   if(phase==='welcome'){ PILL.classList.add('pre'); PILL_LABEL.textContent='Awaiting Session'; warningShown=false; }
   else if(phase==='timer'){ PILL.classList.add('live'); PILL_LABEL.textContent='Session Live'; warningShown=false; }
-  else if(phase==='review'||phase==='thankyou'){
-    PILL.classList.add('post'); PILL_LABEL.textContent='Session Complete';
-    if(!reviewInterval){
-      reviewInterval=setInterval(()=>{
-        reviewToggle=!reviewToggle;
-        Object.values(phaseEls).forEach(el=>el.classList.remove('active'));
-        phaseEls[reviewToggle?'thankyou':'review'].classList.add('active');
-      },15000);
-    }
-  }
+  else if(phase==='thankyou'){ PILL.classList.add('post'); PILL_LABEL.textContent='Session Complete'; }
   else{ PILL.classList.add('pre'); PILL_LABEL.textContent='Studio RYST'; }
 }
 
@@ -492,8 +480,8 @@ function tick(){
   populateSession(s);
 
   if(s.done){
-    // Post-session
-    if(currentPhase!=='review'&&currentPhase!=='thankyou') setPhase('review');
+    // Post-session thank you
+    if(currentPhase!=='thankyou') setPhase('thankyou');
     return;
   }
 
