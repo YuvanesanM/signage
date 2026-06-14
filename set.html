@@ -319,7 +319,7 @@ async function saveSchedule(){
       location.reload(); return;
     }
     if(!res.ok) throw new Error('HTTP '+res.status+' — '+(await res.text()).slice(0,120));
-    setStatus('✅ Saved to GitHub — TV updates within 30 seconds','ok');
+    setStatus('✅ Saved','ok');
   } catch(e){ setStatus('Save error: '+e.message,'err'); }
 }
 
