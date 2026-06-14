@@ -10,6 +10,12 @@
         "wed",
         "fri"
       ]
+    },
+    {
+      "name": "yuvan",
+      "zone": "podcast",
+      "start": "23:03",
+      "end": "23:04"
     }
   ]
 }
