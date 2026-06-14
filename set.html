@@ -1,1 +1,239 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Studio RYST — Schedule Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--teal:#0D7A8A;--teal2:#0A5E6B;--amber:#F5A623;--ink:#1E242C;--snow:#F9F8F6;--silver:#ECEDF0;--stone:#8A919C;--red:#D63B2F;--green:#2C7A4B;--white:#fff}
+body{font-family:'DM Sans',sans-serif;background:var(--snow);color:var(--ink);min-height:100vh;padding-bottom:80px}
+header{background:var(--ink);padding:20px 40px;display:flex;align-items:center;gap:20px}
+header img{height:56px;object-fit:contain;filter:brightness(0) invert(1)}
+header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:rgba(255,255,255,.85);font-style:italic}
+.sub{font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-top:2px}
+.container{max-width:1000px;margin:40px auto;padding:0 40px}
+.card{background:var(--white);border:1.5px solid var(--silver);border-radius:16px;padding:32px;margin-bottom:24px}
+.card-title{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:20px}
+.git-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--stone);text-transform:uppercase}
+.field input,.field select{height:44px;padding:0 16px;border:1.5px solid var(--silver);border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--white);outline:none;transition:border .2s}
+.field input:focus,.field select:focus{border-color:var(--teal)}
+.field input[type=password]{letter-spacing:2px}
+.hint{font-size:11px;color:var(--stone);margin-top:2px}
+.section-label{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--stone);text-transform:uppercase;margin:24px 0 12px}
+.schedule-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day-col{display:flex;flex-direction:column;gap:6px}
+.day-head{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--stone);text-transform:uppercase;text-align:center;padding:6px 0}
+.slot{position:relative;border:1.5px solid var(--silver);border-radius:10px;padding:10px 8px;background:var(--white);cursor:pointer;transition:border .15s,box-shadow .15s}
+.slot:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(13,122,138,.08)}
+.slot.filled{border-color:var(--teal);background:rgba(13,122,138,.04)}
+.slot-time{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--stone);text-transform:uppercase;margin-bottom:4px}
+.slot-title{font-size:12px;font-weight:500;color:var(--ink);word-break:break-word}
+.slot-empty{font-size:11px;color:var(--silver);font-style:italic}
+.add-btn{width:100%;height:32px;border:1.5px dashed var(--silver);border-radius:8px;background:none;cursor:pointer;color:var(--stone);font-size:18px;display:flex;align-items:center;justify-content:center;transition:border .15s,color .15s}
+.add-btn:hover{border-color:var(--teal);color:var(--teal)}
+.fab{position:fixed;bottom:32px;right:32px;height:52px;padding:0 28px;background:var(--teal);color:#fff;border:none;border-radius:26px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(13,122,138,.3);transition:background .2s,transform .1s}
+.fab:hover{background:var(--teal2)}
+.fab:active{transform:scale(.97)}
+.status{position:fixed;bottom:100px;right:32px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none}
+.status.ok{background:#e6f4ec;color:var(--green)}
+.status.err{background:#fdecea;color:var(--red)}
+.status.show{opacity:1}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(30,36,44,.5);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:20px;padding:32px;width:420px;max-width:calc(100vw - 40px);box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(16px);transition:transform .2s}
+.modal-bg.open .modal{transform:none}
+.modal h2{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:20px}
+.modal .field{margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;margin-top:24px}
+.btn{height:40px;padding:0 20px;border-radius:10px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:background .15s}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal2)}
+.btn-ghost{background:var(--silver);color:var(--ink)}
+.btn-ghost:hover{background:#dde0e5}
+.btn-danger{background:#fdecea;color:var(--red);margin-left:auto}
+.btn-danger:hover{background:#f9d5d3}
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="Studio RYST">
+  <div>
+    <h1>Schedule Manager</h1>
+    <div class="sub">Studio RYST Signage</div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Git config -->
+  <div class="card">
+    <div class="card-title">GitHub Configuration</div>
+    <div class="git-row">
+      <div class="field">
+        <label>Owner / Org</label>
+        <input id="owner" placeholder="yuvanesanm">
+        <div class="hint">GitHub username or organisation</div>
+      </div>
+      <div class="field">
+        <label>Repository</label>
+        <input id="repo" placeholder="signage">
+      </div>
+      <div class="field">
+        <label>Branch</label>
+        <input id="branch" value="main">
+      </div>
+      <div class="field">
+        <label>Personal Access Token</label>
+        <input id="token" type="password" placeholder="ghp_…">
+        <div class="hint">Needs repo → contents write permission</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule -->
+  <div class="card">
+    <div class="card-title">Weekly Schedule</div>
+    <div class="section-label">Time Slots</div>
+    <div class="schedule-grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- Save FAB -->
+<button class="fab" onclick="save()">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+  Save Schedule
+</button>
+<div class="status" id="status"></div>
+
+<!-- Slot modal -->
+<div class="modal-bg" id="modalBg" onclick="closeModal(event)">
+  <div class="modal">
+    <h2 id="modalTitle">Add Slot</h2>
+    <div class="field">
+      <label>Time</label>
+      <input id="mTime" placeholder="e.g. 09:00 – 10:00">
+    </div>
+    <div class="field">
+      <label>Content / Show</label>
+      <input id="mContent" placeholder="e.g. Morning Playlist">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveSlot()">Save</button>
+      <button class="btn btn-ghost" onclick="closeMod()">Cancel</button>
+      <button class="btn btn-danger" id="delBtn" onclick="deleteSlot()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let schedule={Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+let editing={day:null,idx:null};
+
+/* ── Build grid ── */
+function renderGrid(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  DAYS.forEach(d=>{
+    const col=document.createElement('div');
+    col.className='day-col';
+    col.innerHTML=`<div class="day-head">${d}</div>`;
+    (schedule[d]||[]).forEach((s,i)=>{
+      const el=document.createElement('div');
+      el.className='slot filled';
+      el.innerHTML=`<div class="slot-time">${s.time||''}</div><div class="slot-title">${s.content||''}</div>`;
+      el.onclick=()=>openModal(d,i);
+      col.appendChild(el);
+    });
+    const add=document.createElement('button');
+    add.className='add-btn';
+    add.title='Add slot';
+    add.innerHTML='+';
+    add.onclick=()=>openModal(d,null);
+    col.appendChild(add);
+    g.appendChild(col);
+  });
+}
+
+/* ── Modal ── */
+function openModal(day,idx){
+  editing={day,idx};
+  const isNew=idx===null;
+  document.getElementById('modalTitle').textContent=isNew?`Add Slot — ${day}`:`Edit Slot — ${day}`;
+  document.getElementById('mTime').value=isNew?'':(schedule[day][idx].time||'');
+  document.getElementById('mContent').value=isNew?'':(schedule[day][idx].content||'');
+  document.getElementById('delBtn').style.display=isNew?'none':'';
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeMod(){document.getElementById('modalBg').classList.remove('open');}
+function closeModal(e){if(e.target===document.getElementById('modalBg'))closeMod();}
+
+function saveSlot(){
+  const{day,idx}=editing;
+  const slot={time:document.getElementById('mTime').value.trim(),content:document.getElementById('mContent').value.trim()};
+  if(!schedule[day])schedule[day]=[];
+  if(idx===null)schedule[day].push(slot);
+  else schedule[day][idx]=slot;
+  closeMod();renderGrid();
+}
+function deleteSlot(){
+  const{day,idx}=editing;
+  if(idx!==null)schedule[day].splice(idx,1);
+  closeMod();renderGrid();
+}
+
+/* ── Status helper ── */
+let stTimer;
+function setStatus(msg,type){
+  const el=document.getElementById('status');
+  el.textContent=msg;el.className='status '+type+' show';
+  clearTimeout(stTimer);stTimer=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+/* ── Save to GitHub ── */
+async function save(){
+  const owner=document.getElementById('owner').value.trim();
+  const repo=document.getElementById('repo').value.trim();
+  const branch=document.getElementById('branch').value.trim()||'main';
+  const token=document.getElementById('token').value.trim();
+  if(!owner||!repo||!token){setStatus('Fill in owner, repo & token','err');return;}
+
+  const path='schedule.json';
+  const apiBase=`https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const headers={'Authorization':'token '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'};
+
+  setStatus('Saving…','ok');
+  try{
+    // get current SHA if exists
+    let sha=null;
+    try{const r=await fetch(apiBase+'?ref='+branch,{headers});if(r.ok){const j=await r.json();sha=j.sha;}}catch(_){}
+
+    const body={message:'chore: update schedule',content:btoa(unescape(encodeURIComponent(JSON.stringify(schedule,null,2)))),branch};
+    if(sha)body.sha=sha;
+
+    const res=await fetch(apiBase,{method:'PUT',headers,body:JSON.stringify(body)});
+    if(!res.ok)throw new Error((await res.text()).slice(0,120));
+    setStatus('✅ Saved','ok');
+  } catch(e){ setStatus('Save error: '+e.message,'err'); }
+}
+
+/* ── Load saved config from localStorage ── */
+(function init(){
+  ['owner','repo','branch','token'].forEach(id=>{
+    const v=localStorage.getItem('ryst_'+id);
+    if(v)document.getElementById(id).value=v;
+  });
+  ['owner','repo','branch','token'].forEach(id=>{
+    document.getElementById(id).addEventListener('change',()=>localStorage.setItem('ryst_'+id,document.getElementById(id).value));
+  });
+
+  // try load schedule from GitHub on open
+  renderGrid();
+})();
+</script>
+</body>
+</html>
