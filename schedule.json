@@ -1,11 +1,3 @@
 {
-  "sessions": [
-    {
-      "name": "yuvan",
-      "zone": "podcast",
-      "start": "00:02",
-      "end": "00:03",
-      "date": "2026-06-15"
-    }
-  ]
+  "sessions": []
 }
