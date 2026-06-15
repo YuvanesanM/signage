@@ -694,12 +694,13 @@ function processSchedule(data){
 //  PHASE CONTROLLER
 // ═══════════════════════════════════════════════════
 const phaseEls = {
-  idle:document.getElementById('phase-idle'),
-  welcome:document.getElementById('phase-welcome'),
-  timer:document.getElementById('phase-timer'),
-  review:document.getElementById('phase-review'),
+  idle:    document.getElementById('phase-idle'),
+  welcome: document.getElementById('phase-welcome'),
+  timer:   document.getElementById('phase-timer'),
+  review:  document.getElementById('phase-review'),
   thankyou:document.getElementById('phase-thankyou'),
 };
+console.log('[phases]', Object.fromEntries(Object.entries(phaseEls).map(([k,v])=>[k,!!v])));
 
 // Cached DOM refs — avoid repeated getElementById in tick()
 const EL = {};
@@ -716,8 +717,10 @@ function setPhase(phase){
   if(phase===currentPhase) return;
   currentPhase=phase;
   const doSwap = () => {
+    const target = phaseEls[phase];
+    if(!target){ console.warn('setPhase: no element for phase', phase); return; }
     Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
-    if(phaseEls[phase]) phaseEls[phase].classList.add('active');
+    target.classList.add('active');
   };
   if(_firstPhaseChange){
     _firstPhaseChange = false;
@@ -915,6 +918,9 @@ const CIRC = 2*Math.PI*100; // r=100 → 628.3 // 540.35
 
 function tick(){
   try { _tick(); } catch(e){ console.error('tick error:', e); }
+  // Safety net: if no phase is active after tick, restore idle
+  const anyActive = Object.values(phaseEls).filter(Boolean).some(el=>el.classList.contains('active'));
+  if(!anyActive && phaseEls.idle){ phaseEls.idle.classList.add('active'); console.warn('tick: no active phase — restored idle'); }
 }
 function _tick(){
   const now = new Date();
