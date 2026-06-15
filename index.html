@@ -173,7 +173,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .slide-frame img{width:100%;height:100%;object-fit:cover;display:block}
 .slide-frame video{width:100%;height:100%;object-fit:cover;display:block}
 .slide-overlay{position:absolute;bottom:0;left:0;right:0;padding:32px 48px;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}
-.slide-date{font-size:15px;color:rgba(255,255,255,.55);font-weight:300;letter-spacing:1px;margin-bottom:18px}
 .slide-sched-title{font-size:10px;font-weight:700;letter-spacing:4px;color:var(--teal);text-transform:uppercase;margin-bottom:10px}
 .slide-sched-row{display:flex;align-items:center;gap:14px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)}
 .slide-sched-time{font-size:14px;font-weight:600;color:rgba(255,255,255,.55);width:80px;flex-shrink:0}
@@ -327,7 +326,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
       <div id="slide-a" class="slide-frame active"></div>
       <div id="slide-b" class="slide-frame"></div>
       <div class="slide-overlay">
-        <div class="slide-date" id="slide-date">—</div>
         <div class="slide-sched-title">Today's Sessions</div>
         <div id="slide-sched-list"></div>
       </div>
@@ -1095,8 +1093,6 @@ function nextSlide(){
 }
 
 function updateSlideClock(now){
-  const sd = document.getElementById('slide-date');
-  if(sd) sd.textContent = fmtDate(now);
   // Mini schedule on overlay
   const sl = document.getElementById('slide-sched-list');
   if(!sl) return;
