@@ -720,9 +720,12 @@ function setPhase(phase){
   const ov=document.getElementById('trans-overlay');
   ov.classList.add('show');
   setTimeout(()=>{
-    Object.values(phaseEls).forEach(el=>el.classList.remove('active'));
-    phaseEls[phase].classList.add('active');
-    ov.classList.remove('show');
+    try {
+      Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
+      if(phaseEls[phase]) phaseEls[phase].classList.add('active');
+    } finally {
+      ov.classList.remove('show');
+    }
   },400);
   PILL.className='phase-pill';
     if(phase==='welcome'){ PILL.classList.add('pre'); PILL_LABEL.textContent='Awaiting Session'; warningShown=false; }
@@ -811,7 +814,7 @@ function renderIdleSchedule(force){
   const nowMs = Date.now();
   let foundActive = false;
   el.innerHTML = todaySchedule.map(s => {
-    const zone = ZONE_MAP[s.zone.toLowerCase()] || {label:s.zone+' Zone', zoneClass:'pod'};
+    const zone = ZONE_MAP[(s.zone||'podcast').toLowerCase()] || {label:(s.zone||'Studio')+' Zone', zoneClass:'pod'};
     const isLive = nowMs >= s.startMs && nowMs < s.endMs;
     const isDone = nowMs >= s.endMs;
     const isNext = !foundActive && !isLive && !isDone;
@@ -863,7 +866,7 @@ function updateNextCountdown(){
   block.style.display = 'block';
   const [h,m,s] = secsToHMS(diff);
   timeEl.textContent = diff > 3600 ? h+':'+m+':'+s : m+':'+s;
-  const zone = ZONE_MAP[nextSession.zone.toLowerCase()] || {label:nextSession.zone+' Zone'};
+  const zone = ZONE_MAP[(nextSession.zone||'podcast').toLowerCase()] || {label:(nextSession.zone||'Studio')+' Zone'};
   nameEl.textContent = nextSession.name + ' · ' + zone.label;
 }
 
@@ -872,7 +875,7 @@ function updateNextCountdown(){
 // ═══════════════════════════════════════════════════
 
 function populateSession(s){
-  const zone = ZONE_MAP[s.zone.toLowerCase()] || {label:s.zone+' Zone',icon:'🎬'};
+  const zone = ZONE_MAP[(s.zone||'podcast').toLowerCase()] || {label:(s.zone||'Studio')+' Zone',icon:'🎬'};
   const startD = new Date(s.startMs);
   const endD = new Date(s.endMs);
   const durMin = Math.round((s.endMs-s.startMs)/60000);
