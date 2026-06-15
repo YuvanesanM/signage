@@ -152,8 +152,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .idle-tagline{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:6px;text-align:center;text-transform:uppercase;margin-top:10px}
 .idle-location{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:3px;text-align:center;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:500}
 .idle-time-block{text-align:center;margin-top:24px}
-.idle-lclock{font-family:'Cormorant Garamond',serif;font-size:92px;font-weight:300;color:rgba(255,255,255,.95);letter-spacing:-3px;line-height:1}
-.idle-ldate{font-size:14px;color:rgba(255,255,255,.42);font-weight:400;letter-spacing:2px;margin-top:8px;text-transform:uppercase}
+.idle-ldate{font-size:14px;color:rgba(255,255,255,.42);font-weight:400;letter-spacing:2px;text-transform:uppercase}
 .idle-weather-block{margin-top:auto;border-top:1px solid var(--silver);padding-top:20px;width:100%;text-align:center}
 .idle-weather-icon{font-size:64px;line-height:1;margin-bottom:8px}
 .idle-weather-main{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px}
@@ -174,8 +173,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .slide-frame img{width:100%;height:100%;object-fit:cover;display:block}
 .slide-frame video{width:100%;height:100%;object-fit:cover;display:block}
 .slide-overlay{position:absolute;bottom:0;left:0;right:0;padding:32px 48px;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}
-.slide-clock{font-family:'Cormorant Garamond',serif;font-size:72px;font-weight:300;color:#fff;line-height:1;letter-spacing:-2px}
-.slide-date{font-size:15px;color:rgba(255,255,255,.55);font-weight:300;letter-spacing:1px;margin-top:4px;margin-bottom:18px}
+.slide-date{font-size:15px;color:rgba(255,255,255,.55);font-weight:300;letter-spacing:1px;margin-bottom:18px}
 .slide-sched-title{font-size:10px;font-weight:700;letter-spacing:4px;color:var(--teal);text-transform:uppercase;margin-bottom:10px}
 .slide-sched-row{display:flex;align-items:center;gap:14px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)}
 .slide-sched-time{font-size:14px;font-weight:600;color:rgba(255,255,255,.55);width:80px;flex-shrink:0}
@@ -310,7 +308,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
     <div class="idle-tagline">Create. Cook. Converse</div>
     <div class="idle-location">Ankur Plaza · T-Nagar · Chennai</div>
     <div class="idle-time-block">
-      <div class="idle-lclock" id="idle-lclock">—</div>
       <div class="idle-ldate" id="idle-ldate">—</div>
     </div>
     <div class="idle-weather-block">
@@ -330,7 +327,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
       <div id="slide-a" class="slide-frame active"></div>
       <div id="slide-b" class="slide-frame"></div>
       <div class="slide-overlay">
-        <div class="slide-clock" id="slide-clock">—</div>
         <div class="slide-date" id="slide-date">—</div>
         <div class="slide-sched-title">Today's Sessions</div>
         <div id="slide-sched-list"></div>
@@ -703,7 +699,7 @@ console.log('[phases]', Object.fromEntries(Object.entries(phaseEls).map(([k,v])=
 // Cached DOM refs — avoid repeated getElementById in tick()
 const EL = {};
 window.addEventListener('DOMContentLoaded', () => {
-  ['sb-clock','wlc-bigtime','wlc-date','tmr-clock','tmr-date','idle-lclock','idle-ldate',
+  ['sb-clock','wlc-bigtime','wlc-date','tmr-clock','tmr-date','idle-ldate',
    'wlc-lclock','wlc-ldate','wlc-cdown','cdown-label','tmr-elapsed','tmr-remain',
    'ring-circle','ring-pct','warning-overlay'].forEach(id => { EL[id] = document.getElementById(id); });
 });
@@ -934,7 +930,6 @@ function _tick(){
   if(!activeSession){
     setPhase('idle');
     // Time/date now live on the left branding panel — always update
-    if(EL['idle-lclock']) EL['idle-lclock'].textContent = fmt12(now);
     if(EL['idle-ldate'])  EL['idle-ldate'].textContent  = fmtDate(now);
     if(mediaFiles.length){ updateSlideClock(now); }
     // Refresh idle schedule display every 60s
@@ -1100,9 +1095,7 @@ function nextSlide(){
 }
 
 function updateSlideClock(now){
-  const sc = document.getElementById('slide-clock');
   const sd = document.getElementById('slide-date');
-  if(sc) sc.textContent = fmt12(now);
   if(sd) sd.textContent = fmtDate(now);
   // Mini schedule on overlay
   const sl = document.getElementById('slide-sched-list');
