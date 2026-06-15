@@ -84,8 +84,8 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .idle-letter{font-family:'Cormorant Garamond',serif;font-size:80px;font-weight:600;line-height:1;opacity:.6}
 
 /* TOAST */
-#toast{position:fixed;top:12px;right:16px;height:auto;width:auto;background:rgba(14,18,24,.92);color:rgba(255,255,255,.75);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;letter-spacing:.2px;opacity:0;pointer-events:none;transition:opacity .35s;z-index:9999;border:1px solid rgba(13,122,138,.4);white-space:nowrap;line-height:1.4;display:inline-block;align-self:flex-start}
-#toast.show{opacity:1}
+
+
 #trans-overlay{position:fixed;inset:0;background:var(--white);opacity:0;pointer-events:none;z-index:250;transition:opacity .4s}
 #trans-overlay.show{opacity:1}
 
@@ -122,19 +122,19 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 
 /* ── THANK YOU + REVIEW COMBINED ── */
 #phase-thankyou{background:var(--snow);display:grid;grid-template-columns:1fr 460px;align-items:stretch}
-.ty-left{padding:36px 48px 36px 72px;display:flex;flex-direction:column;justify-content:center;gap:0;overflow:hidden}
-.ty-eyebrow{font-size:12px;font-weight:700;letter-spacing:5px;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
-.ty-heading{font-family:'Cormorant Garamond',serif;font-size:96px;font-weight:300;line-height:.88;color:var(--ink);margin-bottom:16px}
+.ty-left{padding:40px 48px 36px 72px;display:flex;flex-direction:column;justify-content:center;gap:0;overflow:hidden}
+.ty-eyebrow{font-size:11px;font-weight:700;letter-spacing:5px;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
+.ty-heading{font-family:'Cormorant Garamond',serif;font-size:88px;font-weight:300;line-height:.88;color:var(--ink);margin-bottom:14px}
 .ty-heading em{font-style:italic;color:var(--teal);display:block}
-.ty-divider{width:48px;height:2px;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:2px;margin-bottom:16px}
-.ty-message{font-size:18px;font-weight:300;color:var(--stone);line-height:1.65;max-width:480px;margin-bottom:16px}
-.ty-socials{display:flex;flex-direction:column;gap:10px;margin-top:4px}
-.ty-social{display:flex;align-items:center;gap:14px}
-.ty-s-icon{font-size:20px;width:32px;text-align:center;flex-shrink:0}
+.ty-divider{width:40px;height:2px;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:2px;margin-bottom:14px}
+.ty-message{font-size:17px;font-weight:300;color:var(--stone);line-height:1.6;max-width:520px;margin-bottom:20px}
+.ty-socials{display:flex;flex-direction:row;align-items:flex-start;gap:0;margin-top:0;margin-bottom:20px;border-top:1px solid var(--silver);border-bottom:1px solid var(--silver);padding:16px 0}
+.ty-social{display:flex;align-items:center;gap:10px;flex:1}
+.ty-s-icon{font-size:18px;flex-shrink:0}
 .ty-s-label{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--stone);text-transform:uppercase;margin-bottom:2px}
-.ty-s-val{font-size:18px;font-weight:600;color:var(--ink)}
+.ty-s-val{font-size:15px;font-weight:600;color:var(--ink);line-height:1.2}
 .ty-right{background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 36px}
-.ty-logo-large{width:200px;height:auto;object-fit:contain;mix-blend-mode:multiply;opacity:1;flex-shrink:0}
+.ty-logo-large{width:220px;height:auto;object-fit:contain;mix-blend-mode:multiply;opacity:1;flex-shrink:0;margin-bottom:12px;margin-top:0}
 .ty-review-block{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;width:100%}
 .ty-review-label{font-size:18px;font-weight:600;color:rgba(255,255,255,.88);letter-spacing:.3px;text-align:center}
 .ty-review-sub{font-size:13px;font-weight:300;color:rgba(255,255,255,.45);line-height:1.65;text-align:center;max-width:320px}
@@ -225,19 +225,8 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 
 
 /* ══ NPS STARS (thank you page) ══ */
-.nps-block{margin-bottom:16px}
-.nps-label{
-  font-size:14px;font-weight:600;letter-spacing:3px;
-  color:var(--stone);text-transform:uppercase;margin-bottom:12px
-}
-.nps-stars{display:flex;gap:8px}
-.nps-star{font-size:36px;color:var(--silver);cursor:pointer;transition:color .15s,transform .15s;line-height:1}
-.nps-star.active{color:var(--amber)}
-.nps-star:hover{transform:scale(1.2)}
-.nps-submitted{
-  font-size:18px;font-weight:500;color:var(--teal);
-  letter-spacing:1px;margin-top:12px
-}
+
+
 
 /* ══ NEXT-SESSION COUNTDOWN (thank you) ══ */
 .ty-next-block{border-top:1px solid var(--silver);padding-top:12px;margin-bottom:12px}
@@ -247,7 +236,9 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 
 .wlc-left-clock{margin-top:auto;text-align:center;padding-bottom:8px}
 .wlc-left-clock .wlc-lclock{font-family:'Cormorant Garamond',serif;font-size:72px;font-weight:300;color:rgba(255,255,255,.55);letter-spacing:-2px;line-height:1}
-.wlc-left-clock .wlc-ldate{font-size:13px;color:rgba(255,255,255,.2);letter-spacing:2px;margin-top:4px}</style>
+.wlc-left-clock .wlc-ldate{font-size:13px;color:rgba(255,255,255,.2);letter-spacing:2px;margin-top:4px}
+.ty-sep{width:1px;height:40px;background:var(--silver);flex-shrink:0;margin:0 8px;align-self:center}
+</style>
 
 <style>
 /* ── RESET & BASE ── */
@@ -491,11 +482,7 @@ circle.ring-prog{
 }
 
 /* ── THANK YOU (combined) ── */
-#phase-thankyou{
-  background:var(--snow);
-  grid-template-columns:1fr 440px;
-  align-items:stretch
-}
+#phase-thankyou{background:var(--snow);display:grid;grid-template-columns:1fr 580px;align-items:stretch}
 .ty-left{
   padding:72px 64px 72px 88px;
   display:flex;flex-direction:column;justify-content:center
@@ -527,32 +514,15 @@ circle.ring-prog{
   color:var(--stone);text-transform:uppercase;margin-bottom:4px
 }
 .ty-s-val{font-size:22px;font-weight:600;color:var(--ink)}
-.ty-right{
-  background:var(--ink);
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:40px;padding:52px 40px
-}
+.ty-right{background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:48px 52px}
 .ty-logo-large{
   width:300px;height:auto;
   object-fit:contain;mix-blend-mode:screen;opacity:.97
 }
-.ty-review-block{
-  display:flex;flex-direction:column;
-  align-items:center;gap:14px;text-align:center
-}
-.ty-review-label{
-  font-size:20px;font-weight:600;
-  color:rgba(255,255,255,.85);letter-spacing:.3px
-}
-.ty-review-sub{
-  font-size:15px;font-weight:300;
-  color:rgba(255,255,255,.4);letter-spacing:1px
-}
-.qr-real-img{
-  width:220px;height:220px;object-fit:contain;
-  border-radius:12px;background:white;padding:10px;display:block
-}
+.ty-review-block{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;width:100%}
+.ty-review-label{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300;font-style:italic;color:rgba(255,255,255,.92);letter-spacing:.5px;text-align:center;line-height:1.2}
+.ty-review-sub{font-size:18px;font-weight:300;color:rgba(255,255,255,.5);line-height:1.7;text-align:center;max-width:440px}
+.qr-real-img{width:300px;height:300px;object-fit:contain;border-radius:16px;background:white;padding:12px;display:block}
 
 /* ── STATUS BAR ── */
 #status-bar{
@@ -626,6 +596,14 @@ circle.ring-prog{
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 @keyframes pulseWarning{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* toast - exact size to content */
+#toast{position:fixed;top:14px;right:18px;z-index:9999;background:rgba(14,18,24,.93);color:rgba(255,255,255,.78);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;letter-spacing:.2px;opacity:0;pointer-events:none;transition:opacity .35s;border:1px solid rgba(13,122,138,.4);white-space:nowrap;line-height:normal;box-sizing:content-box;display:block;max-height:none;width:auto;height:auto}
+#toast.show{opacity:1}
+
+/* ty social separator */
+.ty-sep{width:1px;height:40px;background:var(--silver);flex-shrink:0;margin:0 8px;align-self:center}
+
 </style>
 </head>
 <body>
@@ -795,39 +773,30 @@ circle.ring-prog{
       It was our privilege hosting your session today.<br>
       We look forward to creating together again.
     </p>
-    <!-- NPS Rating -->
-    <div class="nps-block">
-      <div class="nps-label">How was your experience today?</div>
-      <div class="nps-stars">
-        <span class="nps-star" data-v="1">★</span>
-        <span class="nps-star" data-v="2">★</span>
-        <span class="nps-star" data-v="3">★</span>
-        <span class="nps-star" data-v="4">★</span>
-        <span class="nps-star" data-v="5">★</span>
-      </div>
-      <div class="nps-submitted" id="nps-submitted" style="display:none">
-        ✓ Thank you for your feedback!
-      </div>
-    </div>
-    <!-- Next session countdown -->
-    <div class="ty-next-block" id="ty-next-block" style="display:none">
-      <div class="ty-next-label">Next session begins in</div>
-      <div class="ty-next-time" id="ty-next-time">—</div>
-      <div class="ty-next-name" id="ty-next-name"></div>
-    </div>
+    <!-- Socials — horizontal row -->
     <div class="ty-socials">
       <div class="ty-social">
         <div class="ty-s-icon">📸</div>
         <div><div class="ty-s-label">Instagram</div><div class="ty-s-val">@studio.ryst</div></div>
       </div>
+      <div class="ty-sep"></div>
       <div class="ty-social">
         <div class="ty-s-icon">💬</div>
         <div><div class="ty-s-label">WhatsApp</div><div class="ty-s-val">+91 75300 11770</div></div>
       </div>
+      <div class="ty-sep"></div>
       <div class="ty-social">
         <div class="ty-s-icon">🌐</div>
         <div><div class="ty-s-label">Website</div><div class="ty-s-val">studio.ryst.in</div></div>
       </div>
+    </div>
+      <div class="nps-submitted" id="nps-submitted" style="display:none">✓ Thank you!</div>
+    </div>
+    <!-- Next session countdown (hidden until needed) -->
+    <div class="ty-next-block" id="ty-next-block" style="display:none">
+      <div class="ty-next-label">Next session begins in</div>
+      <div class="ty-next-time" id="ty-next-time">—</div>
+      <div class="ty-next-name" id="ty-next-name"></div>
     </div>
   </div>
   <div class="ty-right">
@@ -853,21 +822,11 @@ circle.ring-prog{
   <div class="sb-item">👤 <span class="val" id="sb-guest">—</span></div>
   <div class="sb-sep"></div>
   <div class="sb-item">📍 <span class="val" id="sb-zone">—</span></div>
-  <div class="sb-sep"></div>
-  <div class="sb-item">⏰ Starts <span class="val" id="sb-start">—</span></div>
-  <div class="sb-sep"></div>
-  <div class="sb-item">⏱ Ends <span class="val" id="sb-end">—</span></div>
-  <div class="sb-spacer"></div>
-  <div class="phase-pill pre" id="phase-pill">
-    <div class="pd"></div>
-    <span id="phase-label">Studio RYST</span>
-  </div>
-</div>
-
-<script>
+  <div class="sb-sep
 // ═══════════════════════════════════════════════════
 //  CONFIG — edit these to match your GitHub repo
 // ═══════════════════════════════════════════════════
+<script>
 const PROXY_URL    = 'https://ryst-signage-proxy.onrender.com'; // update after Render deploy
 const POLL_INTERVAL = 30000; // poll every 30 seconds
 
@@ -883,11 +842,18 @@ const QUOTES = [
   '"Light is everything. You are the artist."',
 ];
 let quoteIdx = 0;
-setInterval(()=>{
+function rotateQuote(){
   const el = document.getElementById('tmr-quote');
+  if(!el) return;
   el.style.opacity='0';
   setTimeout(()=>{ quoteIdx=(quoteIdx+1)%QUOTES.length; el.textContent=QUOTES[quoteIdx]; el.style.opacity='1'; },800);
-}, 20000);
+}
+// Set first quote immediately, then rotate every 20s
+setTimeout(()=>{
+  const el = document.getElementById('tmr-quote');
+  if(el){ el.textContent=QUOTES[0]; el.style.opacity='1'; }
+},100);
+setInterval(rotateQuote, 20000);
 
 // Zone map
 const ZONE_MAP = {
@@ -924,7 +890,6 @@ let todaySchedule  = [];     // all today's sessions sorted
 let nextSession    = null;   // session after current one
 let weatherCache   = null;   // {temp, icon, mood, desc}
 let weatherFetched = false;
-let npsSubmitted   = false;
 let lastEtag = '';
 let warningShown = false;
 let currentPhase = 'idle';
@@ -1150,38 +1115,6 @@ function updateNextCountdown(){
 // ═══════════════════════════════════════════════════
 //  NPS STAR RATING (thank you page)
 // ═══════════════════════════════════════════════════
-function initNPS(){
-  const stars = document.querySelectorAll('.nps-star');
-  stars.forEach(star => {
-    star.addEventListener('click', () => {
-      if(npsSubmitted) return;
-      const val = parseInt(star.getAttribute('data-v'));
-      stars.forEach(s => {
-        s.classList.toggle('active', parseInt(s.getAttribute('data-v')) <= val);
-      });
-      npsSubmitted = true;
-      setTimeout(() => {
-        document.querySelector('.nps-stars').style.display = 'none';
-        document.getElementById('nps-submitted').style.display = 'block';
-        // Log rating to console (extend to send to proxy if needed)
-        console.log('NPS rating:', val, 'Guest:', activeSession ? activeSession.name : 'unknown');
-        showToast('⭐ Thank you for rating us!');
-      }, 600);
-    });
-    // Hover highlight
-    star.addEventListener('mouseenter', () => {
-      if(npsSubmitted) return;
-      const val = parseInt(star.getAttribute('data-v'));
-      stars.forEach(s => {
-        s.classList.toggle('active', parseInt(s.getAttribute('data-v')) <= val);
-      });
-    });
-    star.addEventListener('mouseleave', () => {
-      if(npsSubmitted) return;
-      stars.forEach(s => s.classList.remove('active'));
-    });
-  });
-}
 
 function populateSession(s){
   const zone = ZONE_MAP[s.zone.toLowerCase()] || {label:s.zone+' Zone',icon:'🎬'};
@@ -1300,7 +1233,16 @@ setInterval(fetchSchedule, POLL_INTERVAL);
 setInterval(fetchWeather, 1800000); // refresh weather every 30 min
 setInterval(tick, 1000);
 tick();
-initNPS();
+setTimeout(()=>showToast('📡 Connected to Studio RYST Schedule'), 2000);
+════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════
+fetchSchedule();
+fetchWeather();
+setInterval(fetchSchedule, POLL_INTERVAL);
+setInterval(fetchWeather, 1800000); // refresh weather every 30 min
+setInterval(tick, 1000);
+tick();
 setTimeout(()=>showToast('📡 Connected to Studio RYST Schedule'), 2000);
 </script>
 </body>
