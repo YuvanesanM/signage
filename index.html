@@ -1110,7 +1110,7 @@ async function checkVersion(){
     const res = await fetch('/version.json?_='+Date.now(), {signal: AbortSignal.timeout(5000)});
     if(!res.ok) return;
     const { v } = await res.json();
-    if(!_deployVersion){ _deployVersion = v; const el=document.getElementById('sb-version'); if(el) el.textContent='v'+v; return; }
+    if(!_deployVersion){ _deployVersion = v; const el=document.getElementById('sb-version'); if(el) el.textContent=v; return; }
     if(v !== _deployVersion) location.reload();
   } catch(e){}
 }

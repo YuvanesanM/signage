@@ -18,7 +18,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Write version.json
-        run: echo "{\"v\":\"$(date -u +%Y%m%d%H%M%S)\"}" > version.json
+        run: echo "{\"v\":\"$(date -u +'%d %b %H:%M')\"}" > version.json
       - name: Commit and push version
         run: |
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
