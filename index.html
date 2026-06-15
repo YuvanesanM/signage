@@ -13,7 +13,7 @@
   --r:#D12F2F;--y:#E8871A;--s:#2C8A3E;--t:#0D6FA8;
 }
 html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font-family:'DM Sans',sans-serif;color:var(--ink);cursor:none;-webkit-font-smoothing:antialiased}
-.phase{position:absolute;top:0;left:0;right:0;bottom:100px;opacity:0;transition:opacity 1.2s ease;pointer-events:none;overflow:hidden}
+.phase{position:absolute;top:0;left:0;right:0;bottom:100px;opacity:0;pointer-events:none;overflow:hidden}
 .phase.active{opacity:1;pointer-events:auto}
 
 /* STATUS BAR */
@@ -87,7 +87,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 /* TOAST */
 
 
-#trans-overlay{position:fixed;inset:0;background:var(--white);opacity:0;pointer-events:none;z-index:250;transition:opacity .4s}
+#trans-overlay{position:fixed;inset:0;background:var(--deep);opacity:0;pointer-events:none;z-index:250;transition:opacity .4s}
 #trans-overlay.show{opacity:1}
 #offline-banner{display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(214,59,47,.92);color:#fff;padding:8px 28px;border-radius:30px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.2)}
 
@@ -715,10 +715,15 @@ const PILL_LABEL = document.getElementById('phase-label');
 let _firstPhaseChange = true;
 function setPhase(phase){
   if(phase===currentPhase) return;
-  currentPhase=phase;
+  const prev = currentPhase;
+  currentPhase = phase;
   const doSwap = () => {
     const target = phaseEls[phase];
-    if(!target){ console.warn('setPhase: no element for phase', phase); return; }
+    if(!target){
+      console.warn('setPhase: element missing for phase:', phase);
+      currentPhase = prev; // revert so next tick retries
+      return;
+    }
     Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
     target.classList.add('active');
   };
