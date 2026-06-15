@@ -1,3 +1,10 @@
 {
-  "sessions": []
+  "sessions": [
+    {
+      "name": "Sana Yuvan",
+      "zone": "photography",
+      "start": "07:25",
+      "end": "07:26"
+    }
+  ]
 }
