@@ -163,6 +163,26 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .idle-weather-desc{font-size:13px;color:rgba(255,255,255,.35);letter-spacing:.5px;margin-top:2px}
 .idle-weather-city{font-size:11px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.22);text-transform:uppercase;margin-top:6px}
 
+
+/* ══ MEDIA SLIDESHOW ══ */
+.idle-right{position:relative}
+#idle-slideshow{display:none;position:absolute;inset:0;overflow:hidden;background:#000}
+.slide-frame{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease}
+.slide-frame.active{opacity:1}
+.slide-frame img{width:100%;height:100%;object-fit:cover;display:block}
+.slide-frame video{width:100%;height:100%;object-fit:cover;display:block}
+.slide-overlay{position:absolute;bottom:0;left:0;right:0;padding:32px 48px;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}
+.slide-clock{font-family:'Cormorant Garamond',serif;font-size:72px;font-weight:300;color:#fff;line-height:1;letter-spacing:-2px}
+.slide-date{font-size:15px;color:rgba(255,255,255,.55);font-weight:300;letter-spacing:1px;margin-top:4px;margin-bottom:18px}
+.slide-sched-title{font-size:10px;font-weight:700;letter-spacing:4px;color:var(--teal);text-transform:uppercase;margin-bottom:10px}
+.slide-sched-row{display:flex;align-items:center;gap:14px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)}
+.slide-sched-time{font-size:14px;font-weight:600;color:rgba(255,255,255,.55);width:80px;flex-shrink:0}
+.slide-sched-name{font-size:16px;font-weight:600;color:rgba(255,255,255,.88);flex:1}
+.slide-sched-live{color:var(--teal)}
+.slide-dots{position:absolute;bottom:12px;right:20px;display:flex;gap:6px;align-items:center}
+.slide-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .3s}
+.slide-dot.active{background:rgba(255,255,255,.85);width:18px;border-radius:3px}
+
 /* Right panel */
 .idle-right{background:var(--snow);display:flex;flex-direction:column;padding:56px 64px;gap:32px}
 .idle-right-top{}
@@ -305,6 +325,19 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
     </div>
   </div>
   <div class="idle-right">
+    <!-- Media slideshow (hidden until media loaded) -->
+    <div id="idle-slideshow">
+      <div id="slide-a" class="slide-frame active"></div>
+      <div id="slide-b" class="slide-frame"></div>
+      <div class="slide-overlay">
+        <div class="slide-clock" id="slide-clock">—</div>
+        <div class="slide-date" id="slide-date">—</div>
+        <div class="slide-sched-title">Today's Sessions</div>
+        <div id="slide-sched-list"></div>
+      </div>
+      <div class="slide-dots" id="slide-dots"></div>
+    </div>
+    <div id="idle-right-content">
     <div class="idle-right-top">
       <div class="idle-clock-big" id="idle-clock">—</div>
       <div class="idle-date" id="idle-date-label">—</div>
@@ -881,7 +914,6 @@ function tick(){
   // Status bar clock — always visible
   if(EL['sb-clock']) EL['sb-clock'].textContent = fmt12(now);
   // Phase-specific clocks — only update when relevant
-  if(currentPhase==='idle'   && EL['idle-clock']) EL['idle-clock'].textContent = fmt12(now);
   if(currentPhase==='welcome'){
     if(EL['wlc-bigtime']) EL['wlc-bigtime'].textContent = fmt12(now);
     if(EL['wlc-date'])    EL['wlc-date'].textContent    = fmtDate(now);
@@ -895,6 +927,7 @@ function tick(){
 
   if(!activeSession){
     setPhase('idle');
+    if(mediaFiles.length){ updateSlideClock(now); } else { if(EL['idle-clock']) EL['idle-clock'].textContent = fmt12(now); }
     // Refresh idle schedule display every 60s
     if(now.getSeconds() === 0) renderIdleSchedule();
     return;
@@ -951,6 +984,122 @@ function tick(){
   }
 }
 
+
+
+// ═══════════════════════════════════════════════════
+//  MEDIA SLIDESHOW
+// ═══════════════════════════════════════════════════
+let mediaFiles   = [];
+let _slideIdx    = 0;
+let _slideTimer  = null;
+let _activeSlide = 'a';
+
+async function fetchMedia(){
+  try {
+    const res = await fetch('/signage/media/media.json?_='+Date.now(), {signal: AbortSignal.timeout(5000)});
+    if(!res.ok) return;
+    const data = await res.json();
+    const files = (data.files||[]).filter(f=>f.type==='image'||f.type==='video');
+    if(JSON.stringify(files)===JSON.stringify(mediaFiles)) return;
+    mediaFiles = files;
+    files.length ? startSlideshow() : stopSlideshow();
+  } catch(e){}
+}
+
+function startSlideshow(){
+  const ss = document.getElementById('idle-slideshow');
+  const content = document.getElementById('idle-right-content');
+  if(!ss) return;
+  ss.style.display = 'block';
+  if(content) content.style.display = 'none';
+  buildDots();
+  _slideIdx = 0;
+  showSlide(_slideIdx);
+}
+
+function stopSlideshow(){
+  const ss = document.getElementById('idle-slideshow');
+  const content = document.getElementById('idle-right-content');
+  if(ss) ss.style.display = 'none';
+  if(content) content.style.display = '';
+  clearTimeout(_slideTimer);
+}
+
+function buildDots(){
+  const el = document.getElementById('slide-dots');
+  if(!el) return;
+  el.innerHTML = mediaFiles.map((_,i)=>'<div class="slide-dot'+(i===0?' active':'')+'"></div>').join('');
+}
+
+function updateDots(idx){
+  document.querySelectorAll('.slide-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+
+function showSlide(idx){
+  if(!mediaFiles.length) return;
+  const file = mediaFiles[idx];
+  const incoming = _activeSlide === 'a' ? 'b' : 'a';
+  const inEl = document.getElementById('slide-'+incoming);
+  inEl.innerHTML = '';
+
+  if(file.type === 'image'){
+    const img = new Image();
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+    img.onload = () => swapSlide(incoming, 8000);
+    img.onerror = () => nextSlide();
+    img.src = file.url;
+    inEl.appendChild(img);
+  } else {
+    const vid = document.createElement('video');
+    vid.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+    vid.muted = true; vid.autoplay = true; vid.playsInline = true;
+    vid.onended = () => nextSlide();
+    vid.onerror = () => nextSlide();
+    inEl.appendChild(vid);
+    vid.src = file.url;
+    swapSlide(incoming, null);
+    vid.play().catch(()=>{});
+  }
+}
+
+function swapSlide(incoming, duration){
+  const curEl = document.getElementById('slide-'+_activeSlide);
+  const inEl  = document.getElementById('slide-'+incoming);
+  inEl.classList.add('active');
+  setTimeout(()=>{
+    curEl.classList.remove('active');
+    _activeSlide = incoming;
+    updateDots(_slideIdx);
+    if(duration != null) _slideTimer = setTimeout(nextSlide, duration);
+  }, 1200);
+}
+
+function nextSlide(){
+  clearTimeout(_slideTimer);
+  _slideIdx = (_slideIdx + 1) % mediaFiles.length;
+  showSlide(_slideIdx);
+}
+
+function updateSlideClock(now){
+  const sc = document.getElementById('slide-clock');
+  const sd = document.getElementById('slide-date');
+  if(sc) sc.textContent = fmt12(now);
+  if(sd) sd.textContent = fmtDate(now);
+  // Mini schedule on overlay
+  const sl = document.getElementById('slide-sched-list');
+  if(!sl) return;
+  const nowMs = now.getTime();
+  sl.innerHTML = todaySchedule.slice(0,4).map(s=>{
+    const live = nowMs>=s.startMs && nowMs<s.endMs;
+    return '<div class="slide-sched-row">'
+      +'<span class="slide-sched-time">'+fmt12(new Date(s.startMs))+'</span>'
+      +'<span class="slide-sched-name'+(live?' slide-sched-live':'')+'">'+esc(s.name)+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+fetchMedia();
+setInterval(fetchMedia, 120000); // re-check media list every 2 min
 
 // ═══════════════════════════════════════════════════
 //  AUTO-RELOAD ON DEPLOY
