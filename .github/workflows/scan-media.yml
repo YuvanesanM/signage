@@ -34,7 +34,7 @@ jobs:
                   ftype = 'video'
               else:
                   continue
-              files.append({'name': f, 'type': ftype, 'url': '/signage/media/' + f})
+              files.append({'name': f, 'type': ftype, 'url': '/media/' + f})
           with open('media/media.json','w') as out:
               json.dump({'files': files}, out, indent=2)
           print(f'Scanned {len(files)} media files')

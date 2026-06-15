@@ -996,7 +996,7 @@ let _activeSlide = 'a';
 
 async function fetchMedia(){
   try {
-    const res = await fetch('/signage/media/media.json?_='+Date.now(), {signal: AbortSignal.timeout(5000)});
+    const res = await fetch('/media/media.json?_='+Date.now(), {signal: AbortSignal.timeout(5000)});
     if(!res.ok) return;
     const data = await res.json();
     const files = (data.files||[]).filter(f=>f.type==='image'||f.type==='video');

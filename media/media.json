@@ -1,3 +1,14 @@
 {
-  "files": []
+  "files": [
+    {
+      "name": "Studio Entrance.PNG",
+      "type": "image",
+      "url": "/media/Studio Entrance.PNG"
+    },
+    {
+      "name": "Studio Photoshoot area.jpeg",
+      "type": "image",
+      "url": "/media/Studio Photoshoot area.jpeg"
+    }
+  ]
 }
