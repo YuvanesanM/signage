@@ -286,8 +286,18 @@ async function loadSchedule(){
     }
     if(!res.ok) throw new Error('HTTP '+res.status);
     const d = await res.json();
-    // Proxy now returns decoded schedule JSON directly
-    scheduleData = Array.isArray(d.sessions) ? d : {sessions:[]};
+    // Proxy now returns decoded schedule JSON directly; validate each session
+    const raw = Array.isArray(d.sessions) ? d.sessions : [];
+    const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+    scheduleData = {
+      sessions: raw.filter(s =>
+        s && typeof s.name === 'string' && s.name.trim() &&
+        typeof s.start === 'string' && TIME_RE.test(s.start) &&
+        (!s.end || TIME_RE.test(s.end))
+      )
+    };
+    const skipped = raw.length - scheduleData.sessions.length;
+    if(skipped > 0) setStatus(`Loaded — ${skipped} invalid session(s) skipped`, 'err');
     setStatus('Schedule loaded — '+scheduleData.sessions.length+' sessions','ok');
     setProxyStatus(true,'Connected · schedule.ryst.in proxy');
     renderSessions();
@@ -368,15 +378,20 @@ function renderList(id, list, withStatus){
         <div class="si-name">${esc(s.name)||'Unnamed'} ${badge}</div>
         <div class="si-meta">
           <span>${esc(zoneLabel)}</span>
-          <span>⏰ ${s.start?(s.start?fmt12(s.start):'?'):'?'} – ${s.end?fmt12(s.end):'?'}</span>
+          <span>⏰ ${s.start?fmt12(s.start):'?'} – ${s.end?fmt12(s.end):'?'}</span>
           <span>📅 ${esc(dateInfo)}</span>
         </div>
       </div>
       <div class="si-actions">
-        <button class="btn btn-danger" onclick="deleteSession(${idx})">Delete</button>
+        <button class="btn btn-danger si-delete" data-idx="${idx}">Delete</button>
       </div>
     </div>`;
   }).join('');
+  // Event delegation — attach once after render
+  el.onclick = e => {
+    const btn = e.target.closest('.si-delete');
+    if(btn) deleteSession(parseInt(btn.dataset.idx, 10));
+  };
 }
 
 async function deleteSession(idx){
@@ -417,6 +432,19 @@ async function addSession(){
   if(!name||!start){ setStatus('Name and start time are required','err'); return; }
   if(end&&end<=start){ setStatus('End time must be after start time','err'); return; }
   if(date&&days.length){ setStatus('Use either a date or repeat days — not both','err'); return; }
+  // Overlap detection — warn if times conflict with existing sessions
+  if(end){
+    const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+    const todayStr=new Date().toISOString().slice(0,10);
+    const conflict = scheduleData.sessions.filter(s=>{
+      if(s.date&&date&&s.date!==date) return false;
+      if(s.days&&days.length&&!s.days.some(d=>days.includes(d))) return false;
+      return s.start < end && (s.end||s.start) > start;
+    });
+    if(conflict.length){
+      if(!confirm(`This session overlaps with "${conflict[0].name}". Add anyway?`)) return;
+    }
+  }
   const session={name,zone,start};
   if(end) session.end=end;
   if(date) session.date=date;
