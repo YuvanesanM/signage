@@ -1,0 +1,24 @@
+name: Bump version on push
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'version.json'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write version.json
+        run: echo "{\"v\":\"$(date -u +%Y%m%d%H%M%S)\"}" > version.json
+      - name: Commit version
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add version.json
+          git commit -m "chore: bump version [skip ci]"
+          git push

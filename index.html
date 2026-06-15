@@ -943,6 +943,23 @@ function tick(){
   }
 }
 
+
+// ═══════════════════════════════════════════════════
+//  AUTO-RELOAD ON DEPLOY
+// ═══════════════════════════════════════════════════
+let _deployVersion = null;
+async function checkVersion(){
+  try {
+    const res = await fetch('/version.json?_='+Date.now(), {signal: AbortSignal.timeout(5000)});
+    if(!res.ok) return;
+    const { v } = await res.json();
+    if(!_deployVersion){ _deployVersion = v; return; }
+    if(v !== _deployVersion) location.reload();
+  } catch(e){}
+}
+setInterval(checkVersion, 60000);
+checkVersion();
+
 // ═══════════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════
