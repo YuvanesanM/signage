@@ -1003,6 +1003,7 @@ let mediaFiles   = [];
 let _slideIdx    = 0;
 let _slideTimer  = null;
 let _activeSlide = 'a';
+let _slideshowReady = false;
 
 async function fetchMedia(){
   try {
@@ -1018,16 +1019,25 @@ async function fetchMedia(){
 
 function startSlideshow(){
   const ss = document.getElementById('idle-slideshow');
-  const content = document.getElementById('idle-right-content');
   if(!ss) return;
-  ss.style.display = 'block';
-  if(content) content.style.display = 'none';
+  _slideshowReady = false;
   buildDots();
   _slideIdx = 0;
   showSlide(_slideIdx);
+  // slideshow container stays hidden until first image is ready (see swapSlide)
+}
+
+function _revealSlideshow(){
+  if(_slideshowReady) return;
+  _slideshowReady = true;
+  const ss = document.getElementById('idle-slideshow');
+  const content = document.getElementById('idle-right-content');
+  if(ss) ss.style.display = 'block';
+  if(content) content.style.display = 'none';
 }
 
 function stopSlideshow(){
+  _slideshowReady = false;
   const ss = document.getElementById('idle-slideshow');
   const content = document.getElementById('idle-right-content');
   if(ss) ss.style.display = 'none';
@@ -1073,6 +1083,7 @@ function showSlide(idx){
 }
 
 function swapSlide(incoming, duration){
+  _revealSlideshow(); // show slideshow only once the first image is ready
   const curEl = document.getElementById('slide-'+_activeSlide);
   const inEl  = document.getElementById('slide-'+incoming);
   inEl.classList.add('active');
