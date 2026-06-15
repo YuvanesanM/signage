@@ -465,16 +465,25 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 
 
 <!-- ═══ STATUS BAR ═══ -->
+
+<!-- ═══ STATUS BAR ═══ -->
 <div id="status-bar">
   <div class="sb-item">🕐 <span class="val" id="sb-clock">—</span></div>
   <div class="sb-sep"></div>
   <div class="sb-item">👤 <span class="val" id="sb-guest">—</span></div>
   <div class="sb-sep"></div>
   <div class="sb-item">📍 <span class="val" id="sb-zone">—</span></div>
-  <div class="sb-sep
-// ═══════════════════════════════════════════════════
-//  CONFIG — edit these to match your GitHub repo
-// ═══════════════════════════════════════════════════
+  <div class="sb-sep"></div>
+  <div class="sb-item">⏱ <span class="val" id="sb-start">—</span></div>
+  <div class="sb-sep"></div>
+  <div class="sb-item">⏹ <span class="val" id="sb-end">—</span></div>
+  <div class="sb-spacer"></div>
+  <div class="phase-pill" id="phase-pill">
+    <div class="pd"></div>
+    <span id="phase-label">Idle</span>
+  </div>
+</div>
+
 <script>
 const PROXY_URL    = 'https://ryst-signage-proxy.onrender.com'; // update after Render deploy
 const POLL_INTERVAL = 30000; // poll every 30 seconds
@@ -874,16 +883,6 @@ function tick(){
 }
 
 // ═══════════════════════════════════════════════════
-//  BOOT
-// ═══════════════════════════════════════════════════
-fetchSchedule();
-fetchWeather();
-setInterval(fetchSchedule, POLL_INTERVAL);
-setInterval(fetchWeather, 1800000); // refresh weather every 30 min
-setInterval(tick, 1000);
-tick();
-setTimeout(()=>showToast('📡 Connected to Studio RYST Schedule'), 2000);
-════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════
 fetchSchedule();
