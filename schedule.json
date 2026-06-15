@@ -1,12 +1,6 @@
 {
   "sessions": [
     {
-      "name": "today",
-      "zone": "podcast",
-      "start": "22:00",
-      "end": "23:00"
-    },
-    {
       "name": "later today",
       "zone": "photography",
       "start": "23:00",
