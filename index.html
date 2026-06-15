@@ -139,13 +139,12 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .idle-tagline{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:6px;text-align:center;text-transform:uppercase;margin-top:8px}
 .idle-location{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:3px;text-align:center;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:500;margin-top:6px}
 /* compact weather — top half, above date */
-.idle-weather-block{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:14px;width:100%}
-.idle-weather-icon{font-size:38px;line-height:1}
-.idle-weather-temp{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;color:rgba(255,255,255,.92);line-height:1}
-.idle-weather-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
-.idle-weather-mood{font-size:11px;font-weight:600;letter-spacing:2px;color:var(--teal);text-transform:uppercase}
-.idle-weather-humidity{font-size:11px;font-weight:500;letter-spacing:1px;color:rgba(255,255,255,.45)}
-.idle-weather-desc{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.3px}
+.idle-weather-block{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:12px;width:100%}
+.idle-weather-icon{font-size:30px;line-height:1}
+.idle-weather-temp{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:rgba(255,255,255,.92);line-height:1}
+.idle-weather-meta{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;text-align:left}
+.idle-weather-mood{font-size:11px;font-weight:600;letter-spacing:2px;color:var(--teal);text-transform:uppercase;line-height:1}
+.idle-weather-humidity{font-size:11px;font-weight:500;letter-spacing:1px;color:rgba(255,255,255,.45);line-height:1}
 .idle-time-block{text-align:center;margin-top:16px}
 .idle-ldate{font-size:14px;color:rgba(255,255,255,.42);font-weight:400;letter-spacing:2px;text-transform:uppercase}
 
@@ -280,8 +279,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
       <div class="idle-weather-icon" id="idle-wx-icon">🌤️</div>
       <div class="idle-weather-temp" id="idle-wx-temp">—°C</div>
       <div class="idle-weather-meta">
-        <span class="idle-weather-mood" id="idle-wx-mood"></span>
-        <span class="idle-weather-desc" id="idle-wx-desc">Fetching weather…</span>
+        <span class="idle-weather-mood" id="idle-wx-mood">Fetching…</span>
         <span class="idle-weather-humidity" id="idle-wx-humidity"></span>
       </div>
     </div>
@@ -764,13 +762,12 @@ async function fetchWeather(){
       temp,
       humidity,
       icon: WEATHER_ICONS[code]  || '🌤️',
-      mood: WEATHER_MOODS[code]  || '',
-      desc: WEATHER_CODES[code]  || 'Weather data'
+      mood: WEATHER_MOODS[code]  || WEATHER_CODES[code] || 'Weather'
     };
     renderWeather();
   } catch(e){
     console.warn('Weather fetch error:', e);
-    setEl('idle-wx-desc', 'Chennai, Tamil Nadu');
+    setEl('idle-wx-mood', 'Chennai, Tamil Nadu');
   }
 }
 
@@ -780,7 +777,6 @@ function renderWeather(){
   const el_temp = document.getElementById('idle-wx-temp');
   const el_mood = document.getElementById('idle-wx-mood');
   const el_humidity = document.getElementById('idle-wx-humidity');
-  const el_desc = document.getElementById('idle-wx-desc');
   if(el_icon) el_icon.textContent = weatherCache.icon;
   if(el_temp) el_temp.textContent = weatherCache.temp + '°C';
   if(el_mood) el_mood.textContent = weatherCache.mood;
