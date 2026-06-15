@@ -44,11 +44,11 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .oa-text{font-size:13px;font-weight:700;letter-spacing:4px;color:#FF7B72;text-transform:uppercase}
 .ring-wrap{position:relative;width:220px;height:220px;flex-shrink:0}
 .ring-wrap svg{position:absolute;top:0;left:0;width:220px;height:220px}
-.ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:6}
-.ring-fg{fill:none;stroke:url(#ringGrad);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .5s linear}
-.ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:rgba(255,255,255,.9);line-height:1;text-align:center;pointer-events:none;white-space:nowrap}
-.ring-lbl{font-size:11px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-top:4px}
+
+
+
+.ring-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:300;color:rgba(255,255,255,.9);line-height:1;text-align:center;white-space:nowrap}
+
 .tmr-center{padding:48px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
 .tmr-phase-label{font-size:15px;font-weight:700;letter-spacing:5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:20px}
 .tmr-elapsed{font-family:'Cormorant Garamond',serif;font-size:160px;font-weight:300;line-height:1;color:var(--white);letter-spacing:-4px;text-align:center;white-space:nowrap}
@@ -62,10 +62,10 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .tmr-remain.warning{color:#FFB547;animation:pulseWarning 1s ease-in-out infinite}
 @keyframes pulseWarning{0%,100%{opacity:1}50%{opacity:.5}}
 .tmr-right{height:100%;padding:80px 64px 80px 48px;border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;justify-content:center;gap:28px}
-.tmr-info-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:24px 28px}
-.tic-label{font-size:11px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:8px}
-.tic-value{font-size:21px;font-weight:500;color:rgba(255,255,255,.8)}
-.tic-sub{font-size:13px;color:rgba(255,255,255,.3);margin-top:4px}
+.tmr-info-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px 28px}
+.tic-label{font-size:11px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:10px}
+.tic-val{font-size:28px;font-weight:600;color:rgba(255,255,255,.88);line-height:1.2}
+.tic-sub{font-size:16px;color:rgba(255,255,255,.5);margin-top:6px;font-weight:300}
 .tmr-quote{border-left:3px solid rgba(13,122,138,.5);padding:16px 20px;font-family:'Cormorant Garamond',serif;font-size:21px;font-style:italic;font-weight:300;color:rgba(255,255,255,.4);line-height:1.6;transition:opacity .8s}
 #warning-overlay{position:fixed;inset:0;border:4px solid #FFB547;pointer-events:none;opacity:0;transition:opacity .5s;z-index:150}
 #warning-overlay.show{opacity:1;animation:warnPulse 2s ease-in-out infinite}
@@ -144,26 +144,23 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .ty-review-divider{width:48px;height:1px;background:rgba(255,255,255,.15);margin:8px auto}
 .ty-review-cta{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-top:4px}
 /* ══ IDLE — two panel layout ══ */
-#phase-idle{display:grid!important;grid-template-columns:520px 1fr;align-items:stretch}
+#phase-idle{background:var(--snow);display:grid!important;grid-template-columns:520px 1fr;align-items:stretch}
 .idle-left{background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 52px}
 .idle-logo{width:340px;height:auto;object-fit:contain;mix-blend-mode:screen;opacity:.95}
 .idle-tagline{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:6px;text-align:center;text-transform:uppercase;margin-top:10px}
 .idle-location{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:3px;text-align:center;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:500}
-.idle-weather-block{margin-top:auto;border-top:1px solid rgba(255,255,255,.08);padding-top:20px;width:100%;text-align:center}
+.idle-weather-block{margin-top:auto;border-top:1px solid var(--silver);padding-top:20px;width:100%;text-align:center}
 .idle-weather-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px}
 .idle-weather-icon{font-size:32px}
-.idle-weather-temp{
-  font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;
-  color:rgba(255,255,255,.8);line-height:1
-}
+.idle-weather-temp{font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;color:var(--ink);line-height:1}
 .idle-weather-mood{
   font-size:13px;font-weight:600;letter-spacing:3px;
   color:var(--teal);text-transform:uppercase
 }
-.idle-weather-desc{font-size:14px;color:rgba(255,255,255,.3);letter-spacing:.5px}
+.idle-weather-desc{font-size:14px;color:var(--stone);letter-spacing:.5px}
 
 /* Right panel */
-.idle-right{display:flex;flex-direction:column;padding:56px 64px;gap:32px}
+.idle-right{background:var(--snow);display:flex;flex-direction:column;padding:56px 64px;gap:32px}
 .idle-right-top{}
 .idle-clock-big{
   font-family:'Cormorant Garamond',serif;font-size:140px;font-weight:300;
@@ -251,6 +248,24 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .ty-s-label{font-size:10px;font-weight:700;letter-spacing:3px;
   color:var(--stone);text-transform:uppercase;margin-bottom:2px}
 .ty-s-val{font-size:15px;font-weight:600;color:var(--ink);line-height:1.2}
+
+
+/* ── Progress ring ── */
+.ring-svg{position:absolute;top:0;left:0;width:220px;height:220px}
+.ring-track{fill:none;stroke:rgba(255,255,255,.08);stroke-width:10}
+.ring-prog{
+  fill:none;stroke:url(#ringGrad);stroke-width:10;
+  stroke-linecap:round;
+  stroke-dasharray:628.3;
+  stroke-dashoffset:628.3;
+  transition:stroke-dashoffset .8s ease;
+  transform:rotate(-90deg);
+  transform-origin:110px 110px
+}
+
+.tmr-clock{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:rgba(255,255,255,.6);line-height:1;text-align:right}
+.tmr-clock-block{text-align:right;margin-top:auto}
+.tmr-date{font-size:13px;color:rgba(255,255,255,.3);letter-spacing:1px;margin-top:4px;text-align:right}
 </style>
 
 
