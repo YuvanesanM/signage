@@ -1,11 +1,3 @@
 {
-  "sessions": [
-    {
-      "name": "cam",
-      "zone": "culinary",
-      "start": "09:00",
-      "end": "10:00",
-      "date": "2026-06-18"
-    }
-  ]
+  "sessions": []
 }
