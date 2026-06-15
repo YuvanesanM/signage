@@ -23,9 +23,28 @@ jobs:
           import os, json
           IMAGE_EXT = {'jpg','jpeg','png','gif','webp','avif'}
           VIDEO_EXT = {'mp4','webm','mov'}
+
+          def sniff(path):
+              """Detect image/video by file signature (magic bytes)."""
+              try:
+                  with open(path, 'rb') as fh:
+                      head = fh.read(16)
+              except Exception:
+                  return None
+              if head[:3] == b'\xff\xd8\xff':                return 'image'   # JPEG
+              if head[:8] == b'\x89PNG\r\n\x1a\n':            return 'image'   # PNG
+              if head[:6] in (b'GIF87a', b'GIF89a'):         return 'image'   # GIF
+              if head[:4] == b'RIFF' and head[8:12] == b'WEBP': return 'image' # WEBP
+              if head[4:8] == b'ftyp':                       return 'video'   # MP4/MOV
+              if head[:4] == b'\x1aE\xdf\xa3':                return 'video'   # WEBM/MKV
+              return None
+
           files = []
           for f in sorted(os.listdir('media')):
               if f.startswith('.') or f == 'media.json':
+                  continue
+              path = os.path.join('media', f)
+              if not os.path.isfile(path):
                   continue
               ext = f.rsplit('.',1)[-1].lower() if '.' in f else ''
               if ext in IMAGE_EXT:
@@ -33,7 +52,11 @@ jobs:
               elif ext in VIDEO_EXT:
                   ftype = 'video'
               else:
-                  continue
+                  # No / unknown extension — fall back to content sniffing
+                  ftype = sniff(path)
+                  if ftype is None:
+                      print(f'Skipped (not a recognized media file): {f}')
+                      continue
               files.append({'name': f, 'type': ftype, 'url': '/media/' + f})
           with open('media/media.json','w') as out:
               json.dump({'files': files}, out, indent=2)

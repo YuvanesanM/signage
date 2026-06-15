@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "name": "Podcast zone.jpeg",
+      "type": "image",
+      "url": "/media/Podcast zone.jpeg"
+    },
+    {
       "name": "Studio Entrance.PNG",
       "type": "image",
       "url": "/media/Studio Entrance.PNG"
@@ -9,6 +14,11 @@
       "name": "Studio Photoshoot area.jpeg",
       "type": "image",
       "url": "/media/Studio Photoshoot area.jpeg"
+    },
+    {
+      "name": "kitchen area.jpeg",
+      "type": "image",
+      "url": "/media/kitchen area.jpeg"
     }
   ]
 }
