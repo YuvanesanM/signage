@@ -637,7 +637,7 @@ function setFetchStatus(ok){
 
 function processSchedule(data){
   const today    = new Date();
-  const todayStr = today.toISOString().slice(0,10);
+  const todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   const todayDay = ['sun','mon','tue','wed','thu','fri','sat'][today.getDay()];
 
   const sessions = (data.sessions || []).filter(s => {
@@ -712,36 +712,26 @@ window.addEventListener('DOMContentLoaded', () => {
 const PILL = document.getElementById('phase-pill');
 const PILL_LABEL = document.getElementById('phase-label');
 
-let _firstPhaseChange = true;
 function setPhase(phase){
   if(phase===currentPhase) return;
   const prev = currentPhase;
   currentPhase = phase;
-  const doSwap = () => {
-    const target = phaseEls[phase];
-    if(!target){
-      console.warn('setPhase: element missing for phase:', phase);
-      currentPhase = prev; // revert so next tick retries
-      return;
-    }
-    Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
-    target.classList.add('active');
-  };
-  if(_firstPhaseChange){
-    _firstPhaseChange = false;
-    doSwap();
-  } else {
-    const ov=document.getElementById('trans-overlay');
-    ov.classList.add('show');
-    setTimeout(()=>{ try{ doSwap(); } finally{ ov.classList.remove('show'); } },400);
+  const target = phaseEls[phase];
+  if(!target){
+    console.warn('setPhase: no element for', phase);
+    currentPhase = prev;
+    return;
   }
-  PILL.className='phase-pill';
-    if(phase==='welcome'){ PILL.classList.add('pre'); PILL_LABEL.textContent='Awaiting Session'; warningShown=false; }
-  else if(phase==='timer'){ PILL.classList.add('live'); PILL_LABEL.textContent='Session Live'; warningShown=false; }
-  else if(phase==='thankyou'){
-    PILL.classList.add('post'); PILL_LABEL.textContent='Session Complete';
+  Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
+  target.classList.add('active');
+  if(PILL){
+    PILL.className='phase-pill';
+    if(phase==='welcome'){ PILL.classList.add('pre'); if(PILL_LABEL) PILL_LABEL.textContent='Awaiting Session'; warningShown=false; }
+    else if(phase==='timer'){ PILL.classList.add('live'); if(PILL_LABEL) PILL_LABEL.textContent='Session Live'; warningShown=false; }
+    else if(phase==='thankyou'){ PILL.classList.add('post'); if(PILL_LABEL) PILL_LABEL.textContent='Session Complete'; }
+    else{ PILL.classList.add('pre'); if(PILL_LABEL) PILL_LABEL.textContent='Studio RYST'; }
   }
-  else{ PILL.classList.add('pre'); PILL_LABEL.textContent='Studio RYST'; }
+  console.log('[setPhase]', prev, '→', phase, '| target found:', !!target);
 }
 
 
@@ -976,7 +966,7 @@ function _tick(){
     const diff = startSec - nowSec;
     const [h,m,sec] = secsToHMS(diff);
     const cdownEl = EL['wlc-cdown'] || document.getElementById('wlc-cdown');
-    cdownEl.textContent = h+':'+m+':'+sec;
+    if(cdownEl) cdownEl.textContent = h+':'+m+':'+sec;
     if(EL['cdown-label']) EL['cdown-label'].textContent = diff<120 ? '🟡 Starting very soon' : 'Session begins in';
   } else if(nowMs < s.endMs){
     // Live session
@@ -987,8 +977,7 @@ function _tick(){
     const [rh,rm,rs] = secsToHMS(remain);
     if(EL['tmr-elapsed']) EL['tmr-elapsed'].innerHTML = eh+'<span class="colon">:</span>'+em+'<span class="colon">:</span>'+es;
     const rEl=EL['tmr-remain'] || document.getElementById('tmr-remain');
-    rEl.textContent = rh+':'+rm+':'+rs;
-    rEl.className='tmr-remain'+(remain<=300?' warning':'');
+    if(rEl){ rEl.textContent = rh+':'+rm+':'+rs; rEl.className='tmr-remain'+(remain<=300?' warning':''); }
     const pct = Math.min(elapsed/totalDur,1);
     if(EL['ring-circle']) EL['ring-circle'].style.strokeDashoffset = CIRC*(1-pct);
     if(EL['ring-pct']) EL['ring-pct'].textContent = Math.round(pct*100)+'%';

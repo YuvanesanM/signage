@@ -343,7 +343,7 @@ function fmt12(hhmm){
 }
 function sessionStatus(s){
   const now=new Date();
-  const today=now.toISOString().slice(0,10);
+  const today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   const todayDay=['sun','mon','tue','wed','thu','fri','sat'][now.getDay()];
   const dateOk = !s.date||(s.date===today);
   const dayOk = !s.days||s.days.map(d=>d.toLowerCase().slice(0,3)).includes(todayDay);
@@ -355,7 +355,7 @@ function sessionStatus(s){
 }
 
 function renderSessions(){
-  const today=new Date().toISOString().slice(0,10);
+  const today=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
   const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   const todaySessions=scheduleData.sessions.filter(s=>{
     if(s.date&&s.date!==today) return false;
@@ -437,7 +437,7 @@ async function addSession(){
   // Overlap detection — warn if times conflict with existing sessions
   if(end){
     const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-    const todayStr=new Date().toISOString().slice(0,10);
+    const todayStr=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
     const conflict = scheduleData.sessions.filter(s=>{
       if(s.date&&date&&s.date!==date) return false;
       if(s.days&&days.length&&!s.days.some(d=>days.includes(d))) return false;
