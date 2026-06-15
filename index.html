@@ -557,7 +557,7 @@ const ZONE_MAP = {
 function fmt12(d){ let h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
 function fmt24(d){ return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
 function fmtDate(d){ return d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
-function secsToHMS(s){ s=Math.max(0,Math.floor(s)); return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(v=>v.toString().padStart(2,'0')); }
+function secsToHMS(s){ s=Math.max(0,Math.floor(isFinite(s)?s:0)); return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(v=>v.toString().padStart(2,'0')); }
 
 function parseTimeToday(hhmm){
   if(!hhmm || typeof hhmm !== 'string') return null;
@@ -648,8 +648,9 @@ function processSchedule(data){
       break;
     }
   }
-  // If activeSession was set before but is no longer in today's schedule, clear it
-  if(found === null && activeSession !== null && !sessions.some(s => s.startMs === activeSession.startMs)) {
+  // If the previously active session was deleted from the schedule, reset fully
+  if(activeSession !== null && !sessions.some(s => s.startMs === activeSession.startMs)) {
+    activeSession = null;
     warningShown = false;
   }
   activeSession = found;

@@ -335,7 +335,9 @@ async function saveSchedule(){
 // ── RENDER ──
 function esc(s){ const d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
 function fmt12(hhmm){
+  if(!hhmm||typeof hhmm!=='string') return '?';
   const [h,m]=hhmm.split(':').map(Number);
+  if(isNaN(h)||isNaN(m)) return '?';
   const ap=h>=12?'PM':'AM';
   return (h%12||12)+':'+(m<10?'0':'')+m+' '+ap;
 }
@@ -442,7 +444,7 @@ async function addSession(){
       return s.start < end && (s.end||s.start) > start;
     });
     if(conflict.length){
-      if(!confirm(`This session overlaps with "${conflict[0].name}". Add anyway?`)) return;
+      const cname = conflict[0].name.slice(0,60).replace(/[\x00-\x1f]/g,''); if(!confirm('This session overlaps with "'+cname+'". Add anyway?')) return;
     }
   }
   const session={name,zone,start};
