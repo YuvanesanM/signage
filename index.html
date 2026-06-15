@@ -12,7 +12,7 @@
   --ink:#1E242C;--deep:#141920;--teal:#0D7A8A;--amber:#F5A623;--red:#D63B2F;
   --r:#D12F2F;--y:#E8871A;--s:#2C8A3E;--t:#0D6FA8;
 }
-html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font-family:'DM Sans',sans-serif;color:var(--ink);cursor:none;-webkit-font-smoothing:antialiased}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font-family:'DM Sans',sans-serif;color:var(--ink);cursor:none;-webkit-font-smoothing:antialiased}
 .phase{position:absolute;top:0;left:0;right:0;bottom:100px;opacity:0;transition:opacity 1.2s ease;pointer-events:none;overflow:hidden}
 .phase.active{opacity:1;pointer-events:auto}
 
@@ -1114,7 +1114,11 @@ async function checkVersion(){
     if(!res.ok) return;
     const { v } = await res.json();
     if(!_deployVersion){ _deployVersion = v; const el=document.getElementById('sb-version'); if(el) el.textContent=v; return; }
-    if(v !== _deployVersion) location.reload();
+    if(v !== _deployVersion){
+      const ov=document.getElementById('trans-overlay');
+      if(ov){ ov.style.background='#141920'; ov.classList.add('show'); }
+      setTimeout(()=>location.reload(), 500);
+    }
   } catch(e){}
 }
 setInterval(checkVersion, 60000);
