@@ -165,7 +165,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 
 
 /* ══ MEDIA SLIDESHOW ══ */
-.idle-right{position:relative}
 #idle-slideshow{display:none;position:absolute;inset:0;overflow:hidden;background:#000}
 .slide-frame{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease}
 .slide-frame.active{opacity:1}
@@ -184,7 +183,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .slide-dot.active{background:rgba(255,255,255,.85);width:18px;border-radius:3px}
 
 /* Right panel */
-.idle-right{background:var(--snow);display:flex;flex-direction:column;padding:56px 64px;gap:32px}
+.idle-right{position:relative;background:var(--snow);display:flex;flex-direction:column;padding:56px 64px;gap:32px}
 .idle-right-top{}
 .idle-clock-big{
   font-family:'Cormorant Garamond',serif;font-size:140px;font-weight:300;
@@ -496,12 +495,12 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
       </div>
     </div>
       <div class="nps-submitted" id="nps-submitted" style="display:none">✓ Thank you!</div>
-    </div>
     <!-- Next session countdown (hidden until needed) -->
     <div class="ty-next-block" id="ty-next-block" style="display:none">
       <div class="ty-next-label">Next session begins in</div>
       <div class="ty-next-time" id="ty-next-time">—</div>
       <div class="ty-next-name" id="ty-next-name"></div>
+    </div>
     </div>
   <div class="ty-right">
     <div class="ty-stars">⭐⭐⭐⭐⭐</div>
@@ -518,8 +517,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
   </div>
 </div>
 
-
-<!-- ═══ STATUS BAR ═══ -->
 
 <!-- ═══ STATUS BAR ═══ -->
 <div id="status-bar">
@@ -714,19 +711,22 @@ window.addEventListener('DOMContentLoaded', () => {
 const PILL = document.getElementById('phase-pill');
 const PILL_LABEL = document.getElementById('phase-label');
 
+let _firstPhaseChange = true;
 function setPhase(phase){
   if(phase===currentPhase) return;
-  const prev=currentPhase; currentPhase=phase;
-  const ov=document.getElementById('trans-overlay');
-  ov.classList.add('show');
-  setTimeout(()=>{
-    try {
-      Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
-      if(phaseEls[phase]) phaseEls[phase].classList.add('active');
-    } finally {
-      ov.classList.remove('show');
-    }
-  },400);
+  currentPhase=phase;
+  const doSwap = () => {
+    Object.values(phaseEls).filter(Boolean).forEach(el=>el.classList.remove('active'));
+    if(phaseEls[phase]) phaseEls[phase].classList.add('active');
+  };
+  if(_firstPhaseChange){
+    _firstPhaseChange = false;
+    doSwap();
+  } else {
+    const ov=document.getElementById('trans-overlay');
+    ov.classList.add('show');
+    setTimeout(()=>{ try{ doSwap(); } finally{ ov.classList.remove('show'); } },400);
+  }
   PILL.className='phase-pill';
     if(phase==='welcome'){ PILL.classList.add('pre'); PILL_LABEL.textContent='Awaiting Session'; warningShown=false; }
   else if(phase==='timer'){ PILL.classList.add('live'); PILL_LABEL.textContent='Session Live'; warningShown=false; }
