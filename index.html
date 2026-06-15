@@ -130,32 +130,23 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .idle-tagline{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:6px;text-align:center;text-transform:uppercase;margin-top:10px}
 .idle-location{font-size:12px;color:rgba(255,255,255,.28);letter-spacing:3px;text-align:center;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:500}
 .idle-weather-block{margin-top:auto;border-top:1px solid var(--silver);padding-top:20px;width:100%;text-align:center}
-.idle-weather-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px}
-.idle-weather-icon{font-size:32px}
-.idle-weather-temp{font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;color:var(--ink);line-height:1}
-.idle-weather-mood{
-  font-size:13px;font-weight:600;letter-spacing:3px;
-  color:var(--teal);text-transform:uppercase
-}
-.idle-weather-desc{font-size:14px;color:var(--stone);letter-spacing:.5px}
+.idle-weather-row{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:8px}
+.idle-weather-icon{font-size:56px;flex-shrink:0;line-height:1}
+.idle-weather-temp{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:var(--ink);line-height:1}
+.idle-weather-mood{font-size:14px;font-weight:700;letter-spacing:3px;color:var(--teal);text-transform:uppercase}
+.idle-weather-desc{font-size:16px;color:var(--stone);letter-spacing:.3px;margin-top:4px}
 
 /* Right panel */
 .idle-right{background:var(--snow);display:flex;flex-direction:column;padding:56px 64px;gap:32px}
 .idle-right-top{}
-.idle-clock-big{
-  font-family:'Cormorant Garamond',serif;font-size:140px;font-weight:300;
-  color:var(--ink);letter-spacing:-4px;line-height:1
-}
-.idle-date{font-size:18px;color:var(--stone);font-weight:300;letter-spacing:1px;margin-top:4px}
+.idle-clock-big{font-family:'Cormorant Garamond',serif;font-size:140px;font-weight:300;color:var(--ink);letter-spacing:-4px;line-height:1;margin-bottom:8px}
+.idle-date{font-size:22px;color:var(--ink);font-weight:300;letter-spacing:.5px;margin-top:0;opacity:.55}
 
 /* Schedule list */
 .idle-schedule-block{flex:1}
-.idle-sched-title{
-  font-size:12px;font-weight:700;letter-spacing:5px;
-  color:var(--teal);text-transform:uppercase;margin-bottom:16px
-}
+.idle-sched-title{font-size:12px;font-weight:700;letter-spacing:5px;color:var(--teal);text-transform:uppercase;margin-bottom:20px}
 .idle-sched-list{display:flex;flex-direction:column;gap:0}
-.idle-sched-empty{font-size:18px;color:var(--mist);font-style:italic}
+.idle-sched-empty{font-size:20px;color:var(--stone);font-style:italic}
 .idle-sched-row{
   display:flex;align-items:center;gap:20px;
   padding:14px 0;border-bottom:1px solid var(--silver)
@@ -167,24 +158,15 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .idle-sched-dot{width:10px;height:10px;border-radius:50%;background:var(--mist);flex-shrink:0}
 .idle-sched-row.is-live .idle-sched-dot{background:var(--teal);animation:livePulse .9s ease-in-out infinite}
 .idle-sched-row.is-next .idle-sched-dot{background:var(--amber)}
-.idle-sched-time{
-  font-size:22px;font-weight:300;color:var(--stone);
-  font-family:'Cormorant Garamond',serif;width:140px;flex-shrink:0
-}
-.idle-sched-row.is-live .idle-sched-time{color:var(--teal);font-weight:600}
-.idle-sched-name{font-size:26px;font-weight:600;color:var(--ink);flex:1}
+.idle-sched-time{font-size:24px;font-weight:400;color:var(--stone);font-family:'Cormorant Garamond',serif;width:150px;flex-shrink:0}
+.idle-sched-row.is-live .idle-sched-time{font-size:24px;font-weight:400;color:var(--stone);font-family:'Cormorant Garamond',serif;width:150px;flex-shrink:0}
+.idle-sched-name{font-size:28px;font-weight:600;color:var(--ink);flex:1}
 .idle-sched-row.is-live .idle-sched-name{color:var(--teal)}
-.idle-sched-zone{
-  font-size:12px;font-weight:700;letter-spacing:3px;
-  text-transform:uppercase;padding:4px 12px;border-radius:12px;flex-shrink:0
-}
+.idle-sched-zone{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:12px;flex-shrink:0}
 .idle-sched-zone.pod{background:rgba(209,47,47,.08);color:var(--r)}
 .idle-sched-zone.pho{background:rgba(13,111,168,.08);color:var(--t)}
 .idle-sched-zone.cul{background:rgba(232,135,26,.08);color:var(--y)}
-.idle-sched-badge{
-  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  padding:3px 10px;border-radius:10px;flex-shrink:0
-}
+.idle-sched-badge{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:10px;flex-shrink:0}
 .idle-sched-badge.live{background:rgba(13,122,138,.12);color:var(--teal)}
 .idle-sched-badge.next{background:rgba(245,166,35,.1);color:var(--amber)}
 .idle-sched-badge.done{background:rgba(122,132,144,.1);color:var(--stone)}
@@ -346,6 +328,21 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--snow);font
 .ty-review-cta{
   font-size:14px;font-weight:700;letter-spacing:5px;
   text-transform:uppercase;color:var(--teal);margin-top:4px
+}
+
+/* ── Upcoming sessions section ── */
+.idle-sched-upcoming-hdr{
+  font-size:11px;font-weight:700;letter-spacing:5px;
+  color:var(--amber);text-transform:uppercase;
+  margin-top:20px;margin-bottom:12px;padding-top:16px;
+  border-top:1px solid var(--silver)
+}
+.idle-sched-row.is-upcoming .idle-sched-dot{background:var(--mist)}
+.idle-sched-row.is-upcoming .idle-sched-name{color:var(--stone)}
+.idle-sched-time-date{
+  font-size:16px!important;font-weight:500;
+  font-family:'DM Sans',sans-serif!important;
+  color:var(--stone)!important;width:150px;flex-shrink:0
 }
 </style>
 
@@ -638,6 +635,7 @@ function parseTimeToday(hhmm){
 // ═══════════════════════════════════════════════════
 let activeSession  = null;  // {name, zone, startMs, endMs}
 let todaySchedule  = [];     // all today's sessions sorted
+let upcomingSchedule = [];   // future dated sessions
 let nextSession    = null;   // session after current one
 let weatherCache   = null;   // {temp, icon, mood, desc}
 let weatherFetched = false;
@@ -662,9 +660,10 @@ function processSchedule(data){
   const todayStr = today.toISOString().slice(0,10);
   const todayDay = ['sun','mon','tue','wed','thu','fri','sat'][today.getDay()];
 
-  const sessions = (data.sessions || []).filter(s => {
+  const allSessions = (data.sessions || []);
+  const sessions = allSessions.filter(s => {
     if(s.date && s.date !== todayStr) return false;
-    if(s.days && !s.days.map(d=>d.toLowerCase().slice(0,3)).includes(todayDay)) return false;
+    if(!s.date && s.days && !s.days.map(d=>d.toLowerCase().slice(0,3)).includes(todayDay)) return false;
     return true;
   }).map(s => {
     const startMs = parseTimeToday(s.start).getTime();
@@ -673,6 +672,13 @@ function processSchedule(data){
   }).sort((a,b) => a.startMs - b.startMs);
 
   todaySchedule = sessions;
+  // Build upcoming: future-dated sessions
+  upcomingSchedule = (data.sessions || []).filter(s => s.date && s.date > todayStr)
+    .map(s => {
+      const d = new Date(s.date+'T'+s.start+':00');
+      const e = s.end ? new Date(s.date+'T'+s.end+':00') : new Date(d.getTime()+3600000);
+      return {...s, dateMs:d.getTime(), startMs:d.getTime(), endMs:e.getTime()};
+    }).sort((a,b)=>a.dateMs-b.dateMs);
   renderIdleSchedule();
 
   const nowMs = Date.now();
@@ -799,30 +805,50 @@ function renderWeather(){
 function renderIdleSchedule(){
   const el = document.getElementById('idle-schedule-list');
   if(!el) return;
-  if(!todaySchedule.length){
-    el.innerHTML = '<div class="idle-sched-empty">No sessions scheduled today</div>';
-    return;
-  }
   const nowMs = Date.now();
+  let html = '';
   let foundActive = false;
-  el.innerHTML = todaySchedule.map(s => {
-    const zone = ZONE_MAP[s.zone.toLowerCase()] || {label:s.zone+' Zone', zoneClass:'pod'};
-    const isLive = nowMs >= s.startMs && nowMs < s.endMs;
-    const isDone = nowMs >= s.endMs;
-    const isNext = !foundActive && !isLive && !isDone;
-    if(isLive) foundActive = true;
-    const stateClass = isLive ? 'is-live' : isDone ? 'is-done' : isNext && !foundActive ? 'is-next' : '';
-    if(isNext && !foundActive) foundActive = true; // only first upcoming is "next"
-    const badge = isLive ? '<span class="idle-sched-badge live">LIVE</span>'
-                : isNext ? '<span class="idle-sched-badge next">NEXT</span>'
-                : isDone ? '<span class="idle-sched-badge done">DONE</span>' : '';
-    return '<div class="idle-sched-row '+stateClass+'">'
-      +'<div class="idle-sched-dot"></div>'
-      +'<div class="idle-sched-time">'+fmt12(new Date(s.startMs))+'</div>'
-      +'<div class="idle-sched-name">'+s.name+'</div>'
-      +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+zone.label+'</div>'
-      +badge+'</div>';  }).join('');
-  // Update idle-date
+
+  if(todaySchedule.length){
+    todaySchedule.forEach(s => {
+      const zone = ZONE_MAP[s.zone.toLowerCase()] || {label:s.zone+' Zone', zoneClass:'pod'};
+      const isLive = nowMs >= s.startMs && nowMs < s.endMs;
+      const isDone = nowMs >= s.endMs;
+      const isNext = !foundActive && !isLive && !isDone;
+      if(isLive || isNext) foundActive = true;
+      const stateClass = isLive ? 'is-live' : isDone ? 'is-done' : isNext ? 'is-next' : '';
+      const badge = isLive ? '<span class="idle-sched-badge live">LIVE</span>'
+                  : isNext ? '<span class="idle-sched-badge next">NEXT</span>'
+                  : isDone ? '<span class="idle-sched-badge done">DONE</span>' : '';
+      html += '<div class="idle-sched-row '+stateClass+'">'
+        +'<div class="idle-sched-dot"></div>'
+        +'<div class="idle-sched-time">'+fmt12(new Date(s.startMs))+'</div>'
+        +'<div class="idle-sched-name">'+s.name+'</div>'
+        +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+zone.label+'</div>'
+        +badge+'</div>';
+    });
+  } else {
+    html += '<div class="idle-sched-empty">No sessions today</div>';
+  }
+
+  // Upcoming future sessions (next 3)
+  if(upcomingSchedule.length){
+    html += '<div class="idle-sched-upcoming-hdr">Upcoming</div>';
+    upcomingSchedule.slice(0,3).forEach(s => {
+      const zone = ZONE_MAP[s.zone.toLowerCase()] || {label:s.zone+' Zone', zoneClass:'pod'};
+      const d = new Date(s.dateMs);
+      const dateLabel = d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+      html += '<div class="idle-sched-row is-upcoming">'
+        +'<div class="idle-sched-dot"></div>'
+        +'<div class="idle-sched-time idle-sched-time-date">'+dateLabel+'</div>'
+        +'<div class="idle-sched-name">'+s.name+'</div>'
+        +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+zone.label+'</div>'
+        +'<span class="idle-sched-badge">'+fmt12(new Date(s.startMs))+'</span>'
+        +'</div>';
+    });
+  }
+
+  el.innerHTML = html;
   const el_date = document.getElementById('idle-date-label');
   if(el_date) el_date.textContent = fmtDate(new Date());
 }
@@ -920,6 +946,14 @@ function tick(){
 
   if(!activeSession){
     setPhase('idle');
+    document.getElementById('sb-guest').textContent = 'Studio RYST';
+    document.getElementById('sb-zone').textContent = '—';
+    document.getElementById('sb-start').textContent = '—';
+    document.getElementById('sb-end').textContent = '—';
+    const pill = document.getElementById('phase-pill');
+    const pillLabel = document.getElementById('phase-label');
+    if(pill){ pill.className='phase-pill'; }
+    if(pillLabel) pillLabel.textContent = 'Studio RYST';
     // Refresh idle schedule display every 60s
     if(now.getSeconds() === 0) renderIdleSchedule();
     return;
