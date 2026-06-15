@@ -780,7 +780,7 @@ async function fetchWeather(){
     renderWeather();
   } catch(e){
     console.warn('Weather fetch error:', e);
-    document.getElementById('idle-wx-desc').textContent = 'Chennai, Tamil Nadu';
+    setEl('idle-wx-desc', 'Chennai, Tamil Nadu');
   }
 }
 
@@ -874,28 +874,32 @@ function updateNextCountdown(){
 //  NPS STAR RATING (thank you page)
 // ═══════════════════════════════════════════════════
 
+function setEl(id, val){
+  const el = document.getElementById(id);
+  if(el) el.textContent = val;
+}
+
 function populateSession(s){
   const zone = ZONE_MAP[(s.zone||'podcast').toLowerCase()] || {label:(s.zone||'Studio')+' Zone',icon:'🎬'};
   const startD = new Date(s.startMs);
-  const endD = new Date(s.endMs);
+  const endD   = new Date(s.endMs);
   const durMin = Math.round((s.endMs-s.startMs)/60000);
-  document.getElementById('wlc-name').textContent = s.name;
-  document.getElementById('sc-zone').textContent = zone.label;
-  document.getElementById('sc-start').textContent = fmt12(startD);
-  document.getElementById('sc-date-sub').textContent = fmtDate(startD);
-  document.getElementById('sc-duration').textContent = durMin+' minutes';
-  document.getElementById('sc-end-sub').textContent = 'Ends at '+fmt12(endD);
-  document.getElementById('tmr-guest').textContent = s.name;
-  document.getElementById('tmr-zone-label').textContent = zone.label;
-  document.getElementById('tmr-window').textContent = fmt12(startD)+' – '+fmt12(endD);
-  document.getElementById('tmr-end-label').textContent = 'Session ends at '+fmt12(endD);
+  setEl('wlc-name',    s.name);
+  setEl('sc-zone',     zone.label);
+  setEl('sc-start',    fmt12(startD));
+  setEl('sc-date-sub', fmtDate(startD));
+  setEl('sc-duration', durMin+' minutes');
+  setEl('sc-end-sub',  'Ends at '+fmt12(endD));
+  setEl('tmr-guest',      s.name);
+  setEl('tmr-zone-label', zone.label);
+  setEl('tmr-window',     fmt12(startD)+' – '+fmt12(endD));
+  setEl('tmr-end-label',  'Session ends at '+fmt12(endD));
   const tyMsg = document.getElementById('ty-message');
   if(tyMsg){ tyMsg.innerHTML = ''; const t1=document.createTextNode('It was our privilege hosting your session today, '); const strong=document.createElement('strong'); strong.textContent=s.name; const t2=document.createTextNode('.'); const br=document.createElement('br'); const t3=document.createTextNode('We look forward to creating together again.'); tyMsg.append(t1,strong,t2,br,t3); }
-  document.getElementById('sb-guest').textContent = s.name;
-  document.getElementById('sb-zone').textContent = zone.label;
-  document.getElementById('sb-start').textContent = fmt12(startD);
-  document.getElementById('sb-end').textContent = fmt12(endD);
-  // Zone-specific welcome message
+  setEl('sb-guest', s.name);
+  setEl('sb-zone',  zone.label);
+  setEl('sb-start', fmt12(startD));
+  setEl('sb-end',   fmt12(endD));
   setZoneMsg(zone);
 }
 
@@ -910,6 +914,9 @@ function showToast(msg){
 const CIRC = 2*Math.PI*100; // r=100 → 628.3 // 540.35
 
 function tick(){
+  try { _tick(); } catch(e){ console.error('tick error:', e); }
+}
+function _tick(){
   const now = new Date();
   const nowMs = now.getTime();
 
