@@ -578,6 +578,7 @@ let weatherFetched = false;
 let warningShown = false;
 let _lastScheduleHash = '';
 let currentPhase = 'idle';
+let _populatedSessionMs = null;
 
 // ═══════════════════════════════════════════════════
 //  FETCH SCHEDULE FROM GITHUB
@@ -621,7 +622,7 @@ function processSchedule(data){
   }).filter(Boolean).sort((a,b) => a.startMs - b.startMs);
 
   todaySchedule = sessions;
-  renderIdleSchedule(true);
+  renderIdleSchedule();
 
   const nowMs = Date.now();
   let found = null, foundNext = null;
@@ -651,6 +652,7 @@ function processSchedule(data){
   if(activeSession !== null && !sessions.some(s => s.startMs === activeSession.startMs)) {
     activeSession = null;
     warningShown = false;
+    _populatedSessionMs = null;
   }
   activeSession = found;
   nextSession   = foundNext;
@@ -874,17 +876,20 @@ function tick(){
   const nowMs = now.getTime();
 
   // Clocks
-  const t24 = fmt24(now);
+  // Status bar clock — always visible
   if(EL['sb-clock']) EL['sb-clock'].textContent = fmt12(now);
-  if(EL['wlc-bigtime']) EL['wlc-bigtime'].textContent = fmt12(now);
-  if(EL['wlc-date']) EL['wlc-date'].textContent = fmtDate(now);
-  if(EL['tmr-clock']) EL['tmr-clock'].textContent = fmt12(now);
-  if(EL['tmr-date']) EL['tmr-date'].textContent = fmtDate(now);
-  if(EL['idle-clock']) EL['idle-clock'].textContent = fmt12(now);
-  const _wlcL = document.getElementById('wlc-lclock');
-  const _wlcD = document.getElementById('wlc-ldate');
-  if(_wlcL) _wlcL.textContent = fmt12(now);
-  if(_wlcD) _wlcD.textContent = fmtDate(now);
+  // Phase-specific clocks — only update when relevant
+  if(currentPhase==='idle'   && EL['idle-clock']) EL['idle-clock'].textContent = fmt12(now);
+  if(currentPhase==='welcome'){
+    if(EL['wlc-bigtime']) EL['wlc-bigtime'].textContent = fmt12(now);
+    if(EL['wlc-date'])    EL['wlc-date'].textContent    = fmtDate(now);
+    if(EL['wlc-lclock'])  EL['wlc-lclock'].textContent  = fmt12(now);
+    if(EL['wlc-ldate'])   EL['wlc-ldate'].textContent   = fmtDate(now);
+  }
+  if(currentPhase==='timer'){
+    if(EL['tmr-clock']) EL['tmr-clock'].textContent = fmt12(now);
+    if(EL['tmr-date'])  EL['tmr-date'].textContent  = fmtDate(now);
+  }
 
   if(!activeSession){
     setPhase('idle');
@@ -894,7 +899,8 @@ function tick(){
   }
 
   const s = activeSession;
-  populateSession(s);
+  // Only repopulate static session data when session changes — not every tick
+  const _sessionKey = s.startMs + (s.done?'|done':''); if(_populatedSessionMs !== _sessionKey){ populateSession(s); _populatedSessionMs = _sessionKey; }
 
   if(s.done){
     // Post-session — show thank you
