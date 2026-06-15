@@ -1,13 +1,6 @@
 {
   "sessions": [
     {
-      "name": "new",
-      "zone": "podcast",
-      "start": "09:00",
-      "end": "10:00",
-      "date": "2026-06-16"
-    },
-    {
       "name": "cam",
       "zone": "culinary",
       "start": "09:00",
