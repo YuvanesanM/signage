@@ -1,3 +1,10 @@
 {
-  "sessions": []
+  "sessions": [
+    {
+      "name": "test",
+      "zone": "podcast",
+      "start": "20:00",
+      "end": "21:00"
+    }
+  ]
 }
