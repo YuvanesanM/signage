@@ -1,10 +1,3 @@
 {
-  "sessions": [
-    {
-      "name": "later today",
-      "zone": "photography",
-      "start": "23:00",
-      "end": "23:03"
-    }
-  ]
+  "sessions": []
 }
