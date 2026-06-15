@@ -5,6 +5,12 @@
       "zone": "photography",
       "start": "07:25",
       "end": "07:26"
+    },
+    {
+      "name": "hello",
+      "zone": "podcast",
+      "start": "07:50",
+      "end": "09:00"
     }
   ]
 }
