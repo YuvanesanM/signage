@@ -39,9 +39,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 #phase-timer{background:var(--deep);display:grid;grid-template-columns:400px 1fr 400px;align-items:stretch}
 .tmr-left{padding:48px 40px;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
 .tmr-logo{width:280px;height:auto;object-fit:contain;mix-blend-mode:screen;opacity:.97}
-.on-air-badge{display:flex;align-items:center;gap:12px;padding:10px 24px;border-radius:30px;border:1px solid rgba(255,123,114,.35);background:rgba(255,123,114,.08)}
-.oa-dot{width:10px;height:10px;border-radius:50%;background:#FF7B72;animation:blink 1.1s ease-in-out infinite}
-.oa-text{font-size:13px;font-weight:700;letter-spacing:4px;color:#FF7B72;text-transform:uppercase}
 .ring-wrap{position:relative;width:220px;height:220px;flex-shrink:0}
 .ring-wrap svg{position:absolute;top:0;left:0;width:220px;height:220px}
 
@@ -103,7 +100,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .sc-zone{font-size:24px;font-weight:600;color:var(--ink);line-height:1.1}
 .sc-val{font-size:24px;font-weight:600;color:var(--ink);line-height:1.1}
 .sc-sub{font-size:13px;color:var(--stone);margin-top:1px}
-.wlc-cdown-block{padding:20px 0 16px;border-bottom:1px solid var(--silver);margin-bottom:20px}
 .wlc-cdown-label{font-size:11px;font-weight:700;letter-spacing:4px;color:var(--teal);text-transform:uppercase;margin-bottom:4px}
 .wlc-cdown-time{font-family:'Cormorant Garamond',serif;font-size:64px;font-weight:300;color:var(--ink);letter-spacing:-2px;line-height:1}
 .wlc-clock-row{display:none}
@@ -204,7 +200,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .idle-sched-zone.pod{background:rgba(214,59,47,.2);color:#f08a7e}
 .idle-sched-zone.pho{background:rgba(13,111,168,.22);color:#74b5e2}
 .idle-sched-zone.cul{background:rgba(232,135,26,.22);color:#f0b25e}
-.idle-sched-badge{display:none}
+.idle-sched-more{font-size:12px;font-weight:600;letter-spacing:1px;color:rgba(255,255,255,.4);text-align:center;padding-top:10px}
 
 /* ══ ZONE MESSAGES (welcome page) ══ */
 .wlc-zone-msg{
@@ -775,22 +771,25 @@ function renderIdleSchedule(force){
   }
   const nowMs = Date.now();
   let foundActive = false;
-  el.innerHTML = todaySchedule.map(s => {
+  // Cap visible rows so a long day never clips silently in the narrow left panel.
+  const MAX_ROWS = 12;
+  const shown = todaySchedule.slice(0, MAX_ROWS);
+  const overflow = todaySchedule.length - shown.length;
+  let rows = shown.map(s => {
     const zone = ZONE_MAP[(s.zone||'podcast').toLowerCase()] || {label:(s.zone||'Studio')+' Zone', zoneClass:'pod'};
     const isLive = nowMs >= s.startMs && nowMs < s.endMs;
     const isDone = nowMs >= s.endMs;
     const isNext = !foundActive && !isLive && !isDone;
     if(isLive || isNext) foundActive = true;
     const stateClass = isLive ? 'is-live' : isDone ? 'is-done' : isNext ? 'is-next' : '';
-    const badge = isLive ? '<span class="idle-sched-badge live">LIVE</span>'
-                : isNext ? '<span class="idle-sched-badge next">NEXT</span>'
-                : isDone ? '<span class="idle-sched-badge done">DONE</span>' : '';
     return '<div class="idle-sched-row '+stateClass+'">'
       +'<div class="idle-sched-dot"></div>'
       +'<div class="idle-sched-time">'+fmt12(new Date(s.startMs))+'</div>'
       +'<div class="idle-sched-name">'+esc(s.name)+'</div>'
       +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+zone.label+'</div>'
-      +badge+'</div>';  }).join('');
+      +'</div>';  }).join('');
+  if(overflow > 0) rows += '<div class="idle-sched-more">+'+overflow+' more session'+(overflow>1?'s':'')+'</div>';
+  el.innerHTML = rows;
 }
 
 // ═══════════════════════════════════════════════════
