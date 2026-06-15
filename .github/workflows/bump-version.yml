@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths-ignore:
       - 'version.json'
+      - 'media/**'
+
+concurrency:
+  group: main-auto-commit
+  cancel-in-progress: false
 
 jobs:
   bump:
@@ -39,4 +44,9 @@ jobs:
           git add version.json
           git diff --cached --quiet && echo "No changes" && exit 0
           git commit -m "chore: bump version [skip ci]"
-          git push
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "Push failed (attempt $i) — rebasing on latest main"
+            git pull --rebase origin main
+          done
+          echo "Push failed after 5 attempts" && exit 1
