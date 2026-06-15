@@ -175,6 +175,8 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 }
 .idle-sched-list{display:flex;flex-direction:column;gap:0;width:100%}
 .idle-sched-empty{font-size:14px;color:rgba(255,255,255,.3);font-style:italic;text-align:center;margin-top:8px}
+.idle-sched-day{font-size:10px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.32);text-transform:uppercase;margin:16px 0 4px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.06)}
+.idle-sched-day:first-child{margin-top:0}
 .idle-sched-row{
   display:flex;align-items:center;gap:12px;
   padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)
@@ -287,9 +289,9 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
       <div class="idle-ldate" id="idle-ldate">—</div>
     </div>
     <div class="idle-schedule-block">
-      <div class="idle-sched-title">Today's Sessions</div>
+      <div class="idle-sched-title">Upcoming Sessions</div>
       <div id="idle-schedule-list" class="idle-sched-list">
-        <div class="idle-sched-empty">No sessions scheduled today</div>
+        <div class="idle-sched-empty">No upcoming sessions</div>
       </div>
     </div>
   </div>
@@ -550,20 +552,23 @@ function fmt24(d){ return d.getHours().toString().padStart(2,'0')+':'+d.getMinut
 function fmtDate(d){ return d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
 function secsToHMS(s){ s=Math.max(0,Math.floor(isFinite(s)?s:0)); return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(v=>v.toString().padStart(2,'0')); }
 
-function parseTimeToday(hhmm){
+function parseTimeOn(base, hhmm){
   if(!hhmm || typeof hhmm !== 'string') return null;
   const parts = hhmm.split(':');
   if(parts.length !== 2) return null;
   const h = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
   if(isNaN(h)||isNaN(m)||h<0||h>23||m<0||m>59) return null;
-  const d=new Date(); d.setHours(h,m,0,0); return d;
+  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  d.setHours(h,m,0,0); return d;
 }
+function parseTimeToday(hhmm){ return parseTimeOn(new Date(), hhmm); }
 
 // ═══════════════════════════════════════════════════
 //  SCHEDULE STATE
 // ═══════════════════════════════════════════════════
 let activeSession  = null;  // {name, zone, startMs, endMs}
-let todaySchedule  = [];     // all today's sessions sorted
+let todaySchedule  = [];     // all today's sessions sorted (drives phase logic)
+let upcomingSessions = [];   // multi-day upcoming list for the idle home screen
 let nextSession    = null;   // session after current one
 let weatherCache   = null;   // {temp, icon, mood, desc}
 let weatherFetched = false;
@@ -614,6 +619,33 @@ function processSchedule(data){
   }).filter(Boolean).sort((a,b) => a.startMs - b.startMs);
 
   todaySchedule = sessions;
+
+  // Build a multi-day "upcoming" list (today, tomorrow, then dated) for the home screen.
+  const DOW = ['sun','mon','tue','wed','thu','fri','sat'];
+  const nowMsU = Date.now();
+  const upcoming = [];
+  for(let d=0; d<14; d++){
+    const day = new Date(today.getFullYear(), today.getMonth(), today.getDate()+d);
+    const dStr = day.getFullYear()+'-'+String(day.getMonth()+1).padStart(2,'0')+'-'+String(day.getDate()).padStart(2,'0');
+    const dow = DOW[day.getDay()];
+    (data.sessions || []).forEach(s => {
+      let occurs;
+      if(s.date)      occurs = (s.date === dStr);
+      else if(s.days) occurs = s.days.map(x=>x.toLowerCase().slice(0,3)).includes(dow);
+      else            occurs = (d === 0);          // no date/days → treat as today only
+      if(!occurs) return;
+      const startD = parseTimeOn(day, s.start);
+      if(!startD) return;
+      const startMs = startD.getTime();
+      const endD = parseTimeOn(day, s.end || '');
+      const endMs = endD ? endD.getTime() : startMs + (parseInt(s.duration||60))*60000;
+      if(endMs <= nowMsU) return;                  // already finished — not upcoming
+      upcoming.push({...s, startMs, endMs, dayOffset:d});
+    });
+  }
+  upcoming.sort((a,b) => a.startMs - b.startMs);
+  upcomingSessions = upcoming;
+
   renderIdleSchedule();
 
   const nowMs = Date.now();
@@ -759,37 +791,44 @@ function renderWeather(){
 // ═══════════════════════════════════════════════════
 //  IDLE SCHEDULE RENDER
 // ═══════════════════════════════════════════════════
-function renderIdleSchedule(force){
-  const hash = todaySchedule.map(s=>s.startMs+s.name).join('|');
-  if(!force && hash === _lastScheduleHash) return;
-  _lastScheduleHash = hash;
+function dayLabel(s){
+  if(s.dayOffset === 0) return 'Today';
+  if(s.dayOffset === 1) return 'Tomorrow';
+  return new Date(s.startMs).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+}
+
+function renderIdleSchedule(){
   const el = document.getElementById('idle-schedule-list');
   if(!el) return;
-  if(!todaySchedule.length){
-    el.innerHTML = '<div class="idle-sched-empty">No sessions scheduled today</div>';
+  if(!upcomingSessions.length){
+    const empty = '<div class="idle-sched-empty">No upcoming sessions</div>';
+    if(empty !== _lastScheduleHash){ el.innerHTML = empty; _lastScheduleHash = empty; }
     return;
   }
   const nowMs = Date.now();
-  let foundActive = false;
-  // Cap visible rows so a long day never clips silently in the narrow left panel.
+  // Cap visible rows so a busy stretch never clips silently in the narrow left panel.
   const MAX_ROWS = 12;
-  const shown = todaySchedule.slice(0, MAX_ROWS);
-  const overflow = todaySchedule.length - shown.length;
-  let rows = shown.map(s => {
+  const shown = upcomingSessions.slice(0, MAX_ROWS);
+  const overflow = upcomingSessions.length - shown.length;
+  let nextMarked = false, lastLabel = null, html = '';
+  shown.forEach(s => {
+    const label = dayLabel(s);
+    if(label !== lastLabel){ html += '<div class="idle-sched-day">'+label+'</div>'; lastLabel = label; }
     const zone = ZONE_MAP[(s.zone||'podcast').toLowerCase()] || {label:(s.zone||'Studio')+' Zone', zoneClass:'pod'};
     const isLive = nowMs >= s.startMs && nowMs < s.endMs;
-    const isDone = nowMs >= s.endMs;
-    const isNext = !foundActive && !isLive && !isDone;
-    if(isLive || isNext) foundActive = true;
-    const stateClass = isLive ? 'is-live' : isDone ? 'is-done' : isNext ? 'is-next' : '';
-    return '<div class="idle-sched-row '+stateClass+'">'
+    const isNext = !isLive && s.startMs > nowMs && !nextMarked;
+    if(isNext) nextMarked = true;
+    const stateClass = isLive ? 'is-live' : isNext ? 'is-next' : '';
+    html += '<div class="idle-sched-row '+stateClass+'">'
       +'<div class="idle-sched-dot"></div>'
       +'<div class="idle-sched-time">'+fmt12(new Date(s.startMs))+'</div>'
       +'<div class="idle-sched-name">'+esc(s.name)+'</div>'
       +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+zone.label+'</div>'
-      +'</div>';  }).join('');
-  if(overflow > 0) rows += '<div class="idle-sched-more">+'+overflow+' more session'+(overflow>1?'s':'')+'</div>';
-  el.innerHTML = rows;
+      +'</div>';
+  });
+  if(overflow > 0) html += '<div class="idle-sched-more">+'+overflow+' more session'+(overflow>1?'s':'')+'</div>';
+  // Only touch the DOM when the rendered output actually changes.
+  if(html !== _lastScheduleHash){ el.innerHTML = html; _lastScheduleHash = html; }
 }
 
 // ═══════════════════════════════════════════════════
