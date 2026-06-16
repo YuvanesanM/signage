@@ -1,12 +1,3 @@
 {
-  "sessions": [
-    {
-      "name": "Yuvan",
-      "zone": "podcast",
-      "start": "08:00",
-      "end": "09:00",
-      "mobile": "8608008600",
-      "charges": 6000
-    }
-  ]
+  "sessions": []
 }
