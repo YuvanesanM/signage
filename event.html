@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,15 +7,74 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #f9f8f6;
+    --ink: #1a1a18;
+    --ink-strong: #080808;
+    --card: #ffffff;
+    --border: #e5e0d5;
+    --muted: #999999;
+    --faint: #aaaaaa;
+    --faintest: #cccccc;
+    --gold: #c9a84c;
+    --gold-dark: #b8962e;
+    --gold-soft: #fdf8ed;
+    --gold-soft-border: #eddfa0;
+    --track: #f0ece4;
+    --grid-line: #f7f5f0;
+    --green: #4caf50;
+    --red: #d9534f;
+    --shadow: rgba(0,0,0,0.04);
+  }
+
+  [data-theme="dark"] {
+    --bg: #15140f;
+    --ink: #ece7da;
+    --ink-strong: #f6f1e4;
+    --card: #1f1d17;
+    --border: #322e23;
+    --muted: #8c8675;
+    --faint: #6f6a5a;
+    --faintest: #4a463a;
+    --gold: #d4b65e;
+    --gold-dark: #c9a84c;
+    --gold-soft: #2a2410;
+    --gold-soft-border: #4a3f1c;
+    --track: #2a2720;
+    --grid-line: #242118;
+    --green: #5cba60;
+    --red: #e06b66;
+    --shadow: rgba(0,0,0,0.3);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: #f9f8f6;
-    color: #1a1a18;
+    background: var(--bg);
+    color: var(--ink);
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
     padding: 2rem;
+    transition: background 0.3s, color 0.3s;
   }
+
+  /* ── Offline banner ── */
+  #offline-banner {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--red);
+    color: #fff;
+    text-align: center;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  #offline-banner.show { display: block; }
 
   header {
     display: flex;
@@ -23,32 +82,36 @@
     align-items: flex-end;
     margin-bottom: 2rem;
     padding-bottom: 1.25rem;
-    border-bottom: 1px solid #e5e0d5;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .logo {
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.75rem;
     font-weight: 600;
-    color: #080808;
+    color: var(--ink-strong);
     letter-spacing: 0.08em;
   }
-
-  .logo span {
-    color: #c9a84c;
-  }
+  .logo span { color: var(--gold); }
 
   .tagline {
     font-size: 0.68rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #999;
+    color: var(--muted);
     margin-top: 3px;
   }
 
   .header-right {
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
   }
+  .header-controls { display: flex; align-items: center; gap: 8px; }
 
   .live-badge {
     display: inline-flex;
@@ -57,42 +120,61 @@
     font-size: 0.72rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #666;
-    background: #fff;
-    border: 1px solid #e5e0d5;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
     padding: 5px 12px;
     border-radius: 20px;
   }
+  .live-badge.offline { color: var(--red); border-color: var(--red); }
 
   .live-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #4caf50;
+    background: var(--green);
     animation: pulse 2s infinite;
   }
+  .live-badge.offline .live-dot { background: var(--red); animation: none; }
 
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
   }
 
+  .icon-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { color: var(--gold-dark); border-color: var(--gold); }
+
   .last-updated {
     font-size: 0.68rem;
-    color: #aaa;
-    margin-top: 6px;
+    color: var(--faint);
   }
+  .last-updated.error { color: var(--red); }
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
 
   .stat-card {
-    background: #fff;
-    border: 1px solid #e5e0d5;
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.25rem 1.5rem;
     position: relative;
@@ -104,7 +186,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
-    background: #c9a84c;
+    background: var(--gold);
     opacity: 0.5;
   }
 
@@ -112,7 +194,7 @@
     font-size: 0.68rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #999;
+    color: var(--muted);
     margin-bottom: 0.5rem;
   }
 
@@ -120,19 +202,32 @@
     font-family: 'Cormorant Garamond', serif;
     font-size: 3rem;
     font-weight: 600;
-    color: #080808;
+    color: var(--ink-strong);
     line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
   }
+  .stat-value.compact { font-size: 1.9rem; padding-top: 0.4rem; }
+
+  .stat-trend {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .stat-trend.up { color: var(--green); }
+  .stat-trend.down { color: var(--red); }
+  .stat-trend.flat { color: var(--faint); }
 
   .stat-sub {
     font-size: 0.7rem;
-    color: #aaa;
+    color: var(--faint);
     margin-top: 0.4rem;
   }
+  .stat-sub .up { color: var(--green); }
+  .stat-sub .down { color: var(--red); }
 
-  .stat-accent {
-    color: #c9a84c;
-  }
+  .stat-accent { color: var(--gold); }
 
   .main-grid {
     display: grid;
@@ -140,14 +235,19 @@
     gap: 1rem;
     margin-bottom: 1rem;
   }
-
-  @media (max-width: 768px) {
-    .main-grid { grid-template-columns: 1fr; }
+  .secondary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 860px) {
+    .main-grid, .secondary-grid { grid-template-columns: 1fr; }
   }
 
   .panel {
-    background: #fff;
-    border: 1px solid #e5e0d5;
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.25rem 1.5rem;
   }
@@ -156,40 +256,74 @@
     font-size: 0.68rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #999;
+    color: var(--muted);
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
     gap: 8px;
   }
-
+  .panel-title .pt-text { white-space: nowrap; }
   .panel-title::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: #f0ece4;
+    background: var(--grid-line);
   }
+  .panel-title .pt-actions { display: flex; gap: 6px; }
+
+  .seg-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .seg-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
 
   .chart-wrap {
     position: relative;
-    height: 200px;
+    height: 220px;
+  }
+  .split-wrap {
+    position: relative;
+    height: 180px;
   }
 
   .snapshot-wrap {
     width: 100%;
     aspect-ratio: 16/9;
-    background: #f0ece4;
+    background: var(--track);
     border-radius: 6px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
-
   .snapshot-wrap img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: relative;
+    z-index: 1;
+  }
+  .snapshot-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    z-index: 0;
   }
 
   .snapshot-meta {
@@ -198,74 +332,118 @@
     align-items: center;
     margin-top: 0.5rem;
   }
-
-  .snapshot-time {
-    font-size: 0.68rem;
-    color: #aaa;
-  }
-
+  .snapshot-time { font-size: 0.68rem; color: var(--faint); }
   .snapshot-label {
     font-size: 0.68rem;
-    color: #c9a84c;
+    color: var(--gold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
-  .events-panel {
-    background: #fff;
-    border: 1px solid #e5e0d5;
-    border-radius: 10px;
-    padding: 1.25rem 1.5rem;
+  /* ── Split donut legend ── */
+  .split-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
   }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--ink); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
 
+  /* ── Heatmap ── */
+  .heatmap-panel { margin-bottom: 1rem; }
+  .heatmap-scroll { overflow-x: auto; }
+  .heatmap {
+    display: grid;
+    grid-template-columns: 56px repeat(24, minmax(16px, 1fr));
+    gap: 2px;
+    min-width: 560px;
+  }
+  .hm-corner, .hm-hour-label, .hm-day-label, .hm-cell { font-size: 0.6rem; }
+  .hm-hour-label {
+    color: var(--faint);
+    text-align: center;
+    padding-bottom: 2px;
+  }
+  .hm-day-label {
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    padding-right: 6px;
+    white-space: nowrap;
+  }
+  .hm-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--track);
+    min-height: 16px;
+  }
+  .hm-cell.today-col { outline: 1px solid var(--gold); outline-offset: -1px; }
+
+  .events-panel { margin-bottom: 1rem; }
   .events-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.82rem;
   }
-
   .events-table th {
     font-size: 0.65rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #bbb;
+    color: var(--muted);
     text-align: left;
     padding: 0 0 0.75rem 0;
-    border-bottom: 1px solid #f0ece4;
+    border-bottom: 1px solid var(--grid-line);
     font-weight: 400;
   }
-
   .events-table td {
     padding: 0.6rem 0;
-    border-bottom: 1px solid #f7f5f0;
-    color: #444;
+    border-bottom: 1px solid var(--grid-line);
+    color: var(--ink);
     vertical-align: middle;
   }
+  .events-table td:first-child { font-weight: 500; }
+  .events-table td.t-right { text-align: right; color: var(--faint); font-size: 0.75rem; }
 
-  .events-table td:first-child {
-    font-weight: 500;
-    color: #1a1a18;
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
   }
-
-  .events-table td:last-child {
-    text-align: right;
-    color: #aaa;
-    font-size: 0.75rem;
-  }
+  .tag-session { background: var(--gold-soft); color: var(--gold-dark); border: 1px solid var(--gold-soft-border); }
+  .tag-walkin { background: var(--track); color: var(--muted); border: 1px solid var(--border); }
 
   .score-pill {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 20px;
     font-size: 0.68rem;
-    background: #fdf8ed;
-    color: #c9a84c;
-    border: 1px solid #eddfa0;
+    background: var(--gold-soft);
+    color: var(--gold-dark);
+    border: 1px solid var(--gold-soft-border);
   }
+
+  .csv-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .csv-btn:hover { color: var(--gold-dark); border-color: var(--gold); }
+  .csv-btn:disabled { opacity: 0.4; cursor: default; }
 
   .no-data {
     font-size: 0.78rem;
-    color: #bbb;
+    color: var(--faint);
     text-align: center;
     padding: 2rem;
   }
@@ -275,19 +453,17 @@
     font-size: 0.65rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #ccc;
+    color: var(--faintest);
     margin-top: 1.5rem;
     padding-top: 1.25rem;
-    border-top: 1px solid #ece8e0;
+    border-top: 1px solid var(--border);
   }
-
-  .divider {
-    color: #c9a84c;
-    margin: 0 8px;
-  }
+  .divider { color: var(--gold); margin: 0 8px; }
 </style>
 </head>
 <body>
+
+<div id="offline-banner">⚠ Camera feed unavailable — occupancy data may be stale</div>
 
 <header>
   <div>
@@ -295,9 +471,12 @@
     <div class="tagline">Occupancy Dashboard &nbsp;·&nbsp; Studio Entrance</div>
   </div>
   <div class="header-right">
-    <div class="live-badge">
-      <div class="live-dot"></div>
-      Live
+    <div class="header-controls">
+      <button class="icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle dark mode">🌙</button>
+      <div class="live-badge" id="live-badge">
+        <div class="live-dot"></div>
+        <span id="live-text">Live</span>
+      </div>
     </div>
     <div class="last-updated" id="last-updated">Refreshing every 30s</div>
   </div>
@@ -306,13 +485,13 @@
 <div class="stats-grid">
   <div class="stat-card">
     <div class="stat-label">People Now</div>
-    <div class="stat-value" id="people-now">—</div>
+    <div class="stat-value"><span id="people-now">—</span><span class="stat-trend flat" id="people-trend"></span></div>
     <div class="stat-sub">Currently tracked</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Today's Footfall</div>
     <div class="stat-value" id="today-count">—</div>
-    <div class="stat-sub">Detections since midnight</div>
+    <div class="stat-sub" id="today-vs-yesterday">vs yesterday —</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Last Hour</div>
@@ -321,23 +500,41 @@
   </div>
   <div class="stat-card">
     <div class="stat-label">Peak Hour</div>
-    <div class="stat-value stat-accent" id="peak-hour" style="font-size:1.9rem; padding-top:0.4rem;">—</div>
+    <div class="stat-value compact stat-accent" id="peak-hour">—</div>
     <div class="stat-sub" id="peak-count">Today's busiest hour</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">First Entry</div>
+    <div class="stat-value compact" id="first-entry">—</div>
+    <div class="stat-sub">First person today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Last Entry</div>
+    <div class="stat-value compact" id="last-entry">—</div>
+    <div class="stat-sub">Most recent person</div>
   </div>
 </div>
 
 <div class="main-grid">
   <div class="panel">
-    <div class="panel-title">Hourly Traffic — Today</div>
+    <div class="panel-title">
+      <span class="pt-text" id="chart-title">Hourly Traffic — Today</span>
+      <span style="flex:1"></span>
+      <span class="pt-actions">
+        <button class="seg-btn active" id="seg-today" onclick="setChartMode('today')">Today</button>
+        <button class="seg-btn" id="seg-week" onclick="setChartMode('week')">Week</button>
+      </span>
+    </div>
     <div class="chart-wrap">
-      <canvas id="hourlyChart" role="img" aria-label="Hourly person detection count for today">Hourly traffic data loading...</canvas>
+      <canvas id="mainChart" role="img" aria-label="Person detection traffic chart">Traffic data loading...</canvas>
     </div>
   </div>
 
   <div class="panel">
-    <div class="panel-title">Live Camera</div>
+    <div class="panel-title"><span class="pt-text">Live Camera</span></div>
     <div class="snapshot-wrap">
-      <img id="cam-snapshot" src="" alt="Studio entrance live snapshot" onerror="this.style.display='none'">
+      <div class="snapshot-loading" id="snap-loading">Loading…</div>
+      <img id="cam-snapshot" src="" alt="Studio entrance live snapshot">
     </div>
     <div class="snapshot-meta">
       <div class="snapshot-label">Studio Entrance</div>
@@ -346,19 +543,41 @@
   </div>
 </div>
 
-<div class="events-panel">
-  <div class="panel-title">Recent Detections</div>
+<div class="secondary-grid">
+  <div class="panel">
+    <div class="panel-title"><span class="pt-text">Booked vs Walk-in — Today</span></div>
+    <div class="split-wrap">
+      <canvas id="splitChart" role="img" aria-label="Booked session vs walk-in split">Split data loading...</canvas>
+    </div>
+    <div class="split-legend" id="split-legend"></div>
+  </div>
+
+  <div class="panel heatmap-panel">
+    <div class="panel-title"><span class="pt-text">7-Day Activity Heatmap</span></div>
+    <div class="heatmap-scroll">
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+  </div>
+</div>
+
+<div class="events-panel panel">
+  <div class="panel-title">
+    <span class="pt-text">Recent Detections</span>
+    <span style="flex:1"></span>
+    <button class="csv-btn" id="csv-btn" onclick="exportCSV()" disabled>⤓ Export CSV</button>
+  </div>
   <table class="events-table">
     <thead>
       <tr>
         <th>Label</th>
-        <th>Camera</th>
+        <th>Type</th>
         <th>Confidence</th>
+        <th>Dwell</th>
         <th>Time</th>
       </tr>
     </thead>
     <tbody id="events-body">
-      <tr><td colspan="4" class="no-data">Loading events...</td></tr>
+      <tr><td colspan="5" class="no-data">Loading events...</td></tr>
     </tbody>
   </table>
 </div>
@@ -371,183 +590,515 @@
 <script>
   const FRIGATE = 'https://frigate.ryst.in';
   const CAMERA = 'studio_entrance';
-  let hourlyChart = null;
+  const SCHEDULE_URL = 'schedule.json';
 
-  function formatTime(ts) {
-    return new Date(ts * 1000).toLocaleTimeString('en-IN', {
-      hour: '2-digit', minute: '2-digit', hour12: true
+  // ── State ──
+  let mainChart = null, splitChart = null;
+  let chartMode = 'today';
+  let peopleHistory = [];        // {t, n} for trend
+  let todaySessions = [];        // parsed sessions occurring today
+  let todaySessionBands = [];    // {start, end} fractional hours for chart overlay
+  let lastTodayEvents = [];      // for CSV export
+  let computed = { todayBuckets: Array(24).fill(0), weekDays: [], weeklyTotals: [] };
+
+  // ── Time helpers ──
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+  function dateStr(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+  function dayMidnight(offsetDays){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-offsetDays); return d; }
+  function todayMidnightSec(){ return Math.floor(dayMidnight(0).getTime()/1000); }
+  function oneHourAgo(){ return Math.floor(Date.now()/1000) - 3600; }
+  function formatTime(ts){
+    return new Date(ts*1000).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+  }
+  function fmtDur(sec){
+    if(sec == null) return '<span style="color:var(--green)">live</span>';
+    sec = Math.max(0, Math.round(sec));
+    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+    if(h) return `${h}h ${m}m`;
+    if(m) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+  function hourLabel(h){
+    if(h === 0) return '12am';
+    if(h < 12) return `${h}am`;
+    if(h === 12) return '12pm';
+    return `${h-12}pm`;
+  }
+  function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function eventScore(e){ return (e.top_score ?? e.data?.top_score ?? e.score ?? 0); }
+
+  // ── Theme ──
+  function autoTheme(){ const h = new Date().getHours(); return (h >= 20 || h < 7) ? 'dark' : 'light'; }
+  function applyTheme(t){
+    document.documentElement.dataset.theme = (t === 'dark') ? 'dark' : 'light';
+    const btn = document.getElementById('theme-toggle');
+    if(btn) btn.textContent = (t === 'dark') ? '☀️' : '🌙';
+  }
+  function initTheme(){ applyTheme(localStorage.getItem('ryst_theme') || autoTheme()); }
+  function toggleTheme(){
+    const next = (document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark';
+    localStorage.setItem('ryst_theme', next);
+    applyTheme(next);
+    renderMainChart(true);
+    renderSplitChart(true);
+  }
+  function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function themeColors(){
+    return {
+      text: cssVar('--faint'), grid: cssVar('--grid-line'), track: cssVar('--track'),
+      gold: cssVar('--gold'), goldDark: cssVar('--gold-dark'), border: cssVar('--border'),
+      card: cssVar('--card'), ink: cssVar('--ink')
+    };
+  }
+
+  // ── Schedule / sessions ──
+  const DOW = ['sun','mon','tue','wed','thu','fri','sat'];
+  function sessionOccursToday(s){
+    const today = todayStr();
+    const dow = DOW[new Date().getDay()];
+    if(s.date) return s.date === today;
+    if(s.days && s.days.length) return s.days.map(d=>String(d).toLowerCase().slice(0,3)).includes(dow);
+    return true; // no date/days = recurring daily
+  }
+  function hhmmToMin(t){
+    if(!t || typeof t !== 'string') return null;
+    const [h,m] = t.split(':').map(Number);
+    if(isNaN(h) || isNaN(m)) return null;
+    return h*60 + m;
+  }
+  function sessionWindowMin(s){
+    const start = hhmmToMin(s.start);
+    if(start == null) return null;
+    let end = hhmmToMin(s.end);
+    if(end == null) end = start + (parseInt(s.duration) || 60);
+    return { start, end };
+  }
+  async function fetchSchedule(){
+    try {
+      const r = await fetch(`${SCHEDULE_URL}?t=${Date.now()}`);
+      const d = await r.json();
+      const sessions = (d.sessions || []).filter(sessionOccursToday);
+      todaySessions = sessions;
+      todaySessionBands = sessions.map(s => sessionWindowMin(s)).filter(Boolean)
+        .map(w => ({ start: w.start/60, end: w.end/60 }));
+    } catch(e) {
+      todaySessions = []; todaySessionBands = [];
+    }
+  }
+  function isDuringSession(ts){
+    const d = new Date(ts*1000);
+    const min = d.getHours()*60 + d.getMinutes();
+    return todaySessions.some(s => {
+      const w = sessionWindowMin(s);
+      return w && min >= w.start && min < w.end;
     });
   }
 
-  function todayMidnight() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return Math.floor(d.getTime() / 1000);
+  // ── Data fetch ──
+  async function fetchActive(){
+    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${CAMERA}&end_time=null&limit=100`);
+    return r.ok ? r.json() : [];
   }
-
-  function oneHourAgo() {
-    return Math.floor(Date.now() / 1000) - 3600;
+  async function fetchWeekEvents(){
+    const after = Math.floor(dayMidnight(6).getTime()/1000);
+    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${CAMERA}&after=${after}&limit=2500`);
+    return r.ok ? r.json() : [];
   }
-
-  async function fetchStats() {
+  async function fetchCameraFps(){
     try {
-      // Active events (end_time=null) = persons currently tracked in frame
-      const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${CAMERA}&end_time=null&limit=100`);
-      const active = await r.json();
-      document.getElementById('people-now').textContent = active.length;
-    } catch(e) {
-      document.getElementById('people-now').textContent = '—';
-    }
+      const r = await fetch(`${FRIGATE}/api/stats`);
+      const d = await r.json();
+      const cam = d.cameras?.[CAMERA];
+      if(!cam) return null;
+      return cam.camera_fps;
+    } catch(e) { return null; }
   }
 
-  async function fetchEvents() {
-    try {
-      const midnight = todayMidnight();
-      const r = await fetch(`${FRIGATE}/api/events?label=person&after=${midnight}&limit=200`);
-      const events = await r.json();
-
-      document.getElementById('today-count').textContent = events.length;
-
-      const lastHour = events.filter(e => e.start_time >= oneHourAgo()).length;
-      document.getElementById('last-hour').textContent = lastHour;
-
-      const hourBuckets = Array(24).fill(0);
-      events.forEach(e => {
-        const h = new Date(e.start_time * 1000).getHours();
-        hourBuckets[h]++;
+  // ── Aggregation ──
+  function buildWeekDays(){
+    const days = [];
+    for(let i = 6; i >= 0; i--){
+      const d = dayMidnight(i);
+      days.push({
+        date: dateStr(d),
+        label: d.toLocaleDateString('en-IN', { weekday:'short', day:'numeric' }),
+        isToday: i === 0,
+        hours: Array(24).fill(0),
+        total: 0
       });
-
-      const peakH = hourBuckets.indexOf(Math.max(...hourBuckets));
-      const peakCount = hourBuckets[peakH];
-      if (peakCount > 0) {
-        const label = peakH === 0 ? '12am' : peakH < 12 ? `${peakH}am` : peakH === 12 ? '12pm' : `${peakH - 12}pm`;
-        document.getElementById('peak-hour').textContent = label;
-        document.getElementById('peak-count').textContent = `${peakCount} detection${peakCount !== 1 ? 's' : ''}`;
-      }
-
-      buildHourlyChart(hourBuckets);
-      buildEventsTable(events.slice(0, 12));
-    } catch(e) {
-      document.getElementById('today-count').textContent = '—';
     }
+    return days;
+  }
+  function aggregate(weekEvents){
+    const weekDays = buildWeekDays();
+    const byDate = {}; weekDays.forEach(d => byDate[d.date] = d);
+    const todayBuckets = Array(24).fill(0);
+    const today = todayStr();
+    weekEvents.forEach(e => {
+      const dt = new Date(e.start_time*1000);
+      const ds = dateStr(dt);
+      const h = dt.getHours();
+      const day = byDate[ds];
+      if(day){ day.hours[h]++; day.total++; }
+      if(ds === today) todayBuckets[h]++;
+    });
+    computed = { todayBuckets, weekDays, weeklyTotals: weekDays.map(d => d.total) };
+    return computed;
   }
 
-  function buildHourlyChart(buckets) {
-    const now = new Date().getHours();
-    const labels = buckets.map((_, i) => {
-      if (i === 0) return '12a';
-      if (i === 12) return '12p';
-      return i < 12 ? `${i}a` : `${i - 12}p`;
-    });
-    const bgColors = buckets.map((_, i) => i === now ? '#c9a84c' : '#f0ece4');
-    const bdColors = buckets.map((_, i) => i === now ? '#b8962e' : '#e5e0d5');
+  // ── Stat cards ──
+  function updateTrend(peopleNow){
+    const now = Date.now();
+    peopleHistory.push({ t: now, n: peopleNow });
+    peopleHistory = peopleHistory.filter(p => now - p.t <= 11*60*1000);
+    const cutoff = now - 5*60*1000;
+    let past = null;
+    for(const p of peopleHistory){ if(p.t <= cutoff) past = p; }
+    if(!past) past = peopleHistory[0];
+    const el = document.getElementById('people-trend');
+    if(!past || peopleHistory.length < 2){ el.textContent = ''; el.className = 'stat-trend flat'; return; }
+    const diff = peopleNow - past.n;
+    if(diff > 0){ el.textContent = `▲ ${diff}`; el.className = 'stat-trend up'; }
+    else if(diff < 0){ el.textContent = `▼ ${Math.abs(diff)}`; el.className = 'stat-trend down'; }
+    else { el.textContent = '—'; el.className = 'stat-trend flat'; }
+  }
 
-    if (hourlyChart) {
-      hourlyChart.data.datasets[0].data = buckets;
-      hourlyChart.data.datasets[0].backgroundColor = bgColors;
-      hourlyChart.data.datasets[0].borderColor = bdColors;
-      hourlyChart.update('none'); // skip animation on live updates
+  function updateStats(active, weekEvents){
+    const today = todayStr();
+    const todayEvents = weekEvents.filter(e => dateStr(new Date(e.start_time*1000)) === today);
+    const yEvents = weekEvents.filter(e => dateStr(new Date(e.start_time*1000)) === computed.weekDays[5]?.date);
+    lastTodayEvents = todayEvents.slice().sort((a,b) => b.start_time - a.start_time);
+
+    // People now + trend
+    const peopleNow = active.length;
+    document.getElementById('people-now').textContent = peopleNow;
+    updateTrend(peopleNow);
+
+    // Today count + vs yesterday
+    document.getElementById('today-count').textContent = todayEvents.length;
+    const yCount = yEvents.length;
+    const vy = document.getElementById('today-vs-yesterday');
+    if(yCount > 0){
+      const pct = Math.round((todayEvents.length - yCount) / yCount * 100);
+      const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : '';
+      const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '·';
+      vy.innerHTML = `<span class="${cls}">${arrow} ${Math.abs(pct)}%</span> vs yesterday`;
+    } else {
+      vy.textContent = 'no data yesterday';
+    }
+
+    // Last hour
+    document.getElementById('last-hour').textContent = todayEvents.filter(e => e.start_time >= oneHourAgo()).length;
+
+    // Peak hour
+    const buckets = computed.todayBuckets;
+    const peakH = buckets.indexOf(Math.max(...buckets));
+    const peakCount = buckets[peakH] || 0;
+    if(peakCount > 0){
+      document.getElementById('peak-hour').textContent = hourLabel(peakH);
+      document.getElementById('peak-count').textContent = `${peakCount} detection${peakCount !== 1 ? 's' : ''}`;
+    } else {
+      document.getElementById('peak-hour').textContent = '—';
+      document.getElementById('peak-count').textContent = "Today's busiest hour";
+    }
+
+    // First / last entry
+    if(todayEvents.length){
+      const times = todayEvents.map(e => e.start_time);
+      document.getElementById('first-entry').textContent = formatTime(Math.min(...times));
+      document.getElementById('last-entry').textContent = formatTime(Math.max(...times));
+    } else {
+      document.getElementById('first-entry').textContent = '—';
+      document.getElementById('last-entry').textContent = '—';
+    }
+
+    document.getElementById('csv-btn').disabled = todayEvents.length === 0;
+    return todayEvents;
+  }
+
+  // ── Main chart (today hourly / weekly) ──
+  const overlayPlugin = {
+    id: 'rystOverlay',
+    beforeDatasetsDraw(chart){
+      if(chartMode !== 'today') return;
+      const { ctx, chartArea: ca } = chart;
+      if(!ca || !todaySessionBands.length) return;
+      ctx.save();
+      const gold = themeColors().gold;
+      todaySessionBands.forEach(b => {
+        const l = ca.left + Math.max(0, b.start/24) * ca.width;
+        const r = ca.left + Math.min(1, b.end/24) * ca.width;
+        ctx.globalAlpha = 0.12; ctx.fillStyle = gold;
+        ctx.fillRect(l, ca.top, Math.max(2, r-l), ca.height);
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(l, ca.top, 1.5, ca.height);
+        ctx.fillRect(r-1.5, ca.top, 1.5, ca.height);
+      });
+      ctx.restore();
+    },
+    afterDatasetsDraw(chart){
+      if(chartMode !== 'today') return;
+      const data = chart.data.datasets[0].data;
+      let pi = -1, pv = 0;
+      data.forEach((v,i) => { if(v > pv){ pv = v; pi = i; } });
+      if(pi < 0 || pv <= 0) return;
+      const x = chart.scales.x.getPixelForValue(pi);
+      const y = chart.scales.y.getPixelForValue(pv);
+      const c = themeColors();
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.fillStyle = c.goldDark;
+      ctx.font = '600 10px DM Sans';
+      ctx.textAlign = 'center';
+      ctx.fillText('▲ ' + pv, x, y - 6);
+      ctx.restore();
+    }
+  };
+
+  function renderMainChart(forceRebuild){
+    const c = themeColors();
+    const isToday = chartMode === 'today';
+    const data = isToday ? computed.todayBuckets : computed.weeklyTotals;
+    const labels = isToday
+      ? computed.todayBuckets.map((_, i) => i === 0 ? '12a' : i === 12 ? '12p' : i < 12 ? `${i}a` : `${i-12}p`)
+      : computed.weekDays.map(d => d.label);
+    const nowH = new Date().getHours();
+    const bg = isToday
+      ? data.map((_, i) => i === nowH ? c.gold : c.track)
+      : computed.weekDays.map(d => d.isToday ? c.gold : c.track);
+    const bd = isToday
+      ? data.map((_, i) => i === nowH ? c.goldDark : c.border)
+      : computed.weekDays.map(d => d.isToday ? c.goldDark : c.border);
+
+    document.getElementById('chart-title').textContent = isToday ? 'Hourly Traffic — Today' : 'Daily Footfall — Last 7 Days';
+
+    if(mainChart && !forceRebuild){
+      mainChart.data.labels = labels;
+      mainChart.data.datasets[0].data = data;
+      mainChart.data.datasets[0].backgroundColor = bg;
+      mainChart.data.datasets[0].borderColor = bd;
+      mainChart.update('none');
       return;
     }
-
-    const ctx = document.getElementById('hourlyChart').getContext('2d');
-    hourlyChart = new Chart(ctx, {
+    if(mainChart) mainChart.destroy();
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    mainChart = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data: buckets,
-          backgroundColor: bgColors,
-          borderColor: bdColors,
-          borderWidth: 1,
-          borderRadius: 4,
-          borderSkipped: false
-        }]
-      },
+      data: { labels, datasets: [{ data, backgroundColor: bg, borderColor: bd, borderWidth: 1, borderRadius: 4, borderSkipped: false }] },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#fff',
-            titleColor: '#1a1a18',
-            bodyColor: '#666',
-            borderColor: '#e5e0d5',
-            borderWidth: 1,
+            backgroundColor: c.card, titleColor: c.ink, bodyColor: c.text,
+            borderColor: c.border, borderWidth: 1,
             callbacks: {
-              title: (items) => labels[items[0].dataIndex],
-              label: (item) => ` ${item.raw} person${item.raw !== 1 ? 's' : ''}`
+              title: items => isToday ? hourLabel(items[0].dataIndex) : computed.weekDays[items[0].dataIndex].label,
+              label: item => ` ${item.raw} person${item.raw !== 1 ? 's' : ''}`
             }
           }
         },
         scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#bbb',
-              font: { size: 9, family: 'DM Sans' },
-              maxRotation: 0,
-              autoSkip: true,
-              maxTicksLimit: 12
-            },
-            border: { display: false }
-          },
-          y: {
-            grid: { color: '#f7f5f0' },
-            ticks: {
-              color: '#bbb',
-              font: { size: 9, family: 'DM Sans' },
-              stepSize: 1
-            },
-            border: { display: false }
+          x: { grid: { display: false }, ticks: { color: c.text, font: { size: 9, family: 'DM Sans' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, border: { display: false } },
+          y: { grid: { color: c.grid }, ticks: { color: c.text, font: { size: 9, family: 'DM Sans' }, stepSize: 1 }, border: { display: false } }
+        }
+      },
+      plugins: [overlayPlugin]
+    });
+  }
+
+  function setChartMode(mode){
+    if(chartMode === mode) return;
+    chartMode = mode;
+    document.getElementById('seg-today').classList.toggle('active', mode === 'today');
+    document.getElementById('seg-week').classList.toggle('active', mode === 'week');
+    renderMainChart(true);
+  }
+
+  // ── Booked vs walk-in donut ──
+  function renderSplitChart(forceRebuild){
+    const c = themeColors();
+    let session = 0, walkin = 0;
+    lastTodayEvents.forEach(e => { isDuringSession(e.start_time) ? session++ : walkin++; });
+    const total = session + walkin;
+    const legend = document.getElementById('split-legend');
+
+    if(total === 0){
+      if(splitChart){ splitChart.destroy(); splitChart = null; }
+      const ctx = document.getElementById('splitChart');
+      ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+      legend.innerHTML = '<div class="no-data" style="padding:0.5rem">No detections today yet</div>';
+      return;
+    }
+
+    legend.innerHTML = `
+      <div class="legend-item"><span class="legend-swatch" style="background:${c.gold}"></span> Booked · ${session}</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:${c.track};border:1px solid ${c.border}"></span> Walk-in · ${walkin}</div>`;
+
+    if(splitChart && !forceRebuild){
+      splitChart.data.datasets[0].data = [session, walkin];
+      splitChart.data.datasets[0].backgroundColor = [c.gold, c.track];
+      splitChart.data.datasets[0].borderColor = [c.goldDark, c.border];
+      splitChart.update('none');
+      return;
+    }
+    if(splitChart) splitChart.destroy();
+    const ctx = document.getElementById('splitChart').getContext('2d');
+    splitChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: ['Booked', 'Walk-in'], datasets: [{ data: [session, walkin], backgroundColor: [c.gold, c.track], borderColor: [c.goldDark, c.border], borderWidth: 1 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: c.card, titleColor: c.ink, bodyColor: c.text, borderColor: c.border, borderWidth: 1,
+            callbacks: { label: item => ` ${item.label}: ${item.raw} (${Math.round(item.raw/total*100)}%)` }
           }
         }
       }
     });
   }
 
-  function esc(s) {
-    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // ── Heatmap ──
+  function renderHeatmap(){
+    const el = document.getElementById('heatmap');
+    const days = computed.weekDays;
+    let max = 1;
+    days.forEach(d => d.hours.forEach(h => { if(h > max) max = h; }));
+    const nowH = new Date().getHours();
+    const gold = themeColors().gold;
+
+    let html = '<div class="hm-corner"></div>';
+    for(let h = 0; h < 24; h++){
+      html += `<div class="hm-hour-label">${h % 3 === 0 ? h : ''}</div>`;
+    }
+    days.forEach(d => {
+      html += `<div class="hm-day-label">${esc(d.label)}</div>`;
+      for(let h = 0; h < 24; h++){
+        const count = d.hours[h];
+        const ratio = count / max;
+        const style = count > 0
+          ? `background:${gold};opacity:${(0.18 + 0.82*ratio).toFixed(2)}`
+          : '';
+        const todayCol = (d.isToday && h === nowH) ? ' today-col' : '';
+        html += `<div class="hm-cell${todayCol}" style="${style}" title="${esc(d.label)} ${hourLabel(h)} — ${count} detection${count!==1?'s':''}"></div>`;
+      }
+    });
+    el.innerHTML = html;
   }
 
-  function buildEventsTable(events) {
+  // ── Events table ──
+  function renderEventsTable(){
     const tbody = document.getElementById('events-body');
-    if (!events.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="no-data">No detections today yet</td></tr>';
+    const events = lastTodayEvents.slice(0, 12);
+    if(!events.length){
+      tbody.innerHTML = '<tr><td colspan="5" class="no-data">No detections today yet</td></tr>';
       return;
     }
-    tbody.innerHTML = events.map(e => `
-      <tr>
+    tbody.innerHTML = events.map(e => {
+      const during = isDuringSession(e.start_time);
+      const dwell = e.end_time ? (e.end_time - e.start_time) : null;
+      return `<tr>
         <td>Person</td>
-        <td>${esc((e.camera || '').replace(/_/g, ' '))}</td>
-        <td><span class="score-pill">${Math.round((e.top_score || 0) * 100)}%</span></td>
-        <td>${formatTime(e.start_time)}</td>
-      </tr>
-    `).join('');
+        <td><span class="tag ${during ? 'tag-session' : 'tag-walkin'}">${during ? 'Booked' : 'Walk-in'}</span></td>
+        <td><span class="score-pill">${Math.round(eventScore(e)*100)}%</span></td>
+        <td>${fmtDur(dwell)}</td>
+        <td class="t-right">${formatTime(e.start_time)}</td>
+      </tr>`;
+    }).join('');
   }
 
-  function refreshSnapshot() {
+  // ── Snapshot ──
+  function refreshSnapshot(){
     const img = document.getElementById('cam-snapshot');
-    img.style.display = 'block';
+    const loading = document.getElementById('snap-loading');
+    img.onload = () => { img.style.opacity = '1'; if(loading) loading.textContent = ''; };
+    img.onerror = () => { img.style.opacity = '0'; if(loading) loading.textContent = 'Camera offline'; };
     img.src = `${FRIGATE}/api/${CAMERA}/latest.jpg?t=${Date.now()}`;
     document.getElementById('snap-time').textContent =
-      new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
   }
 
-  async function refresh() {
-    try {
-      await Promise.all([fetchStats(), fetchEvents()]);
-      document.getElementById('last-updated').textContent =
-        'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    } catch(e) {
-      document.getElementById('last-updated').textContent = '⚠ Connection lost';
+  // ── Offline / live badge ──
+  function setOnlineState(online){
+    const banner = document.getElementById('offline-banner');
+    const badge = document.getElementById('live-badge');
+    const text = document.getElementById('live-text');
+    if(online){
+      banner.classList.remove('show');
+      badge.classList.remove('offline');
+      text.textContent = 'Live';
+    } else {
+      banner.classList.add('show');
+      badge.classList.add('offline');
+      text.textContent = 'Offline';
     }
   }
 
+  // ── CSV export ──
+  function exportCSV(){
+    if(!lastTodayEvents.length) return;
+    const rows = [['Label','Type','Confidence','Start','End','Dwell (s)']];
+    lastTodayEvents.forEach(e => {
+      const during = isDuringSession(e.start_time);
+      const dwell = e.end_time ? Math.round(e.end_time - e.start_time) : '';
+      rows.push([
+        'person', during ? 'Booked' : 'Walk-in',
+        Math.round(eventScore(e)*100) + '%',
+        new Date(e.start_time*1000).toLocaleString('en-IN'),
+        e.end_time ? new Date(e.end_time*1000).toLocaleString('en-IN') : 'ongoing',
+        dwell
+      ]);
+    });
+    const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ryst-detections-${todayStr()}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ── Main refresh ──
+  async function refresh(){
+    // Re-evaluate auto theme if user hasn't pinned one (so it flips at 8pm)
+    if(!localStorage.getItem('ryst_theme')) applyTheme(autoTheme());
+
+    try {
+      const [active, weekEvents, camFps] = await Promise.all([
+        fetchActive(), fetchWeekEvents(), fetchCameraFps()
+      ]);
+      await fetchSchedule();
+
+      setOnlineState(camFps !== null && camFps > 0);
+
+      aggregate(weekEvents);
+      updateStats(active, weekEvents);
+      renderMainChart(false);
+      renderSplitChart(false);
+      renderHeatmap();
+      renderEventsTable();
+
+      const lu = document.getElementById('last-updated');
+      lu.classList.remove('error');
+      lu.textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    } catch(e) {
+      const lu = document.getElementById('last-updated');
+      lu.classList.add('error');
+      lu.textContent = '⚠ Connection lost';
+      setOnlineState(false);
+    }
+  }
+
+  // ── Boot ──
+  initTheme();
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
   refresh();
+  refreshSnapshot();
   setInterval(refresh, 30000);
-  setInterval(refreshSnapshot, 15000); // snapshot refreshes independently every 15s
+  setInterval(refreshSnapshot, 15000);
 </script>
 </body>
 </html>
