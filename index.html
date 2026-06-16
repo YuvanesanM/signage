@@ -649,25 +649,28 @@ function processSchedule(data){
   const nowMs = Date.now();
   let found = null, foundNext = null;
 
+  // Pass 1: a live or imminent (≤30 min away) session always wins, so a prior
+  // session's lingering thank-you never masks the next guest's welcome/timer.
   for(let i=0; i<sessions.length; i++){
     const s = sessions[i];
-    // Pre-session welcome (30 min window)
-    if(nowMs < s.startMs && s.startMs - nowMs <= 1800000){
+    const isActive = nowMs >= s.startMs && nowMs < s.endMs;
+    const isPre    = nowMs < s.startMs && s.startMs - nowMs <= 1800000;
+    if(isActive || isPre){
       found = {...s};
       foundNext = sessions[i+1] || null;
       break;
     }
-    // Active session
-    if(nowMs >= s.startMs && nowMs < s.endMs){
-      found = {...s};
-      foundNext = sessions[i+1] || null;
-      break;
-    }
-    // Post-session (30 min window)
-    if(nowMs >= s.endMs && nowMs < s.endMs + 1800000){
-      found = {...s, done:true};
-      foundNext = sessions[i+1] || null;
-      break;
+  }
+  // Pass 2: only if nothing is active/imminent, fall back to a just-finished
+  // session's thank-you (30 min window).
+  if(!found){
+    for(let i=0; i<sessions.length; i++){
+      const s = sessions[i];
+      if(nowMs >= s.endMs && nowMs < s.endMs + 1800000){
+        found = {...s, done:true};
+        foundNext = sessions[i+1] || null;
+        break;
+      }
     }
   }
   // If the previously active session was deleted from the schedule, reset fully
@@ -781,7 +784,6 @@ function renderWeather(){
   if(el_temp) el_temp.textContent = weatherCache.temp + '°C';
   if(el_mood) el_mood.textContent = weatherCache.mood;
   if(el_humidity && weatherCache.humidity != null) el_humidity.textContent = '💧 ' + weatherCache.humidity + '% humidity';
-  if(el_desc) el_desc.textContent = weatherCache.desc;
 }
 
 // ═══════════════════════════════════════════════════
@@ -819,7 +821,7 @@ function renderIdleSchedule(){
       +'<div class="idle-sched-dot"></div>'
       +'<div class="idle-sched-time">'+fmt12(new Date(s.startMs))+'</div>'
       +'<div class="idle-sched-name">'+esc(s.name)+'</div>'
-      +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+zone.label+'</div>'
+      +'<div class="idle-sched-zone '+(zone.zoneClass||'pod')+'">'+esc(zone.label)+'</div>'
       +'</div>';
   });
   if(overflow > 0) html += '<div class="idle-sched-more">+'+overflow+' more session'+(overflow>1?'s':'')+'</div>';
@@ -942,7 +944,7 @@ function _tick(){
 
   const s = activeSession;
   // Only repopulate static session data when session changes — not every tick
-  const _sessionKey = s.startMs + (s.done?'|done':''); if(_populatedSessionMs !== _sessionKey){ populateSession(s); _populatedSessionMs = _sessionKey; }
+  const _sessionKey = s.startMs+'|'+(s.end||'')+'|'+(s.name||'')+'|'+(s.zone||'')+(s.done?'|done':''); if(_populatedSessionMs !== _sessionKey){ populateSession(s); _populatedSessionMs = _sessionKey; }
 
   if(s.done){
     // Post-session — show thank you
@@ -1126,7 +1128,7 @@ checkVersion();
 fetchSchedule();
 fetchWeather();
 setInterval(fetchSchedule, POLL_INTERVAL);
-setInterval(fetchWeather, 1800000); // refresh weather every 30 min
+setInterval(() => { weatherFetched = false; fetchWeather(); }, 1800000); // refresh weather every 30 min
 setInterval(tick, 1000);
 tick();
 setTimeout(()=>showToast('📡 Connected to Studio RYST Schedule'), 2000);
