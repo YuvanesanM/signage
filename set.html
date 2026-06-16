@@ -373,7 +373,7 @@ async function loadSchedule(){
     const skipped = raw.length - scheduleData.sessions.length;
     if(skipped > 0) setStatus(`Loaded — ${skipped} invalid session(s) skipped`, 'err');
     setStatus('Schedule loaded — '+scheduleData.sessions.length+' sessions','ok');
-    setProxyStatus(true,'Connected · schedule.ryst.in proxy');
+    setProxyStatus(true,'Connected');
     renderSessions();
   } catch(e){
     setStatus('Load error: '+e.message,'err');
