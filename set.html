@@ -35,7 +35,10 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
 .session-item.active-now{border-color:var(--teal);background:rgba(13,122,138,.04)}
 .session-item.past{opacity:.5}
 .si-name{font-size:16px;font-weight:600;color:var(--ink)}
-.si-meta{font-size:13px;color:var(--stone);margin-top:4px;display:flex;gap:16px}
+.si-meta{font-size:13px;color:var(--stone);margin-top:4px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.si-charge{font-weight:700;color:var(--green)}
+.si-addons{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.si-addon{font-size:11px;font-weight:600;letter-spacing:.3px;padding:3px 10px;border-radius:20px;background:rgba(13,122,138,.1);color:var(--teal)}
 .si-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .badge-upcoming{background:rgba(13,122,138,.12);color:var(--teal)}
 .badge-live{background:rgba(214,59,47,.12);color:var(--red)}
@@ -55,6 +58,11 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
 .dur-row label{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--stone);text-transform:uppercase;white-space:nowrap;margin-right:4px}
 .dur-btn{padding:6px 14px;border-radius:6px;border:1.5px solid var(--silver);font-size:12px;font-weight:700;cursor:pointer;background:var(--white);color:var(--stone);transition:all .2s;font-family:'DM Sans',sans-serif}
 .dur-btn.sel{background:var(--teal);color:var(--white);border-color:var(--teal)}
+.addon-row{display:flex;gap:10px;flex-wrap:wrap}
+.addon-check{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:1.5px solid var(--silver);background:var(--white);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.addon-check:has(input:checked){border-color:var(--teal);background:rgba(13,122,138,.06);color:var(--teal)}
+.addon-check input{width:16px;height:16px;accent-color:var(--teal);cursor:pointer}
+.field-note{font-size:11px;color:var(--stone);font-style:italic}
 .empty-state{text-align:center;padding:48px;color:var(--stone)}
 .empty-state .emoji{font-size:40px;margin-bottom:12px}
 .token-note{font-size:12px;color:var(--stone);margin-top:8px;line-height:1.6}
@@ -244,11 +252,16 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
       </div>
       <div class="dur-row">
         <label>Duration</label>
-        <button class="dur-btn" data-h="1"    onclick="setDuration(1)">1 hr</button>
-        <button class="dur-btn" data-h="1.5"  onclick="setDuration(1.5)">1.5 hr</button>
-        <button class="dur-btn" data-h="2"    onclick="setDuration(2)">2 hr</button>
-        <button class="dur-btn" data-h="3"    onclick="setDuration(3)">3 hr</button>
-        <button class="dur-btn" data-h="4"    onclick="setDuration(4)">4 hr</button>
+        <button class="dur-btn" data-h="1"  onclick="setDuration(1)">1 hr</button>
+        <button class="dur-btn" data-h="2"  onclick="setDuration(2)">2 hr</button>
+        <button class="dur-btn" data-h="3"  onclick="setDuration(3)">3 hr</button>
+        <button class="dur-btn" data-h="4"  onclick="setDuration(4)">4 hr</button>
+        <button class="dur-btn" data-h="5"  onclick="setDuration(5)">5 hr</button>
+        <button class="dur-btn" data-h="6"  onclick="setDuration(6)">6 hr</button>
+        <button class="dur-btn" data-h="7"  onclick="setDuration(7)">7 hr</button>
+        <button class="dur-btn" data-h="8"  onclick="setDuration(8)">8 hr</button>
+        <button class="dur-btn" data-h="9"  onclick="setDuration(9)">9 hr</button>
+        <button class="dur-btn" data-h="10" onclick="setDuration(10)">10 hr</button>
       </div>
       <div class="field" style="margin-bottom:16px">
         <label>Date (leave blank for today)</label>
@@ -265,6 +278,19 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
           <button class="day-btn" data-day="sat" onclick="toggleDay(this)">Sat</button>
           <button class="day-btn" data-day="sun" onclick="toggleDay(this)">Sun</button>
         </div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>Add-ons (optional)</label>
+        <div class="addon-row">
+          <label class="addon-check"><input type="checkbox" id="f-addon-cinematography" value="cinematography"><span>🎬 Cinematography</span></label>
+          <label class="addon-check"><input type="checkbox" id="f-addon-audio" value="audio"><span>🎧 Audio Engineer</span></label>
+          <label class="addon-check"><input type="checkbox" id="f-addon-editing" value="editing"><span>✂️ Editing</span></label>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>Total Charges (internal only)</label>
+        <input type="number" id="f-charges" min="0" step="1" placeholder="e.g. 5000" style="max-width:200px">
+        <span class="field-note">Stored privately in this manager — never shown on the display.</span>
       </div>
       <div class="form-actions">
         <button class="btn btn-ghost" onclick="toggleAddForm()">Cancel</button>
@@ -422,6 +448,9 @@ function renderList(id, list, withStatus){
     const zoneLabel=({podcast:'🎙️ Podcast',photography:'📷 Photography',culinary:'🍳 Culinary'}[s.zone]||s.zone);
     const dateInfo=s.date?s.date:(s.days?s.days.join(', '):'Today');
     const idx=scheduleData.sessions.indexOf(s);
+    const addonLabels={cinematography:'🎬 Cinematography',audio:'🎧 Audio Engineer',editing:'✂️ Editing'};
+    const addonsHtml=(s.addons&&s.addons.length)?`<div class="si-addons">${s.addons.map(a=>`<span class="si-addon">${esc(addonLabels[a]||a)}</span>`).join('')}</div>`:'';
+    const chargesHtml=(s.charges!=null)?`<span class="si-charge">₹${esc(String(s.charges))}</span>`:'';
     return `<div class="session-item${st==='live'?' active-now':st==='done'?' past':''}">
       <div>
         <div class="si-name">${esc(s.name)||'Unnamed'} ${badge}</div>
@@ -429,7 +458,9 @@ function renderList(id, list, withStatus){
           <span>${esc(zoneLabel)}</span>
           <span>⏰ ${s.start?fmt12(s.start):'?'} – ${s.end?fmt12(s.end):'?'}</span>
           <span>📅 ${esc(dateInfo)}</span>
+          ${chargesHtml}
         </div>
+        ${addonsHtml}
       </div>
       <div class="si-actions">
         <button class="btn btn-danger si-delete" data-idx="${idx}">Delete</button>
@@ -467,6 +498,8 @@ function toggleAddForm(){
     document.getElementById('f-zone').value='podcast';
     document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('sel'));
     document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('sel'));
+    ['cinematography','audio','editing'].forEach(a=>document.getElementById('f-addon-'+a).checked=false);
+    document.getElementById('f-charges').value='';
     _selectedDuration = null;
   }
 }
@@ -513,10 +546,16 @@ async function addSession(){
       const cname = conflict[0].name.slice(0,60).replace(/[\x00-\x1f]/g,''); if(!confirm('This session overlaps with "'+cname+'". Add anyway?')) return;
     }
   }
+  const addons=['cinematography','audio','editing'].filter(a=>document.getElementById('f-addon-'+a).checked);
+  const chargesRaw=document.getElementById('f-charges').value.trim();
+  const charges=chargesRaw===''?null:Number(chargesRaw);
+  if(charges!==null&&(!isFinite(charges)||charges<0)){ setStatus('Charges must be a positive number','err'); return; }
   const session={name,zone,start};
   if(end) session.end=end;
   if(date) session.date=date;
   else if(days.length) session.days=days;
+  if(addons.length) session.addons=addons;
+  if(charges!==null) session.charges=charges;
   const backup = JSON.parse(JSON.stringify(scheduleData));
   scheduleData.sessions.push(session);
   scheduleData.sessions.sort((a,b)=>a.start.localeCompare(b.start));
