@@ -66,6 +66,11 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
 .status-bar{position:fixed;bottom:0;left:0;right:0;height:48px;background:var(--ink);display:flex;align-items:center;padding:0 40px;gap:16px;font-size:13px;color:rgba(255,255,255,.5)}
 .status-bar .status-msg{flex:1}
 .status-bar .status-ok{color:#56D98A}.status-bar .status-err{color:#FF7B72}
+.proxy-status{display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.55)}
+.proxy-dot{width:8px;height:8px;border-radius:50%;background:#8A919C;flex-shrink:0}
+.hdr-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hdr-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.65);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.5px;text-decoration:none;transition:color .2s,background .2s;white-space:nowrap}
+.hdr-btn:hover{color:rgba(255,255,255,.95);background:rgba(255,255,255,.14)}
 .dur-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .dur-row label{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--stone);text-transform:uppercase;white-space:nowrap;margin-right:4px}
 .dur-btn{padding:6px 14px;border-radius:6px;border:1.5px solid var(--silver);font-size:12px;font-weight:700;cursor:pointer;background:var(--white);color:var(--stone);transition:all .2s;font-family:'DM Sans',sans-serif}
@@ -79,7 +84,6 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
 .empty-state .emoji{font-size:40px;margin-bottom:12px}
 .token-note{font-size:12px;color:var(--stone);margin-top:8px;line-height:1.6}
 a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
-.preview-link{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(13,122,138,.08);border:1px solid rgba(13,122,138,.2);border-radius:8px;font-size:13px;font-weight:600;color:var(--teal);text-decoration:none;margin-top:8px}
 
 /* ═══════════ LOCK SCREEN ═══════════ */
 #lock-screen{
@@ -141,9 +145,10 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 
 /* ═══════════ RESPONSIVE / MOBILE ═══════════ */
 @media (max-width:768px){
-  header{padding:16px 20px;gap:14px}
+  header{padding:16px 20px;gap:14px;flex-wrap:wrap}
   .header-logo,header img{height:42px}
   header h1{font-size:22px}
+  .hdr-btn{padding:7px 12px;font-size:12px}
   .sub{font-size:11px;letter-spacing:2px}
   .container{margin:24px auto;padding:0 16px}
   .card{padding:20px;border-radius:14px}
@@ -212,23 +217,14 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
     <h1>Schedule Manager</h1>
     <div class="sub">signage.ryst.in · Pooja's Control Panel</div>
   </div>
+  <div class="hdr-actions" id="hdr-actions">
+    <button class="hdr-btn" onclick="loadSchedule()">↺ Refresh</button>
+    <a class="hdr-btn" href="/" target="_blank">📺 TV Display</a>
+  </div>
 </header>
 
 <div class="container">
 
-  <!-- Proxy status card -->
-  <div class="card" id="config-card">
-    <div class="card-title">Connection</div>
-    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div id="proxy-dot" style="width:10px;height:10px;border-radius:50%;background:var(--mist)"></div>
-        <span id="proxy-label" style="font-size:14px;color:var(--stone)">Connecting to proxy…</span>
-      </div>
-      <div class="sb-spacer" style="flex:1"></div>
-      <button class="btn btn-ghost" onclick="loadSchedule()">↺ Refresh</button>
-      <a class="preview-link" href="/" target="_blank">📺 Open TV Display</a>
-    </div>
-  </div>
 
   <!-- Today's Sessions -->
   <div class="card">
@@ -319,6 +315,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 
 <div class="status-bar">
   <span class="status-msg" id="status-msg">Ready. Load schedule to begin.</span>
+  <span class="proxy-status"><span class="proxy-dot" id="proxy-dot"></span><span id="proxy-label">Connecting to proxy…</span></span>
   <span id="status-time"></span>
 </div>
 
@@ -726,13 +723,11 @@ function toggleEye(){
 
 // Add lock button to header
 function addLockButton(){
-  const hdr=document.querySelector('header');
-  if(!hdr) return;
+  const host=document.getElementById('hdr-actions')||document.querySelector('header');
+  if(!host) return;
   const btn=document.createElement('button');
+  btn.className='hdr-btn';
   btn.textContent='🔒 Lock';
-  btn.style.cssText='margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px';
-  btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.9)');
-  btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.5)');
   btn.onclick=()=>{
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('ryst_set_pwd_hash');
@@ -740,7 +735,7 @@ function addLockButton(){
     sessionToken = '';
     location.reload();
   };
-  hdr.appendChild(btn);
+  host.appendChild(btn);
 }
 
 // Boot on load
