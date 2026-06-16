@@ -307,7 +307,7 @@
   <div class="stat-card">
     <div class="stat-label">People Now</div>
     <div class="stat-value" id="people-now">—</div>
-    <div class="stat-sub">Currently in frame</div>
+    <div class="stat-sub">Currently tracked</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Today's Footfall</div>
@@ -391,12 +391,10 @@
 
   async function fetchStats() {
     try {
-      const r = await fetch(`${FRIGATE}/api/stats`);
-      const d = await r.json();
-      const count = d.cameras?.[CAMERA]?.detection_fps
-        ? Math.round(d.cameras[CAMERA].detection_fps)
-        : 0;
-      document.getElementById('people-now').textContent = count;
+      // Active events (end_time=null) = persons currently tracked in frame
+      const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${CAMERA}&end_time=null&limit=100`);
+      const active = await r.json();
+      document.getElementById('people-now').textContent = active.length;
     } catch(e) {
       document.getElementById('people-now').textContent = '—';
     }
