@@ -247,7 +247,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
         </div>
       </div>
       <div class="field" style="margin-bottom:16px">
-        <label>Mobile Number (internal only)</label>
+        <label>Mobile Number (required · internal only)</label>
         <input type="tel" id="f-mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit number" style="max-width:240px" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
         <span class="field-note">Stored privately in this manager — never shown on the display.</span>
       </div>
@@ -277,7 +277,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
         </div>
       </div>
       <div class="field" style="margin-bottom:16px">
-        <label>Total Charges (internal only)</label>
+        <label>Total Charges (required · internal only)</label>
         <input type="number" id="f-charges" min="0" step="1" placeholder="e.g. 5000" style="max-width:200px">
         <span class="field-note">Stored privately in this manager — never shown on the display.</span>
       </div>
@@ -531,17 +531,19 @@ async function addSession(){
     }
   }
   const mobile=document.getElementById('f-mobile').value.trim();
-  if(mobile&&!/^[0-9]{10}$/.test(mobile)){ setStatus('Mobile number must be exactly 10 digits','err'); return; }
+  if(!mobile){ setStatus('Mobile number is required','err'); return; }
+  if(!/^[0-9]{10}$/.test(mobile)){ setStatus('Mobile number must be exactly 10 digits','err'); return; }
   const addons=['cinematography','audio','editing'].filter(a=>document.getElementById('f-addon-'+a).checked);
   const chargesRaw=document.getElementById('f-charges').value.trim();
-  const charges=chargesRaw===''?null:Number(chargesRaw);
-  if(charges!==null&&(!isFinite(charges)||charges<0)){ setStatus('Charges must be a positive number','err'); return; }
+  if(chargesRaw===''){ setStatus('Total charges are required','err'); return; }
+  const charges=Number(chargesRaw);
+  if(!isFinite(charges)||charges<0){ setStatus('Charges must be a positive number','err'); return; }
   const session={name,zone,start};
   if(end) session.end=end;
   if(date) session.date=date;
-  if(mobile) session.mobile=mobile;
+  session.mobile=mobile;
   if(addons.length) session.addons=addons;
-  if(charges!==null) session.charges=charges;
+  session.charges=charges;
   const backup = JSON.parse(JSON.stringify(scheduleData));
   scheduleData.sessions.push(session);
   scheduleData.sessions.sort((a,b)=>a.start.localeCompare(b.start));
