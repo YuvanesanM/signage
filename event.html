@@ -588,7 +588,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-  const FRIGATE = 'https://frigate.ryst.in';
+  // Frigate is reached through the signage proxy, which injects the Basic Auth
+  // server-side so the camera password is never exposed in the browser.
+  const FRIGATE = 'https://ryst-signage-proxy.onrender.com/frigate';
   const CAMERA = 'studio_entrance';
   const SCHEDULE_URL = 'schedule.json';
 
