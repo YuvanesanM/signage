@@ -250,6 +250,11 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
           <input type="time" id="f-end">
         </div>
       </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>Mobile Number (internal only)</label>
+        <input type="tel" id="f-mobile" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit number" style="max-width:240px" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+        <span class="field-note">Stored privately in this manager — never shown on the display.</span>
+      </div>
       <div class="dur-row">
         <label>Duration</label>
         <button class="dur-btn" data-h="1"  onclick="setDuration(1)">1 hr</button>
@@ -458,6 +463,7 @@ function renderList(id, list, withStatus){
           <span>${esc(zoneLabel)}</span>
           <span>⏰ ${s.start?fmt12(s.start):'?'} – ${s.end?fmt12(s.end):'?'}</span>
           <span>📅 ${esc(dateInfo)}</span>
+          ${s.mobile?`<span>📱 ${esc(s.mobile)}</span>`:''}
           ${chargesHtml}
         </div>
         ${addonsHtml}
@@ -500,6 +506,7 @@ function toggleAddForm(){
     document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('sel'));
     ['cinematography','audio','editing'].forEach(a=>document.getElementById('f-addon-'+a).checked=false);
     document.getElementById('f-charges').value='';
+    document.getElementById('f-mobile').value='';
     _selectedDuration = null;
   }
 }
@@ -546,6 +553,8 @@ async function addSession(){
       const cname = conflict[0].name.slice(0,60).replace(/[\x00-\x1f]/g,''); if(!confirm('This session overlaps with "'+cname+'". Add anyway?')) return;
     }
   }
+  const mobile=document.getElementById('f-mobile').value.trim();
+  if(mobile&&!/^[0-9]{10}$/.test(mobile)){ setStatus('Mobile number must be exactly 10 digits','err'); return; }
   const addons=['cinematography','audio','editing'].filter(a=>document.getElementById('f-addon-'+a).checked);
   const chargesRaw=document.getElementById('f-charges').value.trim();
   const charges=chargesRaw===''?null:Number(chargesRaw);
@@ -554,6 +563,7 @@ async function addSession(){
   if(end) session.end=end;
   if(date) session.date=date;
   else if(days.length) session.days=days;
+  if(mobile) session.mobile=mobile;
   if(addons.length) session.addons=addons;
   if(charges!==null) session.charges=charges;
   const backup = JSON.parse(JSON.stringify(scheduleData));
