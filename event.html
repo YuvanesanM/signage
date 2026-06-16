@@ -398,7 +398,7 @@
         : 0;
       document.getElementById('people-now').textContent = count;
     } catch(e) {
-      document.getElementById('people-now').textContent = 'N/A';
+      document.getElementById('people-now').textContent = '—';
     }
   }
 
@@ -430,7 +430,7 @@
       buildHourlyChart(hourBuckets);
       buildEventsTable(events.slice(0, 12));
     } catch(e) {
-      document.getElementById('today-count').textContent = 'N/A';
+      document.getElementById('today-count').textContent = '—';
     }
   }
 
@@ -441,22 +441,26 @@
       if (i === 12) return '12p';
       return i < 12 ? `${i}a` : `${i - 12}p`;
     });
+    const bgColors = buckets.map((_, i) => i === now ? '#c9a84c' : '#f0ece4');
+    const bdColors = buckets.map((_, i) => i === now ? '#b8962e' : '#e5e0d5');
+
+    if (hourlyChart) {
+      hourlyChart.data.datasets[0].data = buckets;
+      hourlyChart.data.datasets[0].backgroundColor = bgColors;
+      hourlyChart.data.datasets[0].borderColor = bdColors;
+      hourlyChart.update('none'); // skip animation on live updates
+      return;
+    }
 
     const ctx = document.getElementById('hourlyChart').getContext('2d');
-    if (hourlyChart) hourlyChart.destroy();
-
     hourlyChart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
         datasets: [{
           data: buckets,
-          backgroundColor: buckets.map((_, i) =>
-            i === now ? '#c9a84c' : '#f0ece4'
-          ),
-          borderColor: buckets.map((_, i) =>
-            i === now ? '#b8962e' : '#e5e0d5'
-          ),
+          backgroundColor: bgColors,
+          borderColor: bdColors,
           borderWidth: 1,
           borderRadius: 4,
           borderSkipped: false
@@ -474,7 +478,7 @@
             borderColor: '#e5e0d5',
             borderWidth: 1,
             callbacks: {
-              title: (items) => `${labels[items[0].dataIndex]}`,
+              title: (items) => labels[items[0].dataIndex],
               label: (item) => ` ${item.raw} person${item.raw !== 1 ? 's' : ''}`
             }
           }
@@ -505,6 +509,10 @@
     });
   }
 
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
   function buildEventsTable(events) {
     const tbody = document.getElementById('events-body');
     if (!events.length) {
@@ -514,7 +522,7 @@
     tbody.innerHTML = events.map(e => `
       <tr>
         <td>Person</td>
-        <td>${e.camera.replace(/_/g, ' ')}</td>
+        <td>${esc((e.camera || '').replace(/_/g, ' '))}</td>
         <td><span class="score-pill">${Math.round((e.top_score || 0) * 100)}%</span></td>
         <td>${formatTime(e.start_time)}</td>
       </tr>
@@ -530,16 +538,18 @@
   }
 
   async function refresh() {
-    await fetchStats();
-    await fetchEvents();
-    refreshSnapshot();
-    document.getElementById('last-updated').textContent =
-      'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    try {
+      await Promise.all([fetchStats(), fetchEvents()]);
+      document.getElementById('last-updated').textContent =
+        'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch(e) {
+      document.getElementById('last-updated').textContent = '⚠ Connection lost';
+    }
   }
 
   refresh();
   setInterval(refresh, 30000);
-  setInterval(refreshSnapshot, 15000);
+  setInterval(refreshSnapshot, 15000); // snapshot refreshes independently every 15s
 </script>
 </body>
 </html>
