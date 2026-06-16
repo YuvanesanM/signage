@@ -51,9 +51,6 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
 .status-bar{position:fixed;bottom:0;left:0;right:0;height:48px;background:var(--ink);display:flex;align-items:center;padding:0 40px;gap:16px;font-size:13px;color:rgba(255,255,255,.5)}
 .status-bar .status-msg{flex:1}
 .status-bar .status-ok{color:#56D98A}.status-bar .status-err{color:#FF7B72}
-.days-picker{display:flex;gap:6px;flex-wrap:wrap}
-.day-btn{padding:6px 12px;border-radius:6px;border:1.5px solid var(--silver);font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;background:var(--white);color:var(--stone);transition:all .2s;font-family:'DM Sans',sans-serif}
-.day-btn.sel{background:var(--teal);color:var(--white);border-color:var(--teal)}
 .dur-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .dur-row label{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--stone);text-transform:uppercase;white-space:nowrap;margin-right:4px}
 .dur-btn{padding:6px 14px;border-radius:6px;border:1.5px solid var(--silver);font-size:12px;font-weight:700;cursor:pointer;background:var(--white);color:var(--stone);transition:all .2s;font-family:'DM Sans',sans-serif}
@@ -157,7 +154,6 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
   .si-meta{flex-direction:column;gap:4px}
   .si-actions{flex-wrap:wrap}
   .si-actions .btn{flex:1 1 auto}
-  .day-btn{flex:1 1 auto;text-align:center}
   .lock-card{padding:28px 20px}
   .lock-footer{padding:0 16px}
 }
@@ -271,18 +267,6 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
       <div class="field" style="margin-bottom:16px">
         <label>Date (leave blank for today)</label>
         <input type="date" id="f-date" style="max-width:200px">
-      </div>
-      <div class="field" style="margin-bottom:16px">
-        <label>Repeat on days (optional)</label>
-        <div class="days-picker" id="days-picker">
-          <button class="day-btn" data-day="mon" onclick="toggleDay(this)">Mon</button>
-          <button class="day-btn" data-day="tue" onclick="toggleDay(this)">Tue</button>
-          <button class="day-btn" data-day="wed" onclick="toggleDay(this)">Wed</button>
-          <button class="day-btn" data-day="thu" onclick="toggleDay(this)">Thu</button>
-          <button class="day-btn" data-day="fri" onclick="toggleDay(this)">Fri</button>
-          <button class="day-btn" data-day="sat" onclick="toggleDay(this)">Sat</button>
-          <button class="day-btn" data-day="sun" onclick="toggleDay(this)">Sun</button>
-        </div>
       </div>
       <div class="field" style="margin-bottom:16px">
         <label>Add-ons (optional)</label>
@@ -502,7 +486,6 @@ function toggleAddForm(){
     document.getElementById('f-date').value='';
     document.getElementById('f-name').value='';
     document.getElementById('f-zone').value='podcast';
-    document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('sel'));
     document.querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('sel'));
     ['cinematography','audio','editing'].forEach(a=>document.getElementById('f-addon-'+a).checked=false);
     document.getElementById('f-charges').value='';
@@ -511,7 +494,6 @@ function toggleAddForm(){
   }
 }
 
-function toggleDay(btn){ btn.classList.toggle('sel'); }
 
 let _selectedDuration = null;
 function setDuration(h){
@@ -536,17 +518,12 @@ async function addSession(){
   const start=document.getElementById('f-start').value;
   const end=document.getElementById('f-end').value;
   const date=document.getElementById('f-date').value;
-  const days=[...document.querySelectorAll('.day-btn.sel')].map(b=>b.dataset.day);
   if(!name||!start){ setStatus('Name and start time are required','err'); return; }
   if(end&&end<=start){ setStatus('End time must be after start time','err'); return; }
-  if(date&&days.length){ setStatus('Use either a date or repeat days — not both','err'); return; }
   // Overlap detection — warn if times conflict with existing sessions
   if(end){
-    const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-    const todayStr=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
     const conflict = scheduleData.sessions.filter(s=>{
       if(s.date&&date&&s.date!==date) return false;
-      if(s.days&&days.length&&!s.days.some(d=>days.includes(d))) return false;
       return s.start < end && (s.end||s.start) > start;
     });
     if(conflict.length){
@@ -562,7 +539,6 @@ async function addSession(){
   const session={name,zone,start};
   if(end) session.end=end;
   if(date) session.date=date;
-  else if(days.length) session.days=days;
   if(mobile) session.mobile=mobile;
   if(addons.length) session.addons=addons;
   if(charges!==null) session.charges=charges;
