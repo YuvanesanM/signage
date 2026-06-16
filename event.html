@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio RYST — Occupancy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f9f8f6;
+    color: #1a1a18;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5e0d5;
+  }
+
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #080808;
+    letter-spacing: 0.08em;
+  }
+
+  .logo span {
+    color: #c9a84c;
+  }
+
+  .tagline {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #999;
+    margin-top: 3px;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #666;
+    background: #fff;
+    border: 1px solid #e5e0d5;
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4caf50;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .last-updated {
+    font-size: 0.68rem;
+    color: #aaa;
+    margin-top: 6px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid #e5e0d5;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: #c9a84c;
+    opacity: 0.5;
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    font-weight: 600;
+    color: #080808;
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 0.7rem;
+    color: #aaa;
+    margin-top: 0.4rem;
+  }
+
+  .stat-accent {
+    color: #c9a84c;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid #e5e0d5;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .panel-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #f0ece4;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 200px;
+  }
+
+  .snapshot-wrap {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #f0ece4;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .snapshot-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .snapshot-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+
+  .snapshot-time {
+    font-size: 0.68rem;
+    color: #aaa;
+  }
+
+  .snapshot-label {
+    font-size: 0.68rem;
+    color: #c9a84c;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .events-panel {
+    background: #fff;
+    border: 1px solid #e5e0d5;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .events-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .events-table th {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #bbb;
+    text-align: left;
+    padding: 0 0 0.75rem 0;
+    border-bottom: 1px solid #f0ece4;
+    font-weight: 400;
+  }
+
+  .events-table td {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f7f5f0;
+    color: #444;
+    vertical-align: middle;
+  }
+
+  .events-table td:first-child {
+    font-weight: 500;
+    color: #1a1a18;
+  }
+
+  .events-table td:last-child {
+    text-align: right;
+    color: #aaa;
+    font-size: 0.75rem;
+  }
+
+  .score-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    background: #fdf8ed;
+    color: #c9a84c;
+    border: 1px solid #eddfa0;
+  }
+
+  .no-data {
+    font-size: 0.78rem;
+    color: #bbb;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #ccc;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #ece8e0;
+  }
+
+  .divider {
+    color: #c9a84c;
+    margin: 0 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">STUDIO <span>RYST</span></div>
+    <div class="tagline">Occupancy Dashboard &nbsp;·&nbsp; Studio Entrance</div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live
+    </div>
+    <div class="last-updated" id="last-updated">Refreshing every 30s</div>
+  </div>
+</header>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">People Now</div>
+    <div class="stat-value" id="people-now">—</div>
+    <div class="stat-sub">Currently in frame</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Today's Footfall</div>
+    <div class="stat-value" id="today-count">—</div>
+    <div class="stat-sub">Detections since midnight</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Last Hour</div>
+    <div class="stat-value" id="last-hour">—</div>
+    <div class="stat-sub">Person events</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Peak Hour</div>
+    <div class="stat-value stat-accent" id="peak-hour" style="font-size:1.9rem; padding-top:0.4rem;">—</div>
+    <div class="stat-sub" id="peak-count">Today's busiest hour</div>
+  </div>
+</div>
+
+<div class="main-grid">
+  <div class="panel">
+    <div class="panel-title">Hourly Traffic — Today</div>
+    <div class="chart-wrap">
+      <canvas id="hourlyChart" role="img" aria-label="Hourly person detection count for today">Hourly traffic data loading...</canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Live Camera</div>
+    <div class="snapshot-wrap">
+      <img id="cam-snapshot" src="" alt="Studio entrance live snapshot" onerror="this.style.display='none'">
+    </div>
+    <div class="snapshot-meta">
+      <div class="snapshot-label">Studio Entrance</div>
+      <div class="snapshot-time" id="snap-time">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="events-panel">
+  <div class="panel-title">Recent Detections</div>
+  <table class="events-table">
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Camera</th>
+        <th>Confidence</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="events-body">
+      <tr><td colspan="4" class="no-data">Loading events...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  Studio RYST &nbsp;<span class="divider">·</span>&nbsp; Ankur Plaza, T-Nagar, Chennai &nbsp;<span class="divider">·</span>&nbsp; Create. Cook. Converse.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  const FRIGATE = 'https://frigate.ryst.in';
+  const CAMERA = 'studio_entrance';
+  let hourlyChart = null;
+
+  function formatTime(ts) {
+    return new Date(ts * 1000).toLocaleTimeString('en-IN', {
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  }
+
+  function todayMidnight() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return Math.floor(d.getTime() / 1000);
+  }
+
+  function oneHourAgo() {
+    return Math.floor(Date.now() / 1000) - 3600;
+  }
+
+  async function fetchStats() {
+    try {
+      const r = await fetch(`${FRIGATE}/api/stats`);
+      const d = await r.json();
+      const count = d.cameras?.[CAMERA]?.detection_fps
+        ? Math.round(d.cameras[CAMERA].detection_fps)
+        : 0;
+      document.getElementById('people-now').textContent = count;
+    } catch(e) {
+      document.getElementById('people-now').textContent = 'N/A';
+    }
+  }
+
+  async function fetchEvents() {
+    try {
+      const midnight = todayMidnight();
+      const r = await fetch(`${FRIGATE}/api/events?label=person&after=${midnight}&limit=200`);
+      const events = await r.json();
+
+      document.getElementById('today-count').textContent = events.length;
+
+      const lastHour = events.filter(e => e.start_time >= oneHourAgo()).length;
+      document.getElementById('last-hour').textContent = lastHour;
+
+      const hourBuckets = Array(24).fill(0);
+      events.forEach(e => {
+        const h = new Date(e.start_time * 1000).getHours();
+        hourBuckets[h]++;
+      });
+
+      const peakH = hourBuckets.indexOf(Math.max(...hourBuckets));
+      const peakCount = hourBuckets[peakH];
+      if (peakCount > 0) {
+        const label = peakH === 0 ? '12am' : peakH < 12 ? `${peakH}am` : peakH === 12 ? '12pm' : `${peakH - 12}pm`;
+        document.getElementById('peak-hour').textContent = label;
+        document.getElementById('peak-count').textContent = `${peakCount} detection${peakCount !== 1 ? 's' : ''}`;
+      }
+
+      buildHourlyChart(hourBuckets);
+      buildEventsTable(events.slice(0, 12));
+    } catch(e) {
+      document.getElementById('today-count').textContent = 'N/A';
+    }
+  }
+
+  function buildHourlyChart(buckets) {
+    const now = new Date().getHours();
+    const labels = buckets.map((_, i) => {
+      if (i === 0) return '12a';
+      if (i === 12) return '12p';
+      return i < 12 ? `${i}a` : `${i - 12}p`;
+    });
+
+    const ctx = document.getElementById('hourlyChart').getContext('2d');
+    if (hourlyChart) hourlyChart.destroy();
+
+    hourlyChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: buckets,
+          backgroundColor: buckets.map((_, i) =>
+            i === now ? '#c9a84c' : '#f0ece4'
+          ),
+          borderColor: buckets.map((_, i) =>
+            i === now ? '#b8962e' : '#e5e0d5'
+          ),
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#fff',
+            titleColor: '#1a1a18',
+            bodyColor: '#666',
+            borderColor: '#e5e0d5',
+            borderWidth: 1,
+            callbacks: {
+              title: (items) => `${labels[items[0].dataIndex]}`,
+              label: (item) => ` ${item.raw} person${item.raw !== 1 ? 's' : ''}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#bbb',
+              font: { size: 9, family: 'DM Sans' },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 12
+            },
+            border: { display: false }
+          },
+          y: {
+            grid: { color: '#f7f5f0' },
+            ticks: {
+              color: '#bbb',
+              font: { size: 9, family: 'DM Sans' },
+              stepSize: 1
+            },
+            border: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  function buildEventsTable(events) {
+    const tbody = document.getElementById('events-body');
+    if (!events.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="no-data">No detections today yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = events.map(e => `
+      <tr>
+        <td>Person</td>
+        <td>${e.camera.replace(/_/g, ' ')}</td>
+        <td><span class="score-pill">${Math.round((e.top_score || 0) * 100)}%</span></td>
+        <td>${formatTime(e.start_time)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function refreshSnapshot() {
+    const img = document.getElementById('cam-snapshot');
+    img.style.display = 'block';
+    img.src = `${FRIGATE}/api/${CAMERA}/latest.jpg?t=${Date.now()}`;
+    document.getElementById('snap-time').textContent =
+      new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  async function refresh() {
+    await fetchStats();
+    await fetchEvents();
+    refreshSnapshot();
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  refresh();
+  setInterval(refresh, 30000);
+  setInterval(refreshSnapshot, 15000);
+</script>
+</body>
+</html>
