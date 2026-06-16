@@ -651,8 +651,8 @@ function processSchedule(data){
 
   for(let i=0; i<sessions.length; i++){
     const s = sessions[i];
-    // Pre-session welcome (60 min window)
-    if(nowMs < s.startMs && s.startMs - nowMs <= 3600000){
+    // Pre-session welcome (30 min window)
+    if(nowMs < s.startMs && s.startMs - nowMs <= 1800000){
       found = {...s};
       foundNext = sessions[i+1] || null;
       break;
