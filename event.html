@@ -1229,8 +1229,8 @@
   document.getElementById('tv-toggle').addEventListener('click', toggleTVMode);
   refresh();
   refreshSnapshot();
-  setInterval(refresh, 30000);
-  setInterval(refreshSnapshot, 15000);
+  setInterval(refresh, 60000);        // was 30s — reduced to ease Frigate CPU load
+  setInterval(refreshSnapshot, 90000); // was 15s — each fetch forces an FFmpeg frame grab
 </script>
 </body>
 </html>
