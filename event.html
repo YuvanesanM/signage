@@ -811,16 +811,6 @@
   }
 
   // ── Data fetch ──
-  async function fetchActive(){
-    // Query from start of today so we catch people who arrived hours ago.
-    // Filter client-side for end_time===null (still in studio) rather than
-    // passing end_time=null as a URL param (Frigate parses it as the string "null").
-    const since = Math.floor(dayMidnight(0).getTime()/1000);
-    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${detectedCamera}&after=${since}&limit=500`);
-    if(!r.ok) return [];
-    const events = await r.json();
-    return events.filter(e => e.end_time === null || e.end_time === undefined);
-  }
   async function fetchWeekEvents(){
     const after = Math.floor(dayMidnight(6).getTime()/1000);
     const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${detectedCamera}&after=${after}&limit=2500`);
@@ -1197,10 +1187,14 @@
     if(!localStorage.getItem('ryst_theme')) applyTheme(autoTheme());
 
     try {
-      const [active, weekEvents, camFps] = await Promise.all([
-        fetchActive(), fetchWeekEvents(), fetchCameraFps()
+      // schedule.json fetch runs in parallel (independent of Frigate).
+      const [weekEvents, camFps] = await Promise.all([
+        fetchWeekEvents(), fetchCameraFps(), fetchSchedule()
       ]);
-      await fetchSchedule();
+      // People Now is derived from the same week query — active people have
+      // end_time===null and are always among the most-recent events, so this
+      // avoids a third redundant request to the CPU-constrained Frigate.
+      const active = weekEvents.filter(e => e.end_time === null || e.end_time === undefined);
 
       setOnlineState(camFps !== null && camFps > 0);
 
