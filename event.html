@@ -688,10 +688,11 @@
   // Frigate is reached through the signage proxy, which injects the Basic Auth
   // server-side so the camera password is never exposed in the browser.
   const FRIGATE = 'https://ryst-signage-proxy.onrender.com/frigate';
-  const CAMERA = 'studio_entrance';
+  const CAMERA = 'studio_entrance';   // preferred camera name; auto-corrected if not found in Frigate
   const SCHEDULE_URL = 'schedule.json';
 
   // ── State ──
+  let detectedCamera = CAMERA;        // updated by fetchCameraFps() if CAMERA name doesn't match
   let mainChart = null, splitChart = null;
   let chartMode = 'today';
   let peopleHistory = [];        // {t, n} for trend
@@ -811,19 +812,34 @@
 
   // ── Data fetch ──
   async function fetchActive(){
-    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${CAMERA}&end_time=null&limit=100`);
-    return r.ok ? r.json() : [];
+    // Query events from the last 30 min; active ones will have end_time===null.
+    // We avoid sending end_time=null as a URL param — Frigate's FastAPI parses it
+    // as the string "null" (not Python None), which causes a 422 or silent no-op.
+    const since = Math.floor(Date.now()/1000) - 1800;
+    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${detectedCamera}&after=${since}&limit=200`);
+    if(!r.ok) return [];
+    const events = await r.json();
+    return events.filter(e => e.end_time === null || e.end_time === undefined);
   }
   async function fetchWeekEvents(){
     const after = Math.floor(dayMidnight(6).getTime()/1000);
-    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${CAMERA}&after=${after}&limit=2500`);
+    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${detectedCamera}&after=${after}&limit=2500`);
     return r.ok ? r.json() : [];
   }
   async function fetchCameraFps(){
     try {
       const r = await fetch(`${FRIGATE}/api/stats`);
       const d = await r.json();
-      const cam = d.cameras?.[CAMERA];
+      const cameras = d.cameras || {};
+      // Auto-discover: if preferred name isn't found, fall back to first available camera
+      if(!cameras[detectedCamera]){
+        const first = Object.keys(cameras)[0];
+        if(first){
+          detectedCamera = first;
+          console.info(`[Frigate] camera "${CAMERA}" not found — using "${detectedCamera}"`);
+        }
+      }
+      const cam = cameras[detectedCamera];
       if(!cam) return null;
       return cam.camera_fps;
     } catch(e) { return null; }
@@ -1130,7 +1146,7 @@
     const loading = document.getElementById('snap-loading');
     img.onload = () => { img.style.opacity = '1'; if(loading) loading.textContent = ''; };
     img.onerror = () => { img.style.opacity = '0'; if(loading) loading.textContent = 'Camera offline'; };
-    img.src = `${FRIGATE}/api/${CAMERA}/latest.jpg?t=${Date.now()}`;
+    img.src = `${FRIGATE}/api/${detectedCamera}/latest.jpg?t=${Date.now()}`;
     document.getElementById('snap-time').textContent =
       new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
   }
