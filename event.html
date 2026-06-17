@@ -812,11 +812,11 @@
 
   // ── Data fetch ──
   async function fetchActive(){
-    // Query events from the last 30 min; active ones will have end_time===null.
-    // We avoid sending end_time=null as a URL param — Frigate's FastAPI parses it
-    // as the string "null" (not Python None), which causes a 422 or silent no-op.
-    const since = Math.floor(Date.now()/1000) - 1800;
-    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${detectedCamera}&after=${since}&limit=200`);
+    // Query from start of today so we catch people who arrived hours ago.
+    // Filter client-side for end_time===null (still in studio) rather than
+    // passing end_time=null as a URL param (Frigate parses it as the string "null").
+    const since = Math.floor(dayMidnight(0).getTime()/1000);
+    const r = await fetch(`${FRIGATE}/api/events?label=person&camera=${detectedCamera}&after=${since}&limit=500`);
     if(!r.ok) return [];
     const events = await r.json();
     return events.filter(e => e.end_time === null || e.end_time === undefined);
