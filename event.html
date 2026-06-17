@@ -241,8 +241,104 @@
     gap: 1rem;
     margin-bottom: 1rem;
   }
+  /* ── Large display / TV (≥1440px) ── */
+  @media (min-width: 1440px) {
+    body { padding: 2.5rem 3.5rem; }
+    .logo { font-size: 2.2rem; }
+    .stats-grid { grid-template-columns: repeat(6, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+    .stat-card { padding: 1.5rem 1.75rem; }
+    .stat-value { font-size: 3.5rem; }
+    .stat-value.compact { font-size: 2.2rem; }
+    .stat-label { font-size: 0.75rem; }
+    .stat-sub { font-size: 0.75rem; margin-top: 0.5rem; }
+    .panel { padding: 1.5rem 2rem; }
+    .chart-wrap { height: 280px; }
+    .split-wrap { height: 230px; }
+    .panel-title { font-size: 0.75rem; margin-bottom: 1.25rem; }
+    .events-table { font-size: 0.9rem; }
+    .events-table th { font-size: 0.72rem; padding-bottom: 1rem; }
+    .events-table td { padding: 0.75rem 0; }
+    .hm-cell { min-height: 20px; }
+    .hm-corner, .hm-hour-label, .hm-day-label, .hm-cell { font-size: 0.65rem; }
+    .live-badge { font-size: 0.78rem; padding: 6px 14px; }
+    .seg-btn { font-size: 0.68rem; padding: 5px 12px; }
+    .main-grid, .secondary-grid { gap: 1.25rem; margin-bottom: 1.25rem; }
+    .main-grid { grid-template-columns: 1.6fr 1fr; }
+    .secondary-grid { grid-template-columns: 1fr 1.6fr; }
+  }
+
+  /* ── TV Mode class (toggled for viewing from across the room) ── */
+  .tv-mode .logo { font-size: 2.8rem; }
+  .tv-mode .tagline { font-size: 0.82rem; letter-spacing: 0.22em; }
+  .tv-mode .stats-grid { grid-template-columns: repeat(6, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
+  .tv-mode .stat-card { padding: 2rem 1.75rem; }
+  .tv-mode .stat-value { font-size: 4.5rem; }
+  .tv-mode .stat-value.compact { font-size: 2.8rem; }
+  .tv-mode .stat-label { font-size: 0.82rem; letter-spacing: 0.18em; }
+  .tv-mode .stat-sub { font-size: 0.78rem; margin-top: 0.5rem; }
+  .tv-mode .panel { padding: 2rem 2.5rem; }
+  .tv-mode .panel-title { font-size: 0.82rem; letter-spacing: 0.16em; margin-bottom: 1.5rem; }
+  .tv-mode .chart-wrap { height: 360px; }
+  .tv-mode .split-wrap { height: 300px; }
+  .tv-mode .events-table { font-size: 1rem; }
+  .tv-mode .events-table th { font-size: 0.78rem; padding-bottom: 1.25rem; }
+  .tv-mode .events-table td { padding: 0.9rem 0; }
+  .tv-mode .hm-cell { min-height: 26px; }
+  .tv-mode .hm-corner, .tv-mode .hm-hour-label, .tv-mode .hm-day-label, .tv-mode .hm-cell { font-size: 0.7rem; }
+  .tv-mode .live-badge { font-size: 0.9rem; padding: 8px 18px; }
+  .tv-mode .icon-btn { width: 38px; height: 38px; font-size: 1.1rem; }
+  .tv-mode .seg-btn { font-size: 0.75rem; padding: 6px 14px; }
+  .tv-mode .tag { font-size: 0.72rem; padding: 3px 10px; }
+  .tv-mode .score-pill { font-size: 0.75rem; }
+  .tv-mode .last-updated { font-size: 0.78rem; }
+  .tv-mode .heatmap { grid-template-columns: 64px repeat(24, minmax(22px, 1fr)); }
+  .tv-mode .hm-day-label { padding-right: 8px; }
+
+  /* ── Tablet (641px–860px) ── */
   @media (max-width: 860px) {
+    body { padding: 1.25rem; }
+    header { margin-bottom: 1.25rem; }
     .main-grid, .secondary-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Mobile (≤640px) ── */
+  @media (max-width: 640px) {
+    body { padding: 0.75rem; }
+    header { gap: 0.5rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; }
+    .logo { font-size: 1.45rem; }
+    .tagline { font-size: 0.6rem; }
+    .header-right { gap: 4px; }
+    .last-updated { font-size: 0.6rem; }
+    .icon-btn { width: 27px; height: 27px; font-size: 0.82rem; }
+    .live-badge { font-size: 0.65rem; padding: 4px 9px; gap: 4px; }
+    .live-dot { width: 6px; height: 6px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.75rem; }
+    .stat-card { padding: 0.85rem 1rem; }
+    .stat-card::before { height: 2px; }
+    .stat-value { font-size: 2rem; }
+    .stat-value.compact { font-size: 1.45rem; }
+    .stat-label { font-size: 0.6rem; }
+    .stat-sub { font-size: 0.62rem; margin-top: 0.25rem; }
+    .stat-trend { font-size: 0.78rem; }
+    .panel { padding: 0.85rem 1rem; }
+    .panel-title { font-size: 0.62rem; margin-bottom: 0.65rem; }
+    .chart-wrap { height: 175px; }
+    .split-wrap { height: 145px; }
+    .split-legend { gap: 1rem; margin-top: 0.5rem; }
+    .legend-item { font-size: 0.65rem; }
+    .events-table { font-size: 0.75rem; }
+    .events-table th { font-size: 0.6rem; padding-bottom: 0.6rem; }
+    .events-table td { padding: 0.5rem 0; }
+    .events-table th:nth-child(3),
+    .events-table td:nth-child(3),
+    .events-table th:nth-child(4),
+    .events-table td:nth-child(4) { display: none; }
+    .tag { font-size: 0.6rem; padding: 2px 6px; }
+    .score-pill { font-size: 0.6rem; }
+    .heatmap { min-width: 500px; }
+    .hm-corner, .hm-hour-label, .hm-day-label, .hm-cell { font-size: 0.55rem; }
+    .csv-btn { font-size: 0.58rem; padding: 3px 10px; }
+    footer { font-size: 0.58rem; letter-spacing: 0.1em; margin-top: 1rem; padding-top: 0.75rem; }
   }
 
   .panel {
@@ -472,6 +568,7 @@
   </div>
   <div class="header-right">
     <div class="header-controls">
+      <button class="icon-btn" id="tv-toggle" title="Toggle TV mode" aria-label="Toggle TV mode">📺</button>
       <button class="icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle dark mode">🌙</button>
       <div class="live-badge" id="live-badge">
         <div class="live-dot"></div>
@@ -645,6 +742,21 @@
     renderMainChart(true);
     renderSplitChart(true);
   }
+
+  // ── TV Mode ──
+  function applyTVMode(active){
+    document.body.classList.toggle('tv-mode', active);
+    const btn = document.getElementById('tv-toggle');
+    if(btn) btn.textContent = active ? '🖥️' : '📺';
+    renderMainChart(true);
+    renderSplitChart(true);
+  }
+  function toggleTVMode(){
+    const active = !document.body.classList.contains('tv-mode');
+    localStorage.setItem('ryst_tv', active ? '1' : '');
+    applyTVMode(active);
+  }
+  function initTVMode(){ applyTVMode(!!localStorage.getItem('ryst_tv')); }
   function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function themeColors(){
     return {
@@ -1096,7 +1208,9 @@
 
   // ── Boot ──
   initTheme();
+  initTVMode();
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.getElementById('tv-toggle').addEventListener('click', toggleTVMode);
   refresh();
   refreshSnapshot();
   setInterval(refresh, 30000);
