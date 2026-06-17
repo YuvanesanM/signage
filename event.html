@@ -593,7 +593,7 @@
   <div class="stat-card">
     <div class="stat-label">Last Hour</div>
     <div class="stat-value" id="last-hour">—</div>
-    <div class="stat-sub">Person events</div>
+    <div class="stat-sub">People in last hour</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Peak Hour</div>
@@ -659,7 +659,7 @@
 
 <div class="events-panel panel">
   <div class="panel-title">
-    <span class="pt-text">Recent Detections</span>
+    <span class="pt-text">Recent Visits</span>
     <span style="flex:1"></span>
     <button class="csv-btn" id="csv-btn" onclick="exportCSV()" disabled>⤓ Export CSV</button>
   </div>
@@ -698,7 +698,7 @@
   let peopleHistory = [];        // {t, n} for trend
   let todaySessions = [];        // parsed sessions occurring today
   let todaySessionBands = [];    // {start, end} fractional hours for chart overlay
-  let lastTodayEvents = [];      // for CSV export
+  let lastTodayVisits = [];      // merged visits, for table / CSV / split chart
   let computed = { todayBuckets: Array(24).fill(0), weekDays: [], weeklyTotals: [] };
 
   // ── Time helpers ──
@@ -727,6 +727,40 @@
   }
   function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function eventScore(e){ return (e.top_score ?? e.data?.top_score ?? e.score ?? 0); }
+
+  // ── Visits ──
+  // Frigate emits a NEW event every time the tracker re-acquires a person, so a
+  // single person seated for a while fragments into many events. Merge events
+  // whose gap is below VISIT_GAP_SEC into one "visit" so footfall counts people,
+  // not detections. Note: two different people arriving within the gap window
+  // can't be separated without face identity — an accepted limitation.
+  const VISIT_GAP_SEC = 120;
+  function mergeVisits(events, gapSec = VISIT_GAP_SEC){
+    if(!events.length) return [];
+    const nowSec = Date.now()/1000;
+    const sorted = events.slice().sort((a,b) => a.start_time - b.start_time);
+    const visits = [];
+    for(const e of sorted){
+      const s = e.start_time;
+      const en = (e.end_time == null) ? nowSec : e.end_time;
+      const sc = eventScore(e);
+      const last = visits[visits.length - 1];
+      if(last && s <= last._end + gapSec){
+        last._end = Math.max(last._end, en);
+        last._active = (e.end_time == null);   // latest fragment's state wins
+        last.top_score = Math.max(last.top_score, sc);
+        last.frames++;
+      } else {
+        visits.push({ start_time: s, _end: en, _active: e.end_time == null, top_score: sc, frames: 1 });
+      }
+    }
+    return visits.map(v => ({
+      start_time: v.start_time,
+      end_time: v._active ? null : v._end,
+      top_score: v.top_score,
+      frames: v.frames
+    }));
+  }
 
   // ── Theme ──
   function autoTheme(){ const h = new Date().getHours(); return (h >= 20 || h < 7) ? 'dark' : 'light'; }
@@ -855,13 +889,20 @@
     const byDate = {}; weekDays.forEach(d => byDate[d.date] = d);
     const todayBuckets = Array(24).fill(0);
     const today = todayStr();
+    // Group events by day, merge each day into visits, then bucket by visit
+    // start hour — so the charts/heatmap count people, not raw detections.
+    const eventsByDate = {};
     weekEvents.forEach(e => {
-      const dt = new Date(e.start_time*1000);
-      const ds = dateStr(dt);
-      const h = dt.getHours();
+      const ds = dateStr(new Date(e.start_time*1000));
+      (eventsByDate[ds] = eventsByDate[ds] || []).push(e);
+    });
+    Object.keys(eventsByDate).forEach(ds => {
       const day = byDate[ds];
-      if(day){ day.hours[h]++; day.total++; }
-      if(ds === today) todayBuckets[h]++;
+      mergeVisits(eventsByDate[ds]).forEach(v => {
+        const h = new Date(v.start_time*1000).getHours();
+        if(day){ day.hours[h]++; day.total++; }
+        if(ds === today) todayBuckets[h]++;
+      });
     });
     computed = { todayBuckets, weekDays, weeklyTotals: weekDays.map(d => d.total) };
     return computed;
@@ -888,19 +929,24 @@
     const today = todayStr();
     const todayEvents = weekEvents.filter(e => dateStr(new Date(e.start_time*1000)) === today);
     const yEvents = weekEvents.filter(e => dateStr(new Date(e.start_time*1000)) === computed.weekDays[5]?.date);
-    lastTodayEvents = todayEvents.slice().sort((a,b) => b.start_time - a.start_time);
+    // Merge fragmented detections into visits so counts reflect people, not events.
+    const todayVisits = mergeVisits(todayEvents);
+    const yVisits = mergeVisits(yEvents);
+    lastTodayVisits = todayVisits.slice().sort((a,b) => b.start_time - a.start_time);
 
-    // People now + trend
+    // People now + trend — active events are concurrent objects (one per person),
+    // so count them directly rather than time-merging (which would fuse two
+    // people who are both present right now).
     const peopleNow = active.length;
     document.getElementById('people-now').textContent = peopleNow;
     updateTrend(peopleNow);
 
-    // Today count + vs yesterday
-    document.getElementById('today-count').textContent = todayEvents.length;
-    const yCount = yEvents.length;
+    // Today footfall (visits) + vs yesterday
+    document.getElementById('today-count').textContent = todayVisits.length;
+    const yCount = yVisits.length;
     const vy = document.getElementById('today-vs-yesterday');
     if(yCount > 0){
-      const pct = Math.round((todayEvents.length - yCount) / yCount * 100);
+      const pct = Math.round((todayVisits.length - yCount) / yCount * 100);
       const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : '';
       const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '·';
       vy.innerHTML = `<span class="${cls}">${arrow} ${Math.abs(pct)}%</span> vs yesterday`;
@@ -908,8 +954,11 @@
       vy.textContent = 'no data yesterday';
     }
 
-    // Last hour
-    document.getElementById('last-hour').textContent = todayEvents.filter(e => e.start_time >= oneHourAgo()).length;
+    // Last hour — visits present during the last hour (overlap, not just arrivals)
+    const hourAgo = oneHourAgo();
+    const nowSec = Date.now()/1000;
+    document.getElementById('last-hour').textContent =
+      todayVisits.filter(v => (v.end_time == null ? nowSec : v.end_time) >= hourAgo).length;
 
     // Peak hour
     const buckets = computed.todayBuckets;
@@ -917,15 +966,15 @@
     const peakCount = buckets[peakH] || 0;
     if(peakCount > 0){
       document.getElementById('peak-hour').textContent = hourLabel(peakH);
-      document.getElementById('peak-count').textContent = `${peakCount} detection${peakCount !== 1 ? 's' : ''}`;
+      document.getElementById('peak-count').textContent = `${peakCount} visit${peakCount !== 1 ? 's' : ''}`;
     } else {
       document.getElementById('peak-hour').textContent = '—';
       document.getElementById('peak-count').textContent = "Today's busiest hour";
     }
 
     // First / last entry
-    if(todayEvents.length){
-      const times = todayEvents.map(e => e.start_time);
+    if(todayVisits.length){
+      const times = todayVisits.map(v => v.start_time);
       document.getElementById('first-entry').textContent = formatTime(Math.min(...times));
       document.getElementById('last-entry').textContent = formatTime(Math.max(...times));
     } else {
@@ -933,8 +982,8 @@
       document.getElementById('last-entry').textContent = '—';
     }
 
-    document.getElementById('csv-btn').disabled = todayEvents.length === 0;
-    return todayEvents;
+    document.getElementById('csv-btn').disabled = todayVisits.length === 0;
+    return todayVisits;
   }
 
   // ── Main chart (today hourly / weekly) ──
@@ -1040,7 +1089,7 @@
   function renderSplitChart(forceRebuild){
     const c = themeColors();
     let session = 0, walkin = 0;
-    lastTodayEvents.forEach(e => { isDuringSession(e.start_time) ? session++ : walkin++; });
+    lastTodayVisits.forEach(v => { isDuringSession(v.start_time) ? session++ : walkin++; });
     const total = session + walkin;
     const legend = document.getElementById('split-legend');
 
@@ -1048,7 +1097,7 @@
       if(splitChart){ splitChart.destroy(); splitChart = null; }
       const ctx = document.getElementById('splitChart');
       ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-      legend.innerHTML = '<div class="no-data" style="padding:0.5rem">No detections today yet</div>';
+      legend.innerHTML = '<div class="no-data" style="padding:0.5rem">No visits today yet</div>';
       return;
     }
 
@@ -1103,7 +1152,7 @@
           ? `background:${gold};opacity:${(0.18 + 0.82*ratio).toFixed(2)}`
           : '';
         const todayCol = (d.isToday && h === nowH) ? ' today-col' : '';
-        html += `<div class="hm-cell${todayCol}" style="${style}" title="${esc(d.label)} ${hourLabel(h)} — ${count} detection${count!==1?'s':''}"></div>`;
+        html += `<div class="hm-cell${todayCol}" style="${style}" title="${esc(d.label)} ${hourLabel(h)} — ${count} visit${count!==1?'s':''}"></div>`;
       }
     });
     el.innerHTML = html;
@@ -1112,20 +1161,20 @@
   // ── Events table ──
   function renderEventsTable(){
     const tbody = document.getElementById('events-body');
-    const events = lastTodayEvents.slice(0, 12);
-    if(!events.length){
-      tbody.innerHTML = '<tr><td colspan="5" class="no-data">No detections today yet</td></tr>';
+    const visits = lastTodayVisits.slice(0, 12);
+    if(!visits.length){
+      tbody.innerHTML = '<tr><td colspan="5" class="no-data">No visits today yet</td></tr>';
       return;
     }
-    tbody.innerHTML = events.map(e => {
-      const during = isDuringSession(e.start_time);
-      const dwell = e.end_time ? (e.end_time - e.start_time) : null;
+    tbody.innerHTML = visits.map(v => {
+      const during = isDuringSession(v.start_time);
+      const dwell = v.end_time ? (v.end_time - v.start_time) : null;
       return `<tr>
         <td>Person</td>
         <td><span class="tag ${during ? 'tag-session' : 'tag-walkin'}">${during ? 'Booked' : 'Walk-in'}</span></td>
-        <td><span class="score-pill">${Math.round(eventScore(e)*100)}%</span></td>
+        <td><span class="score-pill">${Math.round(eventScore(v)*100)}%</span></td>
         <td>${fmtDur(dwell)}</td>
-        <td class="t-right">${formatTime(e.start_time)}</td>
+        <td class="t-right">${formatTime(v.start_time)}</td>
       </tr>`;
     }).join('');
   }
@@ -1159,24 +1208,24 @@
 
   // ── CSV export ──
   function exportCSV(){
-    if(!lastTodayEvents.length) return;
-    const rows = [['Label','Type','Confidence','Start','End','Dwell (s)']];
-    lastTodayEvents.forEach(e => {
-      const during = isDuringSession(e.start_time);
-      const dwell = e.end_time ? Math.round(e.end_time - e.start_time) : '';
+    if(!lastTodayVisits.length) return;
+    const rows = [['Label','Type','Confidence','Start','End','Dwell (s)','Detections']];
+    lastTodayVisits.forEach(v => {
+      const during = isDuringSession(v.start_time);
+      const dwell = v.end_time ? Math.round(v.end_time - v.start_time) : '';
       rows.push([
         'person', during ? 'Booked' : 'Walk-in',
-        Math.round(eventScore(e)*100) + '%',
-        new Date(e.start_time*1000).toLocaleString('en-IN'),
-        e.end_time ? new Date(e.end_time*1000).toLocaleString('en-IN') : 'ongoing',
-        dwell
+        Math.round(eventScore(v)*100) + '%',
+        new Date(v.start_time*1000).toLocaleString('en-IN'),
+        v.end_time ? new Date(v.end_time*1000).toLocaleString('en-IN') : 'ongoing',
+        dwell, v.frames
       ]);
     });
     const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `ryst-detections-${todayStr()}.csv`;
+    a.download = `ryst-visits-${todayStr()}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   }
