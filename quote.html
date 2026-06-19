@@ -43,17 +43,21 @@
 
   /* ---------- APP SHELL ---------- */
   #app[hidden]{display:none}
-  header.bar{display:flex;align-items:center;gap:16px;padding:10px 22px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
-  header.bar img.hdr-logo{height:38px;display:block}
-  .bar .sub{color:var(--muted2);font-size:12px;border-left:1px solid var(--line);padding-left:16px}
-  .bar .spacer{flex:1}
-  .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 15px;border-radius:9px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  header.bar{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  header.bar img.hdr-logo{height:36px;display:block;flex-shrink:0}
+  .bar-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .bar .sub{color:var(--muted2);font-size:12px;border-left:1px solid var(--line);padding-left:12px}
+  .conn-dot{width:8px;height:8px;border-radius:50%;background:#d4d8d3;flex-shrink:0;transition:background .4s;cursor:default}
+  .conn-dot.ok{background:var(--accent)}
+  .conn-dot.err{background:var(--danger)}
+  .bar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
   .btn:hover{border-color:var(--accent);color:var(--accent-d)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .btn.primary:hover{background:var(--accent-d);color:#fff}
   .hide{display:none !important}
 
-  main.work{display:grid;grid-template-columns:minmax(380px,460px) 1fr;gap:0;height:calc(100vh - 59px)}
+  main.work{display:grid;grid-template-columns:minmax(360px,460px) 1fr;gap:0;height:calc(100vh - 59px)}
   .form{overflow-y:auto;padding:22px 22px 80px;border-right:1px solid var(--line);background:var(--panel)}
   .form::-webkit-scrollbar,.preview::-webkit-scrollbar,#rateView::-webkit-scrollbar{width:10px}
   .form::-webkit-scrollbar-thumb,.preview::-webkit-scrollbar-thumb,#rateView::-webkit-scrollbar-thumb{background:#d3d6d1;border-radius:6px}
@@ -161,7 +165,6 @@
   table.rc-table td input:focus{outline:none;border-color:var(--accent);background:#fff}
   table.rc-table td input.r{text-align:right}
   table.rc-table td input.c{text-align:center}
-  .td-pretax{font-size:12.5px;color:var(--muted);text-align:right;padding-right:14px !important;white-space:nowrap}
   .td-margin{font-size:12px;text-align:center;color:var(--accent-d);font-weight:600;white-space:nowrap;padding:0 10px !important}
   .td-margin small{display:block;color:var(--muted2);font-weight:400;font-size:10.5px}
   .rc-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;width:30px;height:30px;font-size:16px;line-height:1;padding:0}
@@ -197,10 +200,23 @@
   @media (max-width:900px){
     main.work{grid-template-columns:1fr;height:auto}
     .form{border-right:none;border-bottom:1px solid var(--line)}
-    .preview{padding:14px}
-    .quote{width:100%;min-height:auto;padding:24px 18px}
-    .q-title{font-size:28px}
+    .preview{padding:16px;overflow-x:auto}
+    .quote{width:100%;min-height:auto;padding:20px 16px}
+    .q-title{font-size:24px}
     .rc-table-wrap{border-radius:8px}
+  }
+  @media (max-width:620px){
+    header.bar{padding:8px 14px;gap:8px}
+    header.bar img.hdr-logo{height:28px}
+    .bar .sub{display:none}
+    .bar-actions{gap:6px}
+    .btn{padding:7px 10px;font-size:12px;border-radius:7px}
+    .row2{grid-template-columns:1fr}
+    .li-head,.li-row{grid-template-columns:1fr 76px 44px 82px 28px;gap:6px}
+    .form{padding:16px 14px 60px}
+    .preview{padding:10px}
+    .q-pay{flex-direction:column;gap:12px}
+    .q-qr{align-self:flex-start}
   }
 </style>
 </head>
@@ -221,15 +237,19 @@
 <!-- ===================== APP ===================== -->
 <div id="app" hidden>
   <header class="bar">
-    <img class="hdr-logo" id="hdrLogo" alt="Studio RYST">
-    <div class="sub" id="viewLabel">Quotation builder</div>
-    <div class="spacer"></div>
-    <button class="btn" id="btnRate">Rate Card</button>
-    <button class="btn quote-only" id="btnSaved">Saved</button>
-    <button class="btn quote-only" id="btnSettings">Settings</button>
-    <button class="btn quote-only" id="btnNew">+ New</button>
-    <button class="btn quote-only" id="btnSave">Save</button>
-    <button class="btn primary quote-only" id="btnPdf">Download PDF</button>
+    <div class="bar-left">
+      <img class="hdr-logo" id="hdrLogo" alt="Studio RYST">
+      <div class="sub" id="viewLabel">Quotation builder</div>
+      <span class="conn-dot" id="connDot" title="Cloud sync"></span>
+    </div>
+    <div class="bar-actions">
+      <button class="btn" id="btnRate">Rate Card</button>
+      <button class="btn quote-only" id="btnSaved">Saved</button>
+      <button class="btn quote-only" id="btnSettings">Settings</button>
+      <button class="btn quote-only" id="btnNew">+ New</button>
+      <button class="btn quote-only" id="btnSave">Save</button>
+      <button class="btn primary quote-only" id="btnPdf">PDF</button>
+    </div>
   </header>
 
   <!-- ====== QUOTE BUILDER ====== -->
@@ -338,11 +358,10 @@
           <thead><tr>
             <th>Service description</th>
             <th style="width:106px">SAC code</th>
-            <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(inc. 18% GST)</span></th>
-            <th class="r" style="width:118px">Pre-tax cost</th>
+            <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(pre-tax)</span></th>
             <th class="c" style="width:68px">GST %</th>
             <th class="r" style="width:128px">Selling rate</th>
-            <th class="c" style="width:138px">Margin</th>
+            <th class="c" style="width:148px">Margin</th>
             <th style="width:36px"></th>
           </tr></thead>
           <tbody id="rcBody"></tbody>
@@ -480,9 +499,10 @@ async function fetchQuotesFromProxy(){
     quotesCache = Array.isArray(d.quotes) ? d.quotes : [];
   }catch(e){ console.warn('Could not load quotes from proxy', e); }
 }
+function setConnected(ok){ const d=document.getElementById("connDot"); if(d){ d.classList.toggle("ok",ok); d.classList.toggle("err",!ok); d.title=ok?"Connected to cloud storage":"Disconnected"; } }
 function handleExpired(){
   proxyToken=''; localStorage.removeItem('ryst_proxy_token');
-  location.reload();
+  setConnected(false); location.reload();
 }
 function getQuotes(){ return quotesCache; }
 function setQuotes(a){ quotesCache = a; }
@@ -552,6 +572,7 @@ $("#pw").addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
 /* ---------- INIT ---------- */
 async function initApp(){
   await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
+  setConnected(true);
   init();
 }
 function init(){
@@ -745,17 +766,15 @@ function renderRateCard(){
   rcDraft.forEach((c,i)=>{
     const hasCost = c.cost!=="" && c.cost!=null;
     const hasRate = c.rate!=="" && c.rate!=null;
-    const gstPct  = parseFloat(c.gst)||18;
     const rateNum = parseFloat(c.rate)||0;
-    const pretax  = hasCost ? (parseFloat(c.cost)||0)/(1+gstPct/100) : null;
-    const margin  = (pretax!==null&&hasRate) ? rateNum - pretax : null;
+    const costNum = hasCost ? (parseFloat(c.cost)||0) : null;
+    const margin  = (costNum!==null&&hasRate) ? rateNum - costNum : null;
     const mpct    = (margin!==null&&rateNum>0) ? Math.round(margin/rateNum*100) : null;
     const row=document.createElement("tr");
     row.innerHTML=`
       <td><input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}" style="min-width:170px"></td>
       <td><input data-i="${i}" data-k="sac" placeholder="997212" value="${esc(c.sac)}"></td>
-      <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" placeholder="0" value="${esc(c.cost)}" title="Enter purchase price inclusive of GST"></td>
-      <td class="td-pretax">${pretax!==null?money(pretax):"—"}</td>
+      <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" placeholder="0" value="${esc(c.cost)}" title="Pre-tax purchase cost"></td>
       <td><input class="c" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" placeholder="18" value="${esc(c.gst)}"></td>
       <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" placeholder="0" value="${esc(c.rate)}"></td>
       <td class="td-margin">${margin!==null?money(Math.round(margin)):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</td>
@@ -764,7 +783,7 @@ function renderRateCard(){
   });
   body.querySelectorAll("input[data-i]").forEach(inp=>{
     inp.addEventListener("input", e=>{ rcDraft[+e.target.dataset.i][e.target.dataset.k]=e.target.value;
-      if(["cost","rate","gst"].includes(e.target.dataset.k)) renderRateCard(); });
+      if(["cost","rate"].includes(e.target.dataset.k)) renderRateCard(); });
   });
   body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", e=>{ rcDraft.splice(+e.target.dataset.del,1); renderRateCard(); }));
 }
