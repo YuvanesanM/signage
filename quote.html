@@ -846,11 +846,33 @@ async function downloadPdf(){
   const btn=$("#btnPdf"); btn.classList.add("busy"); btn.textContent="Generating…";
   try{ await document.fonts.ready; }catch(e){}
   const el=$("#quoteDoc"), name=(curQno||"quote").replace(/[\/\\]/g,"-");
-  const opt={ margin:0, filename:name+".pdf", image:{type:"jpeg",quality:0.98},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"}, jsPDF:{unit:"mm",format:"a4",orientation:"portrait"} };
+  const A4_W_PX = 794; // 210mm @ 96dpi
+  const opt={
+    margin: 0,
+    filename: name+".pdf",
+    image: {type:"jpeg", quality:0.98},
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      windowWidth: 1200,   // simulate desktop viewport → disables mobile media queries
+      windowHeight: 1697,  // 297mm @ 96dpi × scale ratio (keeps aspect correct)
+      onclone: (_doc, cloned) => {
+        // Force A4 layout on the cloned element regardless of current viewport
+        cloned.style.cssText = [
+          "width:210mm",
+          "min-height:0",
+          "padding:10mm 13mm 9mm",
+          "box-shadow:none",
+          "font-family:'Outfit',sans-serif"
+        ].join(";");
+      }
+    },
+    jsPDF: {unit:"mm", format:"a4", orientation:"portrait"}
+  };
   try{ await html2pdf().set(opt).from(el).save(); }
   catch(e){ alert("PDF generation failed. Try again, or use the browser's Print → Save as PDF."); console.error(e); }
-  btn.classList.remove("busy"); btn.textContent="Download PDF";
+  btn.classList.remove("busy"); btn.textContent="PDF";
 }
 </script>
 </body>
