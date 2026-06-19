@@ -1,4 +1,19 @@
 {
   "version": 1,
-  "rateCard": []
+  "rateCard": [
+    {"desc": "Studio Space Rental — Half Day (4 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 4000},
+    {"desc": "Studio Space Rental — Full Day (8 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 7000},
+    {"desc": "Studio Space Rental — Hourly (min 2 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 1200},
+    {"desc": "Private Event Buyout (6 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 12000},
+    {"desc": "Cooking Class / Workshop (up to 10 pax)", "sac": "999293", "cost": "", "gst": 18, "rate": 5000},
+    {"desc": "Professional Photography (per hour)", "sac": "998386", "cost": "", "gst": 18, "rate": 2500},
+    {"desc": "Professional Videography (per hour)", "sac": "998386", "cost": "", "gst": 18, "rate": 3500},
+    {"desc": "Video Post-Production & Editing", "sac": "998386", "cost": "", "gst": 18, "rate": 5400},
+    {"desc": "Catering — Veg (per person)", "sac": "996334", "cost": "", "gst": 5, "rate": 450},
+    {"desc": "Catering — Non-Veg (per person)", "sac": "996334", "cost": "", "gst": 5, "rate": 600},
+    {"desc": "Basic Décor", "sac": "999312", "cost": "", "gst": 18, "rate": 1500},
+    {"desc": "Premium Décor", "sac": "999312", "cost": "", "gst": 18, "rate": 4000},
+    {"desc": "AV Equipment", "sac": "997221", "cost": "", "gst": 18, "rate": 1000},
+    {"desc": "Live Streaming Setup", "sac": "998434", "cost": "", "gst": 18, "rate": 2000}
+  ]
 }
