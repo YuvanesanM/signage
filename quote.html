@@ -882,33 +882,37 @@ function saveSettings(){
 async function downloadPdf(){
   const btn=$("#btnPdf"); btn.classList.add("busy"); btn.textContent="Generating…";
   try{ await document.fonts.ready; }catch(e){}
-  const el=$("#quoteDoc"), name=(curQno||"quote").replace(/[\/\\]/g,"-");
+  const source=$("#quoteDoc"), name=(curQno||"quote").replace(/[\/\\]/g,"-");
+
+  // Clone quote as a direct <body> child so no ancestor container clips its 210mm width
+  const frame=source.cloneNode(true);
+  frame.removeAttribute("id");
+  frame.style.cssText=[
+    "position:absolute","top:0","left:0",
+    "width:210mm","min-height:0","padding:10mm 13mm 9mm",
+    "box-shadow:none","background:#fff","z-index:0"
+  ].join(";");
+  const pay=frame.querySelector(".q-pay");
+  if(pay) pay.style.cssText="display:flex;flex-direction:row;gap:24px;align-items:flex-start;margin-bottom:4px";
+  const qr=frame.querySelector(".q-qr");
+  if(qr) qr.style.cssText="text-align:center;flex:0 0 auto";
+  const prevOverflow=document.body.style.overflow;
+  document.body.style.overflow="hidden";
+  document.body.appendChild(frame);
+
   const opt={
-    margin: 0,
-    filename: name+".pdf",
-    image: {type:"jpeg", quality:0.95},
-    html2canvas: {
-      scale: 1.5,           // lower scale prevents mobile canvas memory overflow
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-      windowWidth: 1200,    // simulate desktop — disables mobile media queries
-      onclone: (clonedDoc) => {
-        // single-arg form: works across all html2canvas versions
-        const cloned=clonedDoc.getElementById("quoteDoc");
-        if(!cloned) return;
-        cloned.style.cssText="width:210mm;min-height:0;padding:10mm 13mm 9mm;box-shadow:none;font-family:\'Outfit\',sans-serif";
-        const pay=cloned.querySelector(".q-pay");
-        if(pay) pay.style.cssText="display:flex;flex-direction:row;gap:24px;align-items:flex-start;margin-bottom:4px";
-        const qr=cloned.querySelector(".q-qr");
-        if(qr) qr.style.cssText="text-align:center;flex:0 0 auto";
-      }
-    },
-    jsPDF: {unit:"mm", format:"a4", orientation:"portrait"}
+    margin:0, filename:name+".pdf",
+    image:{type:"jpeg",quality:0.95},
+    html2canvas:{scale:1.5,useCORS:true,logging:false,backgroundColor:"#ffffff",windowWidth:1200},
+    jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}
   };
-  try{ await html2pdf().set(opt).from(el).save(); }
+  try{ await html2pdf().set(opt).from(frame).save(); }
   catch(e){ alert("PDF generation failed. Try again, or use Print → Save as PDF."); console.error(e); }
-  finally{ btn.classList.remove("busy"); btn.textContent="PDF"; }
+  finally{
+    if(frame.parentNode) frame.parentNode.removeChild(frame);
+    document.body.style.overflow=prevOverflow;
+    btn.classList.remove("busy"); btn.textContent="PDF";
+  }
 }
 </script>
 </body>
