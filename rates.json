@@ -1,11 +1,1 @@
-{
-  "version": 1,
-  "rateCard": [
-    {"desc": "Studio Rental — Podcast (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 1500},
-    {"desc": "Studio Rental — Photography (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 1200},
-    {"desc": "Studio Rental — Culinary (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 1200},
-    {"desc": "Studio Rental — Multi-Zone (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 2500},
-    {"desc": "Professional Videography Services with Camera", "sac": "998386", "cost": "", "gst": 18, "rate": 5400},
-    {"desc": "Video Post-Production & Editing Services", "sac": "998386", "cost": "", "gst": 18, "rate": ""}
-  ]
-}
+{"version":1,"rateCard":[{"desc":"Studio Rental — Podcast (per hour)","sac":"997212","cost":"","gst":18,"rate":1500},{"desc":"Studio Rental — Photography (per hour)","sac":"997212","cost":"","gst":18,"rate":1200},{"desc":"Studio Rental — Culinary (per hour)","sac":"997212","cost":"","gst":18,"rate":1200},{"desc":"Studio Rental — Multi-Zone (per hour)","sac":"997212","cost":"","gst":18,"rate":2500},{"desc":"Professional Videography Services with Camera","sac":"998386","cost":"4000","gst":18,"rate":"5400"},{"desc":"Video Post-Production & Editing Services","sac":"998386","cost":"","gst":18,"rate":""}]}
