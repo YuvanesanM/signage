@@ -882,20 +882,19 @@ async function downloadPdf(){
   try{ await document.fonts.ready; }catch(e){}
   const source=$("#quoteDoc"), name=(curQno||"quote").replace(/[\/\\]/g,"-");
 
-  // Clone quote as a direct <body> child so no ancestor container clips its 210mm width
+  // Clone quote as a direct <body> child so no ancestor container clips its 210mm width.
+  // Placed far below the visible area (top:9999px) so the user never sees it.
   const frame=source.cloneNode(true);
   frame.removeAttribute("id");
   frame.style.cssText=[
-    "position:absolute","top:0","left:0",
+    "position:absolute","top:9999px","left:0",
     "width:210mm","min-height:0","padding:10mm 13mm 9mm",
-    "box-shadow:none","background:#fff","z-index:0"
+    "box-shadow:none","background:#fff"
   ].join(";");
   const pay=frame.querySelector(".q-pay");
   if(pay) pay.style.cssText="display:flex;flex-direction:row;gap:24px;align-items:flex-start;margin-bottom:4px";
   const qr=frame.querySelector(".q-qr");
   if(qr) qr.style.cssText="text-align:center;flex:0 0 auto";
-  const prevOverflow=document.body.style.overflow;
-  document.body.style.overflow="hidden";
   document.body.appendChild(frame);
 
   const opt={
@@ -908,7 +907,6 @@ async function downloadPdf(){
   catch(e){ alert("PDF generation failed. Try again, or use Print → Save as PDF."); console.error(e); }
   finally{
     if(frame.parentNode) frame.parentNode.removeChild(frame);
-    document.body.style.overflow=prevOverflow;
     btn.classList.remove("busy"); btn.textContent="PDF";
   }
 }
