@@ -739,42 +739,49 @@
   }
 
   // ── Visits ──
-  // Frigate emits a NEW event every time the tracker re-acquires a person, so a
-  // single person seated for a while fragments into many events.
+  // Frigate re-acquires the same person many times (tracker drops then new event),
+  // so raw events overcount badly. Multi-slot merge handles both concurrent people
+  // and re-acquisitions of the same person correctly:
   //
-  // Merge rule: only merge SEQUENTIAL events (re-acquisitions). If event B
-  // starts AFTER event A ended but within VISIT_GAP_SEC, treat as the same
-  // person (re-acquisition, brief exit, or bathroom break). If B starts WHILE
-  // A is still active (overlap), they are definitely different people → new visit.
+  //   For each event (sorted by start_time):
+  //   1. Search ALL open slots for one that ended recently (0 < gap <= VISIT_GAP_SEC).
+  //      Pick the slot whose end is CLOSEST to this event's start (most likely same person).
+  //   2. Found → re-acquisition, extend that slot.
+  //   3. Not found → concurrent new person, open a new slot.
   //
-  // 30 min gap handles: tracker drops, brief exits, step outside for a call.
-  // Beyond 30 min of empty → new visit (new person or returning guest after a break).
+  // Handles: 5 people simultaneously (all slots still open → no gap match → 5 visits)
+  //          Tracker re-acquires person A while B/C still tracked → finds A's now-closed
+  //          slot as best gap candidate → merges into A's visit correctly.
+  //          Person steps out briefly → gap <= 30 min → same slot.
   const VISIT_GAP_SEC = 1800; // 30 minutes
   function mergeVisits(events, gapSec = VISIT_GAP_SEC){
     if(!events.length) return [];
     const nowSec = Date.now()/1000;
     const sorted = events.slice().sort((a,b) => a.start_time - b.start_time);
-    const visits = [];
+    const slots = [];
     for(const e of sorted){
-      const s = e.start_time;
+      const s  = e.start_time;
       const en = (e.end_time == null) ? nowSec : e.end_time;
       const sc = eventScore(e);
       const sl = eventSubLabel(e);
-      const last = visits[visits.length - 1];
-      // Merge only when there is a gap (sequential re-acquisition of the same person).
-      // Overlapping start times mean a concurrent different person → always a new visit.
-      if(last && s > last._end && s <= last._end + gapSec){
-        last._end = Math.max(last._end, en);
-        last._active = (e.end_time == null);
-        last.top_score = Math.max(last.top_score, sc);
-        last.frames++;
-        if(sl && sc >= last._subScore){ last.sub_label = sl; last._subScore = sc; }
+      // Find the best (closest-ending) closed slot this event could re-open.
+      let best = null, bestGap = Infinity;
+      for(const slot of slots){
+        const gap = s - slot._end;
+        if(gap > 0 && gap <= gapSec && gap < bestGap){ best = slot; bestGap = gap; }
+      }
+      if(best){
+        best._end = Math.max(best._end, en);
+        best._active = (e.end_time == null);
+        best.top_score = Math.max(best.top_score, sc);
+        best.frames++;
+        if(sl && sc >= best._subScore){ best.sub_label = sl; best._subScore = sc; }
       } else {
-        visits.push({ start_time: s, _end: en, _active: e.end_time == null, top_score: sc, frames: 1,
+        slots.push({ start_time: s, _end: en, _active: e.end_time == null, top_score: sc, frames: 1,
           sub_label: sl, _subScore: sl ? sc : -1 });
       }
     }
-    return visits.map(v => ({
+    return slots.map(v => ({
       start_time: v.start_time,
       end_time: v._active ? null : v._end,
       top_score: v.top_score,
