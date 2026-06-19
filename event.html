@@ -753,7 +753,8 @@
   //          Tracker re-acquires person A while B/C still tracked → finds A's now-closed
   //          slot as best gap candidate → merges into A's visit correctly.
   //          Person steps out briefly → gap <= 30 min → same slot.
-  const VISIT_GAP_SEC = 1800; // 30 minutes
+  const VISIT_GAP_SEC   = 1800; // 30 min — gap between sequential re-acquisitions
+  const MIN_VISIT_SEC   =  180; // 3 min  — shorter than this with only 1 frag = tracker ghost
   function mergeVisits(events, gapSec = VISIT_GAP_SEC){
     if(!events.length) return [];
     const nowSec = Date.now()/1000;
@@ -781,10 +782,16 @@
           sub_label: sl, _subScore: sl ? sc : -1 });
       }
     }
-    return slots.map(v => ({
-      start_time: v.start_time,
-      end_time: v._active ? null : v._end,
-      top_score: v.top_score,
+    return slots
+      // Drop ghost slots: only 1 Frigate fragment AND duration < MIN_VISIT_SEC.
+      // These are overlapping duplicate tracks Frigate creates mid-session for
+      // an already-present person — not distinguishable from a new person without
+      // face identity, but they're very short and single-fragment.
+      .filter(v => v.frames > 1 || (v._end - v.start_time) >= MIN_VISIT_SEC)
+      .map(v => ({
+        start_time: v.start_time,
+        end_time: v._active ? null : v._end,
+        top_score: v.top_score,
       frames: v.frames,
       sub_label: v.sub_label || null
     }));
