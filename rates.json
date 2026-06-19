@@ -1,9 +1,9 @@
 {
   "version": 1,
   "rateCard": [
-    {"desc": "Studio Space Rental — Half Day (4 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 4000},
-    {"desc": "Studio Space Rental — Full Day (8 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 7000},
-    {"desc": "Studio Space Rental — Hourly (min 2 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 1200},
+    {"desc": "Studio Rental — Podcast (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 1500},
+    {"desc": "Studio Rental — Photography (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 1200},
+    {"desc": "Studio Rental — Culinary (per hour)", "sac": "997212", "cost": "", "gst": 18, "rate": 1200},
     {"desc": "Private Event Buyout (6 hrs)", "sac": "997212", "cost": "", "gst": 18, "rate": 12000},
     {"desc": "Cooking Class / Workshop (up to 10 pax)", "sac": "999293", "cost": "", "gst": 18, "rate": 5000},
     {"desc": "Professional Photography (per hour)", "sac": "998386", "cost": "", "gst": 18, "rate": 2500},

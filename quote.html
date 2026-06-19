@@ -146,17 +146,25 @@
   .rc-wrap{max-width:1020px;margin:0 auto}
   .rc-wrap h2{font-size:22px;font-weight:600;margin:0 0 4px}
   .rc-wrap .sd{color:var(--muted);font-size:13px;margin:0 0 22px}
-  .rc-head,.rc-row{display:grid;grid-template-columns:1fr 130px 130px 70px 130px 150px 34px;gap:10px;align-items:center}
-  .rc-head{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted2);font-weight:600;padding:0 4px 8px}
-  .rc-head .num{text-align:center}
-  .rc-row{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px;margin-bottom:10px}
-  .rc-row input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:13px}
-  .rc-row input:focus{outline:none;border-color:var(--accent);background:#fff}
-  .rc-row input.num{text-align:center}
-  .rc-row input.amt{text-align:right}
-  .rc-margin{font-size:12px;text-align:center;color:var(--accent-d);font-weight:600;line-height:1.3}
-  .rc-margin small{display:block;color:var(--muted2);font-weight:400;font-size:10.5px}
-  .rc-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;height:36px;font-size:16px}
+  /* -- rate card spreadsheet table -- */
+  .rc-table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  table.rc-table{width:100%;border-collapse:collapse;min-width:860px}
+  table.rc-table thead th{background:var(--panel2);border-bottom:2px solid var(--line);padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted2);font-weight:600;white-space:nowrap}
+  table.rc-table thead th.r{text-align:right}
+  table.rc-table thead th.c{text-align:center}
+  table.rc-table tbody tr{border-bottom:1px solid var(--line)}
+  table.rc-table tbody tr:last-child{border-bottom:none}
+  table.rc-table tbody tr:hover td{background:var(--accent-soft)}
+  table.rc-table td{padding:4px 6px;vertical-align:middle}
+  table.rc-table td input{width:100%;background:transparent;border:1px solid transparent;border-radius:7px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink)}
+  table.rc-table td input:hover{border-color:var(--line);background:var(--panel2)}
+  table.rc-table td input:focus{outline:none;border-color:var(--accent);background:#fff}
+  table.rc-table td input.r{text-align:right}
+  table.rc-table td input.c{text-align:center}
+  .td-pretax{font-size:12.5px;color:var(--muted);text-align:right;padding-right:14px !important;white-space:nowrap}
+  .td-margin{font-size:12px;text-align:center;color:var(--accent-d);font-weight:600;white-space:nowrap;padding:0 10px !important}
+  .td-margin small{display:block;color:var(--muted2);font-weight:400;font-size:10.5px}
+  .rc-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;width:30px;height:30px;font-size:16px;line-height:1;padding:0}
   .rc-del:hover{border-color:var(--danger);color:var(--danger)}
   .rc-foot{display:flex;gap:10px;margin-top:18px}
   .rc-add{background:transparent;border:1px dashed #cdd1cb;color:var(--muted);padding:11px 16px;border-radius:9px;font-size:13px}
@@ -192,8 +200,7 @@
     .preview{padding:14px}
     .quote{width:100%;min-height:auto;padding:24px 18px}
     .q-title{font-size:28px}
-    .rc-head{display:none}
-    .rc-row{grid-template-columns:1fr 1fr;gap:8px}
+    .rc-table-wrap{border-radius:8px}
   }
 </style>
 </head>
@@ -326,10 +333,21 @@
     <div class="rc-wrap">
       <h2>Rate Card</h2>
       <p class="sd">Master pricing for Studio RYST services. The quote pulls the selling rate, SAC code and GST % from here. Purchase cost is internal — it never appears on the client quote.</p>
-      <div class="rc-head">
-        <div>Service description</div><div>SAC code</div><div class="num">Purchase cost</div><div class="num">GST %</div><div class="num">Selling rate</div><div class="num">Margin</div><div></div>
+      <div class="rc-table-wrap">
+        <table class="rc-table">
+          <thead><tr>
+            <th>Service description</th>
+            <th style="width:106px">SAC code</th>
+            <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(inc. 18% GST)</span></th>
+            <th class="r" style="width:118px">Pre-tax cost</th>
+            <th class="c" style="width:68px">GST %</th>
+            <th class="r" style="width:128px">Selling rate</th>
+            <th class="c" style="width:138px">Margin</th>
+            <th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="rcBody"></tbody>
+        </table>
       </div>
-      <div id="rcBody"></div>
       <button class="rc-add" id="rcAdd">+ Add service</button>
       <div class="rc-foot">
         <button class="btn primary" id="rcSave">Save rate card</button>
@@ -404,9 +422,12 @@ Branch: KILPAUK
 Account Type: CURRENT`,
   prefix: "RYST",
   rateCard: [
-    {desc:"Studio Space Rental", sac:"", cost:"", gst:18, rate:8000},
-    {desc:"Professional Videography Services with Camera", sac:"", cost:"", gst:18, rate:5400},
-    {desc:"Video Post-Production & Editing Services", sac:"", cost:"", gst:18, rate:""}
+    {desc:"Studio Rental — Podcast (per hour)", sac:"997212", cost:"", gst:18, rate:1500},
+    {desc:"Studio Rental — Photography (per hour)", sac:"997212", cost:"", gst:18, rate:1200},
+    {desc:"Studio Rental — Culinary (per hour)", sac:"997212", cost:"", gst:18, rate:1200},
+    {desc:"Professional Photography (per hour)", sac:"998386", cost:"", gst:18, rate:2500},
+    {desc:"Professional Videography (per hour)", sac:"998386", cost:"", gst:18, rate:3500},
+    {desc:"Video Post-Production & Editing", sac:"998386", cost:"", gst:18, rate:5400}
   ],
   terms:
 `This quotation is valid for 7 days from the date of issue.
@@ -545,8 +566,15 @@ function init(){
 function buildServiceList(){
   $("#services").innerHTML = settings.rateCard.map(c=>`<option value="${esc(c.desc)}">`).join("");
 }
+function isStudioHourly(desc){ return /studio rental/i.test(desc||"") && /per hour/i.test(desc||""); }
+function syncStudioHours(){
+  const h=String(parseInt($("#hours").value,10)||1); let changed=false;
+  items.forEach(it=>{ if(isStudioHourly(it.desc)){ it.qty=h; changed=true; } });
+  if(changed) renderItems();
+}
 function bind(){
-  ["cname","caddr","terms","zone","hours"].forEach(id=> $("#"+id).addEventListener("input", render));
+  ["cname","caddr","terms","zone"].forEach(id=> $("#"+id).addEventListener("input", render));
+  $("#hours").addEventListener("input", ()=>{ syncStudioHours(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", saveQuote);
@@ -598,6 +626,11 @@ function renderItems(){
           items[i].price=(c.rate===""||c.rate==null)?"":String(c.rate);
           const pin=e.target.closest(".li-row").querySelector('[data-k="price"]');
           if(pin) pin.value=items[i].price;
+          if(isStudioHourly(e.target.value)){
+            items[i].qty=String(parseInt($("#hours").value,10)||1);
+            const qin=e.target.closest(".li-row").querySelector('[data-k="qty"]');
+            if(qin) qin.value=items[i].qty;
+          }
         }
       }
       const cell=e.target.closest(".li-row").querySelector(".tot");
@@ -710,22 +743,28 @@ function closeRateCard(){
 function renderRateCard(){
   const body=$("#rcBody"); body.innerHTML="";
   rcDraft.forEach((c,i)=>{
-    const margin = (c.rate!==""&&c.cost!=="") ? (parseFloat(c.rate)||0)-(parseFloat(c.cost)||0) : null;
-    const mpct = (margin!==null && (parseFloat(c.rate)||0)>0) ? Math.round(margin/(parseFloat(c.rate))*100) : null;
-    const row=document.createElement("div"); row.className="rc-row";
+    const hasCost = c.cost!=="" && c.cost!=null;
+    const hasRate = c.rate!=="" && c.rate!=null;
+    const gstPct  = parseFloat(c.gst)||18;
+    const rateNum = parseFloat(c.rate)||0;
+    const pretax  = hasCost ? (parseFloat(c.cost)||0)/(1+gstPct/100) : null;
+    const margin  = (pretax!==null&&hasRate) ? rateNum - pretax : null;
+    const mpct    = (margin!==null&&rateNum>0) ? Math.round(margin/rateNum*100) : null;
+    const row=document.createElement("tr");
     row.innerHTML=`
-      <input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}">
-      <input data-i="${i}" data-k="sac" placeholder="998314" value="${esc(c.sac)}">
-      <input class="num" data-i="${i}" data-k="cost" type="number" min="0" placeholder="0" value="${esc(c.cost)}">
-      <input class="num" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" placeholder="18" value="${esc(c.gst)}">
-      <input class="amt" data-i="${i}" data-k="rate" type="number" min="0" placeholder="0" value="${esc(c.rate)}">
-      <div class="rc-margin">${margin!==null?money(margin):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</div>
-      <button class="rc-del" data-del="${i}" title="Remove">×</button>`;
+      <td><input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}" style="min-width:170px"></td>
+      <td><input data-i="${i}" data-k="sac" placeholder="997212" value="${esc(c.sac)}"></td>
+      <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" placeholder="0" value="${esc(c.cost)}" title="Enter purchase price inclusive of GST"></td>
+      <td class="td-pretax">${pretax!==null?money(pretax):"—"}</td>
+      <td><input class="c" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" placeholder="18" value="${esc(c.gst)}"></td>
+      <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" placeholder="0" value="${esc(c.rate)}"></td>
+      <td class="td-margin">${margin!==null?money(Math.round(margin)):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</td>
+      <td><button class="rc-del" data-del="${i}" title="Remove">×</button></td>`;
     body.appendChild(row);
   });
   body.querySelectorAll("input[data-i]").forEach(inp=>{
     inp.addEventListener("input", e=>{ rcDraft[+e.target.dataset.i][e.target.dataset.k]=e.target.value;
-      if(["cost","rate"].includes(e.target.dataset.k)) renderRateCard(); });
+      if(["cost","rate","gst"].includes(e.target.dataset.k)) renderRateCard(); });
   });
   body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", e=>{ rcDraft.splice(+e.target.dataset.del,1); renderRateCard(); }));
 }
