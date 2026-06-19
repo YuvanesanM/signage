@@ -416,7 +416,7 @@
    ========================================================================= */
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 let proxyToken = localStorage.getItem('ryst_proxy_token') || '';
-const ZONES = ["Podcast", "Photography", "Culinary"];
+const ZONES = ["Podcast", "Photography", "Culinary", "Multi-Zone"];
 const MIN_HOURS = 2;
 const MAX_HOURS = 12;
 const FALLBACK_GST = 18;
@@ -444,7 +444,7 @@ Account Type: CURRENT`,
     {desc:"Studio Rental — Podcast (per hour)", sac:"997212", cost:"", gst:18, rate:1500},
     {desc:"Studio Rental — Photography (per hour)", sac:"997212", cost:"", gst:18, rate:1200},
     {desc:"Studio Rental — Culinary (per hour)", sac:"997212", cost:"", gst:18, rate:1200},
-    {desc:"Studio Space Rental", sac:"997212", cost:"", gst:18, rate:8000},
+    {desc:"Studio Rental — Multi-Zone (per hour)", sac:"997212", cost:"", gst:18, rate:2500},
     {desc:"Professional Videography Services with Camera", sac:"998386", cost:"", gst:18, rate:5400},
     {desc:"Video Post-Production & Editing Services", sac:"998386", cost:"", gst:18, rate:""}
   ],
@@ -588,13 +588,28 @@ function buildServiceList(){
   $("#services").innerHTML = settings.rateCard.map(c=>`<option value="${esc(c.desc)}">`).join("");
 }
 function isStudioHourly(desc){ return /studio rental/i.test(desc||"") && /per hour/i.test(desc||""); }
+function zoneRentalDesc(zone){ return `Studio Rental — ${zone} (per hour)`; }
+function zoneItem(){
+  const zone=$("#zone").value||ZONES[0];
+  const h=String(parseInt($("#hours").value,10)||MIN_HOURS);
+  const desc=zoneRentalDesc(zone);
+  const card=findCard(desc)||{sac:"997212",gst:FALLBACK_GST,rate:""};
+  return {desc, sac:card.sac||"997212", price:(card.rate===""||card.rate==null)?"":String(card.rate), qty:h, gst:(card.gst??FALLBACK_GST)};
+}
+function syncZoneItem(){
+  const zi=zoneItem();
+  const idx=items.findIndex(it=>isStudioHourly(it.desc));
+  if(idx>=0) items[idx]=zi; else items.unshift(zi);
+  renderItems();
+}
 function syncStudioHours(){
   const h=String(parseInt($("#hours").value,10)||1); let changed=false;
   items.forEach(it=>{ if(isStudioHourly(it.desc)){ it.qty=h; changed=true; } });
   if(changed) renderItems();
 }
 function bind(){
-  ["cname","caddr","terms","zone"].forEach(id=> $("#"+id).addEventListener("input", render));
+  ["cname","caddr","terms"].forEach(id=> $("#"+id).addEventListener("input", render));
+  $("#zone").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#hours").addEventListener("input", ()=>{ syncStudioHours(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
@@ -618,9 +633,9 @@ function newQuote(){
   editingKey=null;
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
-  $("#zone").value=ZONES[0]; $("#hours").value="4";
+  $("#zone").value=ZONES[0]; $("#hours").value=String(MIN_HOURS);
   $("#cname").value=""; $("#caddr").value=""; $("#terms").value=settings.terms;
-  items = settings.rateCard.map(c=>({desc:c.desc, sac:c.sac||"", price:(c.rate===""||c.rate==null)?"":String(c.rate), qty:"1", gst:(c.gst??FALLBACK_GST)}));
+  items=[zoneItem()];
   renderItems(); render();
 }
 
