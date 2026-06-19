@@ -732,9 +732,12 @@
   // Frigate emits a NEW event every time the tracker re-acquires a person, so a
   // single person seated for a while fragments into many events. Merge events
   // whose gap is below VISIT_GAP_SEC into one "visit" so footfall counts people,
-  // not detections. Note: two different people arriving within the gap window
-  // can't be separated without face identity — an accepted limitation.
-  const VISIT_GAP_SEC = 120;
+  // not detections. 30 min gap handles brief exits (bathroom, phone call, quick
+  // step outside) without splitting one person's day into many walk-ins. Two
+  // studio sessions separated by 30+ min still count as distinct walk-ins.
+  // Without face recognition, same-person re-entry beyond 30 min is indistinguishable
+  // from a new visitor — an accepted limitation until faces are trained.
+  const VISIT_GAP_SEC = 1800; // 30 minutes
   function mergeVisits(events, gapSec = VISIT_GAP_SEC){
     if(!events.length) return [];
     const nowSec = Date.now()/1000;
