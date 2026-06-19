@@ -1,4 +1,4 @@
-[Resource from github at repo://yuvanesanm/signage/sha/826f7f5ed417eccfeee714a3405e6e86dd7b9cad/contents/quote.html] <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -72,15 +72,17 @@
   input.t:focus,textarea.t:focus,select.t:focus{outline:none;border-color:var(--accent);background:#fff}
   input.locked{background:#eef0ec;color:var(--muted);cursor:not-allowed;border-style:dashed}
 
-  .li-head,.li-row{display:grid;grid-template-columns:1fr 84px 50px 92px 30px;gap:8px;align-items:center}
-  .li-head{font-size:11px;color:var(--muted2);letter-spacing:.4px;margin-bottom:7px;padding:0 2px}
+  .li-head,.li-row{display:grid;grid-template-columns:1fr 84px 50px 92px 30px;gap:8px;align-items:start}
+  .li-head{font-size:11px;color:var(--muted2);letter-spacing:.4px;margin-bottom:7px;padding:0 2px;align-items:center}
   .li-head .num{text-align:center}
   .li-row{margin-bottom:8px}
-  .li-row input{padding:9px 10px;font-size:13px}
+  .li-row input,.li-row select{padding:9px 10px;font-size:13px}
   .li-row input.num{text-align:center}
   .li-row input.tot{background:var(--accent-soft);border-color:#d3e7db;color:var(--accent-d);font-weight:600;text-align:right}
-  .li-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;height:34px;font-size:16px;line-height:1}
+  .li-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;height:34px;font-size:16px;line-height:1;margin-top:2px}
   .li-del:hover{border-color:var(--danger);color:var(--danger)}
+  .li-desc-wrap{display:flex;flex-direction:column;gap:4px}
+  .li-desc-wrap select,.li-desc-wrap .custom-desc{width:100%}
   .add-li{margin-top:4px;width:100%;background:transparent;border:1px dashed #cdd1cb;color:var(--muted);padding:10px;border-radius:9px;font-size:13px}
   .add-li:hover{border-color:var(--accent);color:var(--accent-d)}
 
@@ -376,7 +378,6 @@
   </section>
 </div>
 
-<datalist id="services"></datalist>
 
 <!-- ===================== SETTINGS MODAL ===================== -->
 <div class="modal" id="settingsModal" hidden>
@@ -485,8 +486,7 @@ async function fetchRatesFromProxy(){
     const d = await res.json();
     if(Array.isArray(d.rateCard) && d.rateCard.length){
       settings.rateCard = d.rateCard;
-      buildServiceList();
-    }
+        }
   }catch(e){ console.warn('Could not load rates from proxy', e); }
 }
 async function fetchQuotesFromProxy(){
@@ -577,16 +577,13 @@ async function initApp(){
 }
 function init(){
   setBrandLogos();
-  buildServiceList();
   $("#zone").innerHTML = ZONES.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");
   let h=""; for(let i=MIN_HOURS;i<=MAX_HOURS;i++) h+=`<option value="${i}">${i} ${i===1?"Hour":"Hours"}</option>`;
   $("#hours").innerHTML=h;
   newQuote();
   bind();
 }
-function buildServiceList(){
-  $("#services").innerHTML = settings.rateCard.map(c=>`<option value="${esc(c.desc)}">`).join("");
-}
+
 function isStudioHourly(desc){ return /studio rental/i.test(desc||"") && /per hour/i.test(desc||""); }
 function zoneRentalDesc(zone){ return `Studio Rental — ${zone} (per hour)`; }
 function zoneItem(){
@@ -643,32 +640,60 @@ function newQuote(){
 function renderItems(){
   const body=$("#liBody"); body.innerHTML="";
   items.forEach((it,i)=>{
+    const inRC=settings.rateCard.some(c=>c.desc===it.desc);
+    const isCustom=!inRC && it.desc!=="";
+    const rcOpts=settings.rateCard.map(c=>`<option value="${esc(c.desc)}"${c.desc===it.desc?" selected":""}>${esc(c.desc)}</option>`).join("");
     const row=document.createElement("div"); row.className="li-row";
     row.innerHTML=`
-      <input class="t" list="services" data-i="${i}" data-k="desc" placeholder="Service / description" value="${esc(it.desc)}">
+      <div class="li-desc-wrap">
+        <select class="t li-sel" data-i="${i}">
+          <option value="">— choose service —</option>
+          ${rcOpts}
+          <option value="__custom"${isCustom?" selected":""}>Other…</option>
+        </select>
+        <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">
+      </div>
       <input class="t num" data-i="${i}" data-k="price" type="number" min="0" placeholder="0" value="${esc(it.price)}">
       <input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" placeholder="1" value="${esc(it.qty)}">
       <input class="t tot" value="${money(lineTotal(it))}" readonly tabindex="-1">
       <button class="li-del" data-del="${i}" title="Remove">×</button>`;
     body.appendChild(row);
   });
-  body.querySelectorAll("input[data-i]").forEach(inp=>{
-    inp.addEventListener("input", e=>{
-      const i=+e.target.dataset.i, k=e.target.dataset.k; items[i][k]=e.target.value;
-      if(k==="desc"){
-        const c=findCard(e.target.value);
-        if(c){
-          items[i].sac=c.sac||""; items[i].gst=(c.gst??FALLBACK_GST);
-          items[i].price=(c.rate===""||c.rate==null)?"":String(c.rate);
-          const pin=e.target.closest(".li-row").querySelector('[data-k="price"]');
-          if(pin) pin.value=items[i].price;
-          if(isStudioHourly(e.target.value)){
-            items[i].qty=String(parseInt($("#hours").value,10)||1);
-            const qin=e.target.closest(".li-row").querySelector('[data-k="qty"]');
-            if(qin) qin.value=items[i].qty;
+  body.querySelectorAll(".li-sel").forEach(sel=>{
+    sel.addEventListener("change", e=>{
+      const i=+e.target.dataset.i, val=e.target.value;
+      const wrap=e.target.closest(".li-desc-wrap");
+      const customInp=wrap.querySelector(".custom-desc");
+      const row=e.target.closest(".li-row");
+      if(val==="__custom"){
+        customInp.classList.remove("hide"); customInp.focus();
+        items[i].desc=customInp.value||"";
+      } else {
+        customInp.classList.add("hide");
+        items[i].desc=val;
+        if(val){
+          const c=findCard(val);
+          if(c){
+            items[i].sac=c.sac||""; items[i].gst=(c.gst??FALLBACK_GST);
+            items[i].price=(c.rate===""||c.rate==null)?"":String(c.rate);
+            if(isStudioHourly(val)) items[i].qty=String(parseInt($("#hours").value,10)||MIN_HOURS);
+            const pin=row.querySelector("[data-k=\"price\"]"); if(pin) pin.value=items[i].price;
+            const qin=row.querySelector("[data-k=\"qty\"]"); if(qin) qin.value=items[i].qty;
           }
         }
       }
+      row.querySelector(".tot").value=money(lineTotal(items[i]));
+      render();
+    });
+  });
+  body.querySelectorAll(".custom-desc").forEach(inp=>{
+    inp.addEventListener("input", e=>{
+      items[+e.target.dataset.i].desc=e.target.value; render();
+    });
+  });
+  body.querySelectorAll("input[data-k=\"price\"],input[data-k=\"qty\"]").forEach(inp=>{
+    inp.addEventListener("input", e=>{
+      const i=+e.target.dataset.i, k=e.target.dataset.k; items[i][k]=e.target.value;
       const cell=e.target.closest(".li-row").querySelector(".tot");
       if(cell) cell.value=money(lineTotal(items[i]));
       render();
@@ -785,7 +810,7 @@ function renderRateCard(){
     const costNum = hasCost ? (parseFloat(c.cost)||0) : null;
     const margin  = (costNum!==null&&hasRate) ? rateNum - costNum : null;
     const mpct    = (margin!==null&&rateNum>0) ? Math.round(margin/rateNum*100) : null;
-    const row=document.createElement("tr");
+    const row=document.createElement("tr"); row.dataset.row=String(i);
     row.innerHTML=`
       <td><input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}" style="min-width:170px"></td>
       <td><input data-i="${i}" data-k="sac" placeholder="997212" value="${esc(c.sac)}"></td>
@@ -797,10 +822,23 @@ function renderRateCard(){
     body.appendChild(row);
   });
   body.querySelectorAll("input[data-i]").forEach(inp=>{
-    inp.addEventListener("input", e=>{ rcDraft[+e.target.dataset.i][e.target.dataset.k]=e.target.value;
-      if(["cost","rate"].includes(e.target.dataset.k)) renderRateCard(); });
+    inp.addEventListener("input", e=>{
+      const i=+e.target.dataset.i, k=e.target.dataset.k; rcDraft[i][k]=e.target.value;
+      if(["cost","rate"].includes(k)) updateRcMargin(i);
+    });
   });
   body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", e=>{ rcDraft.splice(+e.target.dataset.del,1); renderRateCard(); }));
+}
+function updateRcMargin(i){
+  const c=rcDraft[i];
+  const hasCost=c.cost!==""&&c.cost!=null, hasRate=c.rate!==""&&c.rate!=null;
+  const rateNum=parseFloat(c.rate)||0, costNum=hasCost?parseFloat(c.cost)||0:null;
+  const margin=(costNum!==null&&hasRate)?rateNum-costNum:null;
+  const mpct=(margin!==null&&rateNum>0)?Math.round(margin/rateNum*100):null;
+  const row=document.querySelector(`#rcBody tr[data-row="${i}"]`);
+  if(!row) return;
+  const cell=row.querySelector(".td-margin");
+  if(cell) cell.innerHTML=margin!==null?`${money(Math.round(margin))}${mpct!==null?`<small>${mpct}% margin</small>`:""}`:"—";
 }
 async function saveRateCard(){
   settings.rateCard = rcDraft
@@ -816,7 +854,6 @@ async function saveRateCard(){
       if(res.status===401) handleExpired();
     }catch(e){ console.error('Rate card push failed',e); }
   }
-  buildServiceList();
   toast("Rate card saved");
   closeRateCard();
 }
@@ -858,14 +895,15 @@ async function downloadPdf(){
       windowWidth: 1200,   // simulate desktop viewport → disables mobile media queries
       windowHeight: 1697,  // 297mm @ 96dpi × scale ratio (keeps aspect correct)
       onclone: (_doc, cloned) => {
-        // Force A4 layout on the cloned element regardless of current viewport
         cloned.style.cssText = [
-          "width:210mm",
-          "min-height:0",
-          "padding:10mm 13mm 9mm",
-          "box-shadow:none",
-          "font-family:'Outfit',sans-serif"
+          "width:210mm","min-height:0","padding:10mm 13mm 9mm",
+          "box-shadow:none","font-family:'Outfit',sans-serif"
         ].join(";");
+        // Ensure payment row stays horizontal (row layout, QR on right)
+        const pay=cloned.querySelector(".q-pay");
+        if(pay){ pay.style.cssText="display:flex;flex-direction:row;gap:24px;align-items:flex-start;margin-bottom:4px"; }
+        const qr=cloned.querySelector(".q-qr");
+        if(qr){ qr.style.cssText="text-align:center;flex:0 0 auto"; }
       }
     },
     jsPDF: {unit:"mm", format:"a4", orientation:"portrait"}
