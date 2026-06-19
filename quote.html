@@ -116,9 +116,10 @@
   table.q-table th{background:var(--quote-green);color:#fff;text-align:left;padding:10px 13px;font-weight:600;font-size:14px}
   table.q-table th.num,table.q-table td.num{text-align:center}
   table.q-table th.amt,table.q-table td.amt{text-align:right}
-  table.q-table td{padding:9px 13px;color:#2c2c2c;background:#f3f3f3;vertical-align:top}
+  table.q-table td{padding:7px 13px;color:#2c2c2c;background:#f3f3f3;vertical-align:middle}
   table.q-table tr:nth-child(even) td{background:#ededed}
-  table.q-table td .sac{font-size:11px;color:#8a8a8a;margin-top:2px}
+  table.q-table td .desc-cell{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+  table.q-table td .sac{font-size:11px;color:#8a8a8a;white-space:nowrap;flex:0 0 auto}
 
   .q-sums{margin-top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:15px}
   .q-sums .sline{display:grid;grid-template-columns:auto 160px;gap:20px;align-items:center;color:#333}
@@ -759,7 +760,7 @@ function render(){
 
   const active = items.filter(it=> it.desc!=="" || it.price!=="");
   $("#pRows").innerHTML = active.length ? active.map(it=>`<tr>
-      <td>${esc(it.desc)}${it.sac?`<div class="sac">SAC: ${esc(it.sac)}</div>`:""}</td>
+      <td><div class="desc-cell"><span>${esc(it.desc)}</span>${it.sac?`<span class="sac">SAC: ${esc(it.sac)}</span>`:""}</div></td>
       <td class="amt">${it.price!==""?money(it.price):""}</td>
       <td class="num">${it.qty!==""?esc(it.qty):""}</td>
       <td class="amt">${money(lineTotal(it))}</td></tr>`).join("")
