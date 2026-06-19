@@ -49,11 +49,13 @@
   .conn-dot{width:8px;height:8px;border-radius:50%;background:#d4d8d3;flex-shrink:0;transition:background .4s;cursor:default}
   .conn-dot.ok{background:var(--accent)}
   .conn-dot.err{background:var(--danger)}
-  .bar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
-  .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+  .bar-actions{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap;cursor:pointer}
   .btn:hover{border-color:var(--accent);color:var(--accent-d)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .btn.primary:hover{background:var(--accent-d);color:#fff}
+  .btn.icon-btn{padding:0;width:34px;height:34px;justify-content:center;flex-shrink:0}
+  .bar-sep{width:1px;height:22px;background:var(--line);flex-shrink:0;margin:0 2px}
   .hide{display:none !important}
 
   main.work{display:grid;grid-template-columns:minmax(360px,460px) 1fr;gap:0;height:calc(100vh - 59px)}
@@ -208,11 +210,13 @@
     .rc-table-wrap{border-radius:8px}
   }
   @media (max-width:620px){
-    header.bar{padding:8px 14px;gap:8px}
+    header.bar{padding:8px 12px;gap:6px}
     header.bar img.hdr-logo{height:28px}
     .bar .sub{display:none}
-    .bar-actions{gap:6px}
+    .bar-actions{gap:4px}
     .btn{padding:7px 10px;font-size:12px;border-radius:7px}
+    .btn.icon-btn{width:32px;height:32px}
+    .bar-sep{height:20px;margin:0 1px}
     .row2{grid-template-columns:1fr}
     .li-head,.li-row{grid-template-columns:1fr 76px 44px 82px 28px;gap:6px}
     .form{padding:16px 14px 60px}
@@ -275,9 +279,18 @@
       <span class="conn-dot" id="connDot" title="Cloud sync"></span>
     </div>
     <div class="bar-actions">
-      <button class="btn" id="btnRate">Rate Card</button>
-      <button class="btn quote-only" id="btnSaved">Saved</button>
-      <button class="btn quote-only" id="btnSettings">Settings</button>
+      <!-- utility icon buttons -->
+      <button class="btn icon-btn" id="btnRate" title="Rate Card">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x=".75" y=".75" width="13.5" height="13.5" rx="1.75"/><line x1=".75" y1="5.25" x2="14.25" y2="5.25"/><line x1=".75" y1="9.75" x2="14.25" y2="9.75"/><line x1="5.25" y1="5.25" x2="5.25" y2="14.25"/></svg>
+      </button>
+      <button class="btn icon-btn quote-only" id="btnSaved" title="Saved Quotes">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 1.75h11a1 1 0 011 1V13l-6.5-2.5L1 13V2.75a1 1 0 011-1z"/></svg>
+      </button>
+      <button class="btn icon-btn quote-only" id="btnSettings" title="Settings">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="2.25"/><path d="M7.5 1.5V3M7.5 12V13.5M1.5 7.5H3M12 7.5h1.5M3.2 3.2l1.05 1.05M10.75 10.75l1.05 1.05M3.2 11.8l1.05-1.05M10.75 4.25l1.05-1.05"/></svg>
+      </button>
+      <div class="bar-sep quote-only"></div>
+      <!-- primary action buttons -->
       <button class="btn quote-only" id="btnNew">+ New</button>
       <button class="btn quote-only" id="btnSave">Save</button>
       <button class="btn primary quote-only" id="btnPdf">PDF</button>
