@@ -666,18 +666,26 @@ function newQuote(){
 function renderItems(){
   const body=$("#liBody"); body.innerHTML="";
   items.forEach((it,i)=>{
+    const isStudio=isStudioHourly(it.desc);
     const inRC=settings.rateCard.some(c=>c.desc===it.desc);
     const isCustom=!inRC && it.desc!=="";
-    const rcOpts=settings.rateCard.map(c=>`<option value="${esc(c.desc)}"${c.desc===it.desc?" selected":""}>${esc(c.desc)}</option>`).join("");
-    const row=document.createElement("div"); row.className="li-row";
-    row.innerHTML=`
-      <div class="li-desc-wrap">
-        <select class="t li-sel" data-i="${i}">
+    // Studio rental entries are hidden from the dropdown — that line is driven
+    // by the Zone + Duration selectors above, not chosen here.
+    const rcOpts=settings.rateCard
+      .filter(c=>!isStudioHourly(c.desc))
+      .map(c=>`<option value="${esc(c.desc)}"${c.desc===it.desc?" selected":""}>${esc(c.desc)}</option>`).join("");
+    const descCell = isStudio
+      ? `<input class="t locked" value="${esc(it.desc)}" readonly tabindex="-1" title="Set by Zone & Duration above">`
+      : `<select class="t li-sel" data-i="${i}">
           <option value="">— choose service —</option>
           ${rcOpts}
           <option value="__custom"${isCustom?" selected":""}>Other…</option>
         </select>
-        <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">
+        <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">`;
+    const row=document.createElement("div"); row.className="li-row";
+    row.innerHTML=`
+      <div class="li-desc-wrap">
+        ${descCell}
       </div>
       <input class="t num" data-i="${i}" data-k="price" type="number" min="0" placeholder="0" value="${esc(it.price)}">
       <input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" placeholder="1" value="${esc(it.qty)}">
