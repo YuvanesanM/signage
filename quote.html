@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
   /* ============================================================
@@ -217,6 +216,29 @@
     .li-head,.li-row{grid-template-columns:1fr 76px 44px 82px 28px;gap:6px}
     .form{padding:16px 14px 60px}
     .preview{padding:10px}
+  }
+
+  /* ============ PRINT → SAVE AS PDF ============ */
+  @page{ size:A4; margin:0 }
+  @media print{
+    html,body{ background:#fff !important; margin:0 !important; padding:0 !important }
+    /* hide everything, then reveal only the quote document */
+    body * { visibility:hidden !important }
+    #quoteDoc, #quoteDoc * { visibility:visible !important }
+    header.bar, .form, #rateView, #login, .modal, .toast{ display:none !important }
+    .preview{ display:block !important; padding:0 !important; background:#fff !important; overflow:visible !important }
+    #quoteDoc{
+      position:absolute !important; left:0 !important; top:0 !important;
+      width:210mm !important; min-height:auto !important;
+      margin:0 !important; padding:10mm 13mm 9mm !important;
+      box-shadow:none !important; border:none !important; overflow:visible !important;
+    }
+    /* keep desktop quote layout regardless of device viewport width */
+    #quoteDoc .q-title{ font-size:28px !important }
+    #quoteDoc .q-pay{ display:flex !important; flex-direction:row !important; gap:24px !important; align-items:flex-start !important }
+    #quoteDoc .q-qr{ flex:0 0 auto !important }
+    /* force coloured backgrounds (green header bars, total chip) to print */
+    #quoteDoc, #quoteDoc *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important }
   }
 </style>
 </head>
@@ -880,39 +902,17 @@ function saveSettings(){
   $("#settingsModal").hidden=true; setBrandLogos(); render(); toast("Settings saved");
 }
 
-/* ---------- PDF ---------- */
+/* ---------- PDF via native print → Save as PDF ---------- */
 async function downloadPdf(){
-  const btn=$("#btnPdf"); btn.classList.add("busy"); btn.textContent="Generating…";
   try{ await document.fonts.ready; }catch(e){}
-  const source=$("#quoteDoc"), name=(curQno||"quote").replace(/[\/\\]/g,"-");
-
-  // Clone quote as a direct <body> child so no ancestor container clips its 210mm width.
-  // Placed far below the visible area (top:9999px) so the user never sees it.
-  const frame=source.cloneNode(true);
-  frame.removeAttribute("id");
-  frame.style.cssText=[
-    "position:absolute","top:9999px","left:0",
-    "width:210mm","min-height:0","padding:10mm 13mm 9mm",
-    "box-shadow:none","background:#fff"
-  ].join(";");
-  const pay=frame.querySelector(".q-pay");
-  if(pay) pay.style.cssText="display:flex;flex-direction:row;gap:24px;align-items:flex-start;margin-bottom:4px";
-  const qr=frame.querySelector(".q-qr");
-  if(qr) qr.style.cssText="text-align:center;flex:0 0 auto";
-  document.body.appendChild(frame);
-
-  const opt={
-    margin:0, filename:name+".pdf",
-    image:{type:"jpeg",quality:0.95},
-    html2canvas:{scale:1.5,useCORS:true,logging:false,backgroundColor:"#ffffff",windowWidth:1200},
-    jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}
-  };
-  try{ await html2pdf().set(opt).from(frame).save(); }
-  catch(e){ alert("PDF generation failed. Try again, or use Print → Save as PDF."); console.error(e); }
-  finally{
-    if(frame.parentNode) frame.parentNode.removeChild(frame);
-    btn.classList.remove("busy"); btn.textContent="PDF";
-  }
+  // Suggest the quote number as the saved filename (browsers use document.title)
+  const prevTitle=document.title;
+  document.title=(curQno||"quote").replace(/[\/\\]/g,"-");
+  const restore=()=>{ document.title=prevTitle; window.removeEventListener("afterprint",restore); };
+  window.addEventListener("afterprint",restore);
+  window.print();
+  // Fallback restore in case afterprint never fires (some mobile browsers)
+  setTimeout(restore,1500);
 }
 </script>
 </body>
