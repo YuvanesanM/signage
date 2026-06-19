@@ -269,8 +269,9 @@
 
       <div class="group">
         <p class="gh">Client</p>
-        <label class="f"><span>Name (with title)</span><input class="t" id="cname" placeholder="Ms. Kaviya"></label>
-        <label class="f"><span>Address / location</span><textarea class="t" id="caddr" placeholder="Chennai, India"></textarea></label>
+        <label class="f"><span>Name / Company name</span><input class="t" id="cname" placeholder="Studio RYST / Ms. Kaviya"></label>
+        <label class="f"><span>GST No. <span style="font-weight:400;color:var(--muted2)">(optional)</span></span><input class="t" id="cgst" placeholder="22AAAAA0000A1Z5" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></label>
+        <label class="f"><span>Billing address</span><textarea class="t" id="caddr" placeholder="Chennai, India"></textarea></label>
       </div>
 
       <div class="group">
@@ -309,6 +310,7 @@
           </div>
           <div class="q-client">
             <div class="cname" id="pCName"></div>
+            <div id="pCGst" style="font-size:11.5px;color:#666;margin-top:1px"></div>
             <div id="pCAddr"></div>
           </div>
         </div>
@@ -603,7 +605,7 @@ function syncStudioHours(){
   if(changed) renderItems();
 }
 function bind(){
-  ["cname","caddr","terms"].forEach(id=> $("#"+id).addEventListener("input", render));
+  ["cname","cgst","caddr","terms"].forEach(id=> $("#"+id).addEventListener("input", render));
   $("#zone").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#hours").addEventListener("input", ()=>{ syncStudioHours(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
@@ -629,7 +631,7 @@ function newQuote(){
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(MIN_HOURS);
-  $("#cname").value=""; $("#caddr").value=""; $("#terms").value=settings.terms;
+  $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms;
   items=[zoneItem()];
   renderItems(); render();
 }
@@ -713,6 +715,8 @@ function render(){
   $("#pQno").textContent   = curQno;
   $("#pDate").textContent  = fmtDate(curDateISO);
   $("#pCName").textContent = $("#cname").value || "Client name";
+  const gstVal=$("#cgst").value.trim();
+  $("#pCGst").textContent = gstVal ? "GSTIN: "+gstVal : "";
   $("#pCAddr").innerHTML   = esc($("#caddr").value).replace(/\n/g,"<br>");
   $("#pReq").textContent   = reqText();
   $("#pBank").innerHTML    = esc(settings.bank).replace(/\n/g,"<br>");
@@ -749,7 +753,7 @@ function render(){
 /* ---------- SAVE / LOAD QUOTES ---------- */
 function collect(){
   return { qno:curQno, date:curDateISO, zone:$("#zone").value, hours:$("#hours").value, req:reqText(),
-    cname:$("#cname").value, caddr:$("#caddr").value, terms:$("#terms").value,
+    cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
 async function saveQuote(){
@@ -766,7 +770,7 @@ function loadQuote(qno){
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:"4";
-  $("#cname").value=q.cname; $("#caddr").value=q.caddr; $("#terms").value=q.terms;
+  $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms;
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
 }
