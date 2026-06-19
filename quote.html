@@ -218,6 +218,10 @@
     .form{padding:16px 14px 60px}
     .preview{padding:10px}
   }
+  /* smaller quote logo on phone screens only — PDF keeps full size */
+  @media screen and (max-width:620px){
+    #quoteDoc .q-logo{ max-height:96px; max-width:220px; margin-top:0 }
+  }
 
   /* ============ PRINT → SAVE AS PDF ============ */
   @page{ size:A4; margin:0 }
@@ -512,7 +516,7 @@ async function fetchRatesFromProxy(){
     const d = await res.json();
     if(Array.isArray(d.rateCard) && d.rateCard.length){
       settings.rateCard = d.rateCard;
-        }
+    }
   }catch(e){ console.warn('Could not load rates from proxy', e); }
 }
 async function fetchQuotesFromProxy(){
@@ -810,7 +814,7 @@ function loadQuote(qno){
 }
 async function deleteQuote(qno){ if(!confirm("Delete "+qno+"?")) return; setQuotes(getQuotes().filter(x=>x.qno!==qno)); await pushQuotes(); openSaved(); }
 function openSaved(){
-  const list=$("#savedList"), all=getQuotes().sort((a,b)=>b.savedAt-a.savedAt);
+  const list=$("#savedList"), all=getQuotes().slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
   list.innerHTML = !all.length ? `<div class="empty">No saved quotes yet.</div>`
     : all.map(q=>`<div class="saved-item"><div class="si-main"><div class="si-no">${esc(q.qno)}</div>
         <div class="si-sub">${esc(q.cname||"—")} · ${esc(q.zone||"")} · ${fmtDate(q.date)}</div></div>
