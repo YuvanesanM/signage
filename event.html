@@ -511,6 +511,9 @@
   .tag-session { background: var(--gold-soft); color: var(--gold-dark); border: 1px solid var(--gold-soft-border); }
   .tag-walkin { background: var(--track); color: var(--muted); border: 1px solid var(--border); }
 
+  /* Recognized guest name (face recognition match) */
+  .guest-name { font-weight: 600; color: var(--gold-dark); }
+
   .score-pill {
     display: inline-block;
     padding: 2px 8px;
@@ -727,6 +730,13 @@
   }
   function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function eventScore(e){ return (e.top_score ?? e.data?.top_score ?? e.score ?? 0); }
+  // Recognized guest name from Frigate face recognition (null until faces are trained).
+  // Frigate attaches the matched person's name as `sub_label` on the event.
+  function eventSubLabel(e){
+    const sl = e.sub_label ?? e.data?.sub_label ?? null;
+    if(sl == null || sl === '') return null;
+    return Array.isArray(sl) ? (sl[0] || null) : String(sl);
+  }
 
   // ── Visits ──
   // Frigate emits a NEW event every time the tracker re-acquires a person, so a
@@ -747,21 +757,26 @@
       const s = e.start_time;
       const en = (e.end_time == null) ? nowSec : e.end_time;
       const sc = eventScore(e);
+      const sl = eventSubLabel(e);
       const last = visits[visits.length - 1];
       if(last && s <= last._end + gapSec){
         last._end = Math.max(last._end, en);
         last._active = (e.end_time == null);   // latest fragment's state wins
         last.top_score = Math.max(last.top_score, sc);
         last.frames++;
+        // Keep the recognized name from the most-confident fragment that had one.
+        if(sl && sc >= last._subScore){ last.sub_label = sl; last._subScore = sc; }
       } else {
-        visits.push({ start_time: s, _end: en, _active: e.end_time == null, top_score: sc, frames: 1 });
+        visits.push({ start_time: s, _end: en, _active: e.end_time == null, top_score: sc, frames: 1,
+          sub_label: sl, _subScore: sl ? sc : -1 });
       }
     }
     return visits.map(v => ({
       start_time: v.start_time,
       end_time: v._active ? null : v._end,
       top_score: v.top_score,
-      frames: v.frames
+      frames: v.frames,
+      sub_label: v.sub_label || null
     }));
   }
 
@@ -1172,8 +1187,13 @@
     tbody.innerHTML = visits.map(v => {
       const during = isDuringSession(v.start_time);
       const dwell = v.end_time ? (v.end_time - v.start_time) : null;
+      // Show the recognized guest name when face recognition matched one;
+      // otherwise fall back to the generic "Person" label.
+      const label = v.sub_label
+        ? `<span class="guest-name">👤 ${esc(v.sub_label)}</span>`
+        : 'Person';
       return `<tr>
-        <td>Person</td>
+        <td>${label}</td>
         <td><span class="tag ${during ? 'tag-session' : 'tag-walkin'}">${during ? 'Booked' : 'Walk-in'}</span></td>
         <td><span class="score-pill">${Math.round(eventScore(v)*100)}%</span></td>
         <td>${fmtDur(dwell)}</td>
@@ -1212,12 +1232,12 @@
   // ── CSV export ──
   function exportCSV(){
     if(!lastTodayVisits.length) return;
-    const rows = [['Label','Type','Confidence','Start','End','Dwell (s)','Detections']];
+    const rows = [['Label','Guest','Type','Confidence','Start','End','Dwell (s)','Detections']];
     lastTodayVisits.forEach(v => {
       const during = isDuringSession(v.start_time);
       const dwell = v.end_time ? Math.round(v.end_time - v.start_time) : '';
       rows.push([
-        'person', during ? 'Booked' : 'Walk-in',
+        'person', v.sub_label || '', during ? 'Booked' : 'Walk-in',
         Math.round(eventScore(v)*100) + '%',
         new Date(v.start_time*1000).toLocaleString('en-IN'),
         v.end_time ? new Date(v.end_time*1000).toLocaleString('en-IN') : 'ongoing',
