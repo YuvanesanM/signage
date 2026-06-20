@@ -213,14 +213,22 @@
               background:#fff !important; overflow:visible !important; }
     #quoteDoc{
       position:static !important; width:210mm !important; min-height:295mm !important;
-      margin:0 !important; padding:4mm 13mm 6mm !important;
+      margin:0 !important; padding:9mm 13mm 5mm !important;
       box-shadow:none !important; border:none !important; overflow:visible !important;
       transform:none !important;
       display:flex !important; flex-direction:column !important;
     }
     /* keep desktop quote layout regardless of device viewport width */
     #quoteDoc .q-logo{ margin-top:0 !important }
+    /* keep the header's negative title pull (it saves a page) but cap the
+       logo and trim divider/section gaps to free room for top padding so
+       the company text isn't clipped, while staying on one page */
     #quoteDoc .q-title{ font-size:30px !important }
+    #quoteDoc .q-logo{ max-height:84px !important }
+    #quoteDoc .q-divider{ margin:6px 0 8px !important }
+    #quoteDoc .q-divider2{ margin:8px 0 6px !important }
+    #quoteDoc .q-terms{ margin-top:6px !important }
+    #quoteDoc .q-foot{ padding-top:6px !important }
     #quoteDoc .q-pay{ display:flex !important; flex-direction:row !important; gap:24px !important; align-items:flex-start !important }
     #quoteDoc .q-qr{ flex:0 0 auto !important }
     /* force coloured backgrounds (green header bars, total chip) to print */
