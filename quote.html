@@ -10,12 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-  /* ============================================================
-     CONFIG: login password -> const PASSWORD in <script> below.
-     Client-side gate only; pair with nginx basic-auth / signage login.
-     Pricing (descriptions, SAC, cost, GST%, rate) lives in the Rate Card
-     page inside the app. Zones -> ZONES.
-     ============================================================ */
   :root{
     --bg:#f3f4f1; --panel:#ffffff; --panel2:#f7f8f5;
     --line:#e3e5e0; --accent:#3d9b69; --accent-d:#2f7d54; --accent-soft:#eaf4ee;
@@ -153,46 +147,6 @@
 
   .busy{opacity:.6;pointer-events:none}
 
-  /* ============ RATE CARD VIEW ============ */
-  #configView{height:calc(100vh - 59px);overflow-y:auto;padding:0 32px 80px;background:var(--bg)}
-  #configView[hidden]{display:none}
-  .cfg-wrap{max-width:1020px;margin:0 auto}
-  .cfg-tabs{display:flex;align-items:center;gap:2px;border-bottom:2px solid var(--line);margin-bottom:28px;padding-top:24px;position:sticky;top:0;background:var(--bg);z-index:5;padding-bottom:0}
-  .cfg-tab{background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:10px 18px;font-size:13.5px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-family:inherit}
-  .cfg-tab:hover{color:var(--ink)}
-  .cfg-tab.active{color:var(--accent-d);font-weight:700;border-bottom-color:var(--accent)}
-  .cfg-back-wrap{margin-left:auto;padding-bottom:4px}
-  .rc-wrap{max-width:1020px;margin:0 auto}
-  .rc-wrap h2{font-size:22px;font-weight:600;margin:0 0 4px}
-  .rc-wrap .sd{color:var(--muted);font-size:13px;margin:0 0 22px}
-  /* -- rate card spreadsheet table -- */
-  .rc-table-wrap{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-  table.rc-table{width:100%;border-collapse:collapse;min-width:860px}
-  table.rc-table thead th{background:var(--panel2);border-bottom:2px solid var(--line);padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted2);font-weight:600;white-space:nowrap}
-  table.rc-table thead th.r{text-align:right}
-  table.rc-table thead th.c{text-align:center}
-  table.rc-table tbody tr{border-bottom:1px solid var(--line)}
-  table.rc-table tbody tr:last-child{border-bottom:none}
-  table.rc-table tbody tr:hover td{background:var(--accent-soft)}
-  table.rc-table td{padding:4px 6px;vertical-align:middle}
-  table.rc-table td input{width:100%;background:transparent;border:1px solid transparent;border-radius:7px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink)}
-  table.rc-table td input:hover{border-color:var(--line);background:var(--panel2)}
-  table.rc-table td input:focus{outline:none;border-color:var(--accent);background:#fff}
-  table.rc-table td input.r{text-align:right}
-  table.rc-table td input.c{text-align:center}
-  .td-margin{font-size:12px;text-align:center;color:var(--accent-d);font-weight:600;white-space:nowrap;padding:0 10px !important}
-  .td-margin small{display:block;color:var(--muted2);font-weight:400;font-size:10.5px}
-  .td-disc{padding:3px 6px !important}
-  .disc-row{display:flex;align-items:center;gap:4px;margin:2px 0}
-  .disc-lbl{font-size:10px;color:var(--muted2);font-weight:600;width:30px;text-align:right;flex-shrink:0}
-  .disc-inp{width:58px !important;padding:4px 6px !important;font-size:12px !important;text-align:right}
-  .disc-pct{font-size:11px;color:var(--muted2);flex-shrink:0}
-  .rc-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;width:30px;height:30px;font-size:16px;line-height:1;padding:0}
-  .rc-del:hover{border-color:var(--danger);color:var(--danger)}
-  .rc-foot{display:flex;gap:10px;margin-top:18px}
-  .rc-add{background:transparent;border:1px dashed #cdd1cb;color:var(--muted);padding:11px 16px;border-radius:9px;font-size:13px}
-  .rc-add:hover{border-color:var(--accent);color:var(--accent-d)}
-
   /* modals */
   .modal{position:fixed;inset:0;background:rgba(30,40,30,.42);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
   .modal[hidden]{display:none}
@@ -216,20 +170,6 @@
 
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1d211c;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:60}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-  /* PIN modal */
-  #pinOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:200}
-  #pinOverlay[hidden]{display:none}
-  .pin-card{background:#fff;border-radius:16px;padding:32px 28px 28px;width:280px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18)}
-  .pin-card h3{margin:0 0 6px;font-size:17px;color:var(--dark)}
-  .pin-card p{margin:0 0 20px;font-size:13px;color:var(--muted)}
-  .pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
-  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);background:transparent;transition:.15s}
-  .pin-dot.filled{background:var(--accent)}
-  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-  .pin-key{background:#f4f6f3;border:none;border-radius:10px;padding:14px 0;font-size:18px;font-weight:600;cursor:pointer;color:var(--dark);transition:.12s}
-  .pin-key:active{background:var(--accent);color:#fff}
-  .pin-err{color:#c0392b;font-size:13px;min-height:18px;margin-top:-8px}
 
   @media (max-width:900px){
     main.work{grid-template-columns:1fr;height:auto}
@@ -266,7 +206,7 @@
     /* Collapse every structural container so it occupies NO print space.
        (visibility:hidden alone keeps the box model — that caused the giant
        app layout to be scaled down into a small box with big margins.)    */
-    header.bar, .form, #configView, .modal, .toast{ display:none !important }
+    header.bar, .form, .modal, .toast{ display:none !important }
     #app{ display:block !important }
     main.work{ display:block !important; height:auto !important; grid-template-columns:none !important }
     .preview{ display:block !important; height:auto !important; margin:0 !important; padding:0 !important;
@@ -426,56 +366,7 @@
     </section>
   </main>
 
-  <!-- ====== COMBINED CONFIG VIEW ====== -->
-  <section id="configView" hidden>
-    <div class="cfg-wrap">
-      <div class="cfg-tabs">
-        <button class="cfg-tab active" data-tab="rate">Rate Card</button>
-        <button class="cfg-tab" data-tab="settings">Studio Settings</button>
-        <div class="cfg-back-wrap"><button class="btn" id="cfgBack">← Back to quote</button></div>
-      </div>
 
-      <!-- Rate Card pane -->
-      <div id="cfgRatePane">
-        <p class="sd">Master pricing. The quote pulls selling rate, SAC code and GST % from here. Purchase cost is internal — never shown on client quote.</p>
-        <div class="rc-table-wrap">
-          <table class="rc-table">
-            <thead><tr>
-              <th>Service description</th>
-              <th style="width:106px">SAC code</th>
-              <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(pre-tax)</span></th>
-              <th class="c" style="width:68px">GST %</th>
-              <th class="r" style="width:128px">Base rate/hr</th>
-              <th class="c" style="width:148px">Margin <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">/ Discount tiers</span></th>
-              <th style="width:36px"></th>
-            </tr></thead>
-            <tbody id="rcBody"></tbody>
-          </table>
-        </div>
-        <button class="rc-add" id="rcAdd">+ Add service</button>
-        <div class="rc-foot">
-          <button class="btn primary" id="rcSave">Save rate card</button>
-        </div>
-      </div>
-
-      <!-- Studio Settings pane -->
-      <div id="cfgSettingsPane" hidden>
-        <p class="sd">Saved on this device. These appear on every quote.</p>
-        <label class="f"><span>Logo (PNG/JPG)</span><input type="file" id="logoFile" accept="image/*" class="t"></label>
-        <div id="logoPrev"></div>
-        <label class="f"><span>Payment QR (PNG/JPG)</span><input type="file" id="qrFile" accept="image/*" class="t"></label>
-        <div id="qrPrev"></div>
-        <label class="f"><span>Company header block (right of logo)</span><textarea class="t" id="setCompany" rows="5"></textarea></label>
-        <label class="f"><span>Bank / payment details block</span><textarea class="t" id="setBank" rows="6"></textarea></label>
-        <label class="f"><span>Default terms (one per line)</span><textarea class="t" id="setTerms" rows="8"></textarea></label>
-        <label class="f"><span>Quote no. prefix</span><input class="t" id="setPrefix" placeholder="RYST"></label>
-        <div class="rc-foot">
-          <button class="btn primary" id="setSave">Save settings</button>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
 
 <!-- ===================== SAVED MODAL ===================== -->
 <div class="modal" id="savedModal" hidden>
@@ -489,21 +380,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- PIN gate for settings -->
-<div id="pinOverlay" hidden>
-  <div class="pin-card">
-    <h3>Enter PIN</h3>
-    <p>Rate card &amp; settings are protected</p>
-    <div class="pin-dots">
-      <span class="pin-dot" id="pd0"></span>
-      <span class="pin-dot" id="pd1"></span>
-      <span class="pin-dot" id="pd2"></span>
-      <span class="pin-dot" id="pd3"></span>
-    </div>
-    <div class="pin-pad" id="pinPad"></div>
-    <div class="pin-err" id="pinErr"></div>
-  </div>
-</div>
 
 <script>
 /* =========================================================================
@@ -556,7 +432,6 @@ let settings = loadSettings();
 let items = [];            // {desc, sac, price, qty, gst}
 let editingKey = null;
 let curQno = "", curDateISO = "";
-let rcDraft = [];          // working copy while editing rate card
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
@@ -640,7 +515,6 @@ setBrandLogos();
   // Show the app immediately from localStorage/defaults — don't block on network.
   init();
   $("#app").hidden = false;
-  if(new URLSearchParams(location.search).get('config')==='1') openConfig('rate');
   // Validate token + refresh data in background.
   initApp();
 })();
@@ -752,14 +626,7 @@ function bind(){
   $("#btnPdf").addEventListener("click", downloadPdf);
   $("#btnHome").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnSaved").addEventListener("click", openSaved);
-  document.querySelectorAll(".cfg-tab").forEach(b=>b.addEventListener("click",()=>switchCfgTab(b.dataset.tab)));
-  $("#cfgBack").addEventListener("click", closeConfig);
-  $("#rcAdd").addEventListener("click", ()=>{ rcDraft.push({desc:"",sac:"",cost:"",gst:18,rate:""}); renderRateCard(); });
-  $("#rcSave").addEventListener("click", saveRateCard);
-  $("#setSave").addEventListener("click", saveSettings);
   $("#savedClose").addEventListener("click", ()=>$("#savedModal").hidden=true);
-  $("#logoFile").addEventListener("change", e=>pickImage(e,"logo","#logoPrev"));
-  $("#qrFile").addEventListener("change", e=>pickImage(e,"qr","#qrPrev"));
 }
 
 /* ---------- NEW QUOTE ---------- */
@@ -975,190 +842,6 @@ function openSaved(){
   list.querySelectorAll("[data-load]").forEach(b=>b.addEventListener("click",()=>loadQuote(b.dataset.load)));
   list.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>deleteQuote(b.dataset.del)));
   $("#savedModal").hidden=false;
-}
-
-/* ---------- CONFIG (Rate Card + Settings) ---------- */
-function switchCfgTab(tab){
-  $("#cfgRatePane").hidden    = tab!=="rate";
-  $("#cfgSettingsPane").hidden = tab!=="settings";
-  document.querySelectorAll(".cfg-tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
-  $("#viewLabel").textContent = tab==="settings" ? "Studio settings" : "Rate card";
-}
-/* ---------- PIN GATE ---------- */
-const RC_PIN_HASH="8e9b669109df89620b94f2387dc53206a82ddc71d658f8f7a2b3a9b417370d3e";
-let _pinBuf="", _pinTarget=null;
-async function sha256(s){
-  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
-}
-(function buildPinPad(){
-  const pad=document.getElementById("pinPad"); if(!pad) return;
-  const keys=[1,2,3,4,5,6,7,8,9,"⌫",0,"✓"];
-  keys.forEach(k=>{
-    const b=document.createElement("button");
-    b.className="pin-key"; b.textContent=String(k); b.type="button";
-    b.addEventListener("click",()=>handlePinKey(String(k)));
-    pad.appendChild(b);
-  });
-})();
-function showPinOverlay(tab){
-  _pinBuf=""; _pinTarget=tab||"rate";
-  updatePinDots(); document.getElementById("pinErr").textContent="";
-  document.getElementById("pinOverlay").hidden=false;
-}
-function hidePinOverlay(){ document.getElementById("pinOverlay").hidden=true; _pinBuf=""; }
-function updatePinDots(){
-  for(let i=0;i<4;i++) document.getElementById("pd"+i).classList.toggle("filled",i<_pinBuf.length);
-}
-async function handlePinKey(k){
-  if(k==="⌫"){ _pinBuf=_pinBuf.slice(0,-1); updatePinDots(); return; }
-  if(k==="✓"){ await checkPin(); return; }
-  if(_pinBuf.length>=4) return;
-  _pinBuf+=k; updatePinDots();
-  if(_pinBuf.length===4) await checkPin();
-}
-async function checkPin(){
-  const h=await sha256(_pinBuf);
-  if(h===RC_PIN_HASH){ hidePinOverlay(); _openConfig(_pinTarget); }
-  else{
-    document.getElementById("pinErr").textContent="Incorrect PIN";
-    for(let i=0;i<4;i++) document.getElementById("pd"+i).classList.add("filled");
-    setTimeout(()=>{ _pinBuf=""; updatePinDots(); document.getElementById("pinErr").textContent=""; },700);
-  }
-}
-function _openConfig(tab){
-  rcDraft = settings.rateCard.map(c=>({...c}));
-  renderRateCard();
-  $("#setCompany").value=settings.company; $("#setBank").value=settings.bank;
-  $("#setTerms").value=settings.terms; $("#setPrefix").value=settings.prefix;
-  renderImgPrev("logo","#logoPrev"); renderImgPrev("qr","#qrPrev");
-  switchCfgTab(tab||"rate");
-  $("#quoteView").classList.add("hide");
-  $("#configView").hidden=false;
-  document.querySelectorAll(".quote-only").forEach(b=>b.classList.add("hide"));
-}
-function openConfig(tab){ showPinOverlay(tab); }
-function closeConfig(){
-  $("#configView").hidden=true;
-  $("#quoteView").classList.remove("hide");
-  document.querySelectorAll(".quote-only").forEach(b=>b.classList.remove("hide"));
-  $("#viewLabel").textContent="Quotation builder";
-}
-function renderRateCard(){
-  const body=$("#rcBody"); body.innerHTML="";
-  rcDraft.forEach((c,i)=>{
-    const isStudio=isStudioHourly(c.desc);
-    const hasCost = c.cost!=="" && c.cost!=null;
-    const hasRate = c.rate!=="" && c.rate!=null;
-    const rateNum = parseFloat(c.rate)||0;
-    const costNum = hasCost ? (parseFloat(c.cost)||0) : null;
-    const margin  = (costNum!==null&&hasRate) ? rateNum - costNum : null;
-    const mpct    = (margin!==null&&rateNum>0) ? Math.round(margin/rateNum*100) : null;
-    const lastCol = isStudio
-      ? `<td class="td-disc">
-           <div class="disc-row"><span class="disc-lbl">4–7hr</span><input class="disc-inp" data-i="${i}" data-k="disc4" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0" value="${esc(c.disc4??'')}"><span class="disc-pct">%</span></div>
-           <div class="disc-row"><span class="disc-lbl">8+hr</span><input class="disc-inp" data-i="${i}" data-k="disc8" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0" value="${esc(c.disc8??'')}"><span class="disc-pct">%</span></div>
-         </td>`
-      : `<td class="td-margin">${margin!==null?money(Math.round(margin)):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</td>`;
-    const row=document.createElement("tr"); row.dataset.row=String(i);
-    row.innerHTML=`
-      <td><input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}" style="min-width:170px"></td>
-      <td><input data-i="${i}" data-k="sac" placeholder="997212" value="${esc(c.sac)}"></td>
-      <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" inputmode="decimal" placeholder="0" value="${esc(c.cost)}" title="Pre-tax purchase cost"></td>
-      <td><input class="c" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" inputmode="decimal" placeholder="18" value="${esc(c.gst)}"></td>
-      <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" inputmode="decimal" placeholder="0" value="${esc(c.rate)}"></td>
-      ${lastCol}
-      <td><button class="rc-del" data-del="${i}" title="Remove">×</button></td>`;
-    body.appendChild(row);
-  });
-  body.querySelectorAll("input[data-i]").forEach(inp=>{
-    inp.addEventListener("input", e=>{
-      const i=+e.target.dataset.i, k=e.target.dataset.k;
-      const val=e.target.value;
-      rcDraft[i][k]= (k==="disc4"||k==="disc8") ? (val===""?"":parseFloat(val)) : val;
-      if(["cost","rate"].includes(k) && !isStudioHourly(rcDraft[i].desc)) updateRcMargin(i);
-    });
-  });
-  body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", e=>{ rcDraft.splice(+e.target.dataset.del,1); renderRateCard(); }));
-}
-function updateRcMargin(i){
-  const c=rcDraft[i];
-  const hasCost=c.cost!==""&&c.cost!=null, hasRate=c.rate!==""&&c.rate!=null;
-  const rateNum=parseFloat(c.rate)||0, costNum=hasCost?parseFloat(c.cost)||0:null;
-  const margin=(costNum!==null&&hasRate)?rateNum-costNum:null;
-  const mpct=(margin!==null&&rateNum>0)?Math.round(margin/rateNum*100):null;
-  const row=document.querySelector(`#rcBody tr[data-row="${i}"]`);
-  if(!row) return;
-  const cell=row.querySelector(".td-margin");
-  if(cell) cell.innerHTML=margin!==null?`${money(Math.round(margin))}${mpct!==null?`<small>${mpct}% margin</small>`:""}`:"—";
-}
-async function saveRateCard(){
-  // Build old→new description rename map before overwriting settings.rateCard.
-  // rcDraft entries are matched to the current card by position; if a desc changed,
-  // any line item using the old name gets updated to the new one.
-  const prevCard = settings.rateCard;
-  const renameMap = {};
-  rcDraft.forEach((c,i)=>{
-    const oldDesc = (prevCard[i]||{}).desc||"";
-    const newDesc = (c.desc||"").trim();
-    if(oldDesc && newDesc && oldDesc!==newDesc) renameMap[oldDesc]=newDesc;
-  });
-
-  settings.rateCard = rcDraft
-    .filter(c=>(c.desc||"").trim()!=="")
-    .map(c=>{
-      const base={desc:c.desc.trim(), sac:(c.sac||"").trim(), cost:c.cost, gst:(c.gst===""||c.gst==null)?FALLBACK_GST:parseFloat(c.gst), rate:c.rate};
-      if(isStudioHourly(c.desc)){
-        base.disc4 = (c.disc4===""||c.disc4==null) ? 0 : parseFloat(c.disc4);
-        base.disc8 = (c.disc8===""||c.disc8==null) ? 0 : parseFloat(c.disc8);
-      }
-      return base;
-    });
-  if(!settings.rateCard.length) settings.rateCard=DEFAULT_SETTINGS.rateCard.map(x=>({...x}));
-
-  // Apply renames to current line items so they stay matched to the updated card.
-  if(Object.keys(renameMap).length){
-    items.forEach(it=>{ if(renameMap[it.desc]) it.desc=renameMap[it.desc]; });
-  }
-  localStorage.setItem(K_SET, JSON.stringify(settings));
-  if(proxyToken){
-    try{
-      const res=await fetch(PROXY_URL+'/rates',{method:'PUT',
-        headers:{'X-Token':proxyToken,'Content-Type':'application/json'},
-        body:JSON.stringify({version:1, rateCard:settings.rateCard})});
-      if(res.status===401) handleExpired();
-    }catch(e){ console.error('Rate card push failed',e); }
-  }
-  // Re-render the builder so renamed services / new prices flow through
-  // immediately. The auto-driven studio line gets its price refreshed from
-  // the updated card; regular items keep any manually-entered price but the
-  // dropdown now lists the current service names.
-  const sIdx=items.findIndex(it=>isStudioHourly(it.desc));
-  if(sIdx>=0){
-    const hours=parseInt($("#hours").value,10)||MIN_HOURS;
-    const card=studioCard(items[sIdx].desc);
-    items[sIdx].price=studioPrice(card,hours);
-    items[sIdx].sac=card.sac;
-    items[sIdx].gst=card.gst??FALLBACK_GST;
-  }
-  renderItems(); render();
-  toast("Rate card saved");
-  closeConfig();
-}
-
-/* ---------- SETTINGS ---------- */
-function openSettings(){ openConfig("settings"); }
-function renderImgPrev(key,sel){
-  const v=settings[key];
-  if(key==="logo") $(sel).innerHTML = v?`<div class="logo-preview"><img src="${v}"></div>`:`<p class="hint">No logo set.</p>`;
-  else $(sel).innerHTML = v?`<div class="qr-preview"><img src="${v}"></div>`:`<p class="hint">No QR set — a placeholder shows on the quote.</p>`;
-}
-function pickImage(e,key,sel){ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ settings[key]=r.result; renderImgPrev(key,sel); }; r.readAsDataURL(f); }
-function saveSettings(){
-  settings.company=$("#setCompany").value; settings.bank=$("#setBank").value;
-  settings.terms=$("#setTerms").value; settings.prefix=$("#setPrefix").value.trim()||"RYST";
-  localStorage.setItem(K_SET, JSON.stringify(settings));
-  closeConfig(); setBrandLogos(); render(); toast("Settings saved");
 }
 
 /* ---------- PDF via native print → Save as PDF ---------- */
