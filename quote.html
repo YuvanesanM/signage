@@ -217,6 +217,20 @@
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1d211c;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:60}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* PIN modal */
+  #pinOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:200}
+  #pinOverlay[hidden]{display:none}
+  .pin-card{background:#fff;border-radius:16px;padding:32px 28px 28px;width:280px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+  .pin-card h3{margin:0 0 6px;font-size:17px;color:var(--dark)}
+  .pin-card p{margin:0 0 20px;font-size:13px;color:var(--muted)}
+  .pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);background:transparent;transition:.15s}
+  .pin-dot.filled{background:var(--accent)}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  .pin-key{background:#f4f6f3;border:none;border-radius:10px;padding:14px 0;font-size:18px;font-weight:600;cursor:pointer;color:var(--dark);transition:.12s}
+  .pin-key:active{background:var(--accent);color:#fff}
+  .pin-err{color:#c0392b;font-size:13px;min-height:18px;margin-top:-8px}
+
   @media (max-width:900px){
     main.work{grid-template-columns:1fr;height:auto}
     .form{border-right:none;border-bottom:1px solid var(--line)}
@@ -474,6 +488,22 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PIN gate for settings -->
+<div id="pinOverlay" hidden>
+  <div class="pin-card">
+    <h3>Enter PIN</h3>
+    <p>Rate card &amp; settings are protected</p>
+    <div class="pin-dots">
+      <span class="pin-dot" id="pd0"></span>
+      <span class="pin-dot" id="pd1"></span>
+      <span class="pin-dot" id="pd2"></span>
+      <span class="pin-dot" id="pd3"></span>
+    </div>
+    <div class="pin-pad" id="pinPad"></div>
+    <div class="pin-err" id="pinErr"></div>
+  </div>
+</div>
 
 <script>
 /* =========================================================================
@@ -941,7 +971,49 @@ function switchCfgTab(tab){
   document.querySelectorAll(".cfg-tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   $("#viewLabel").textContent = tab==="settings" ? "Studio settings" : "Rate card";
 }
-function openConfig(tab){
+/* ---------- PIN GATE ---------- */
+const RC_PIN_HASH="8e9b669109df89620b94f2387dc53206a82ddc71d658f8f7a2b3a9b417370d3e";
+let _pinBuf="", _pinTarget=null;
+async function sha256(s){
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+(function buildPinPad(){
+  const pad=document.getElementById("pinPad"); if(!pad) return;
+  const keys=[1,2,3,4,5,6,7,8,9,"⌫",0,"✓"];
+  keys.forEach(k=>{
+    const b=document.createElement("button");
+    b.className="pin-key"; b.textContent=String(k); b.type="button";
+    b.addEventListener("click",()=>handlePinKey(String(k)));
+    pad.appendChild(b);
+  });
+})();
+function showPinOverlay(tab){
+  _pinBuf=""; _pinTarget=tab||"rate";
+  updatePinDots(); document.getElementById("pinErr").textContent="";
+  document.getElementById("pinOverlay").hidden=false;
+}
+function hidePinOverlay(){ document.getElementById("pinOverlay").hidden=true; _pinBuf=""; }
+function updatePinDots(){
+  for(let i=0;i<4;i++) document.getElementById("pd"+i).classList.toggle("filled",i<_pinBuf.length);
+}
+async function handlePinKey(k){
+  if(k==="⌫"){ _pinBuf=_pinBuf.slice(0,-1); updatePinDots(); return; }
+  if(k==="✓"){ await checkPin(); return; }
+  if(_pinBuf.length>=4) return;
+  _pinBuf+=k; updatePinDots();
+  if(_pinBuf.length===4) await checkPin();
+}
+async function checkPin(){
+  const h=await sha256(_pinBuf);
+  if(h===RC_PIN_HASH){ hidePinOverlay(); _openConfig(_pinTarget); }
+  else{
+    document.getElementById("pinErr").textContent="Incorrect PIN";
+    for(let i=0;i<4;i++) document.getElementById("pd"+i).classList.add("filled");
+    setTimeout(()=>{ _pinBuf=""; updatePinDots(); document.getElementById("pinErr").textContent=""; },700);
+  }
+}
+function _openConfig(tab){
   rcDraft = settings.rateCard.map(c=>({...c}));
   renderRateCard();
   $("#setCompany").value=settings.company; $("#setBank").value=settings.bank;
@@ -952,6 +1024,7 @@ function openConfig(tab){
   $("#configView").hidden=false;
   document.querySelectorAll(".quote-only").forEach(b=>b.classList.add("hide"));
 }
+function openConfig(tab){ showPinOverlay(tab); }
 function closeConfig(){
   $("#configView").hidden=true;
   $("#quoteView").classList.remove("hide");
