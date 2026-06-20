@@ -637,22 +637,30 @@ setBrandLogos();
 // Redirect to login if no valid token; init app otherwise
 (async function bootAuth(){
   if(!proxyToken){ window.location.href='login.html'; return; }
-  const res=await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
-  if(res && res.ok){
-    await initApp();
-    if(new URLSearchParams(location.search).get('config')==='1') openConfig('rate');
-  } else {
-    proxyToken=''; localStorage.removeItem('ryst_proxy_token');
-    window.location.href='login.html';
-  }
+  // Show the app immediately from localStorage/defaults — don't block on network.
+  init();
+  $("#app").hidden = false;
+  if(new URLSearchParams(location.search).get('config')==='1') openConfig('rate');
+  // Validate token + refresh data in background.
+  initApp();
 })();
 
 /* ---------- INIT ---------- */
 async function initApp(){
-  await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
-  setConnected(true);
-  init();
-  $("#app").hidden = false;
+  const res = await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
+  if(res && res.status===401){ proxyToken=''; localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; return; }
+  if(res && res.ok){
+    await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
+    setConnected(true);
+    // Refresh studio line price now that real rates are loaded.
+    const sIdx=items.findIndex(it=>isStudioHourly(it.desc));
+    if(sIdx>=0){
+      const hours=parseInt($("#hours").value,10)||MIN_HOURS;
+      const card=studioCard(items[sIdx].desc);
+      items[sIdx].price=studioPrice(card,hours);
+    }
+    renderItems(); render();
+  }
 }
 function init(){
   setBrandLogos();
@@ -1080,6 +1088,17 @@ function updateRcMargin(i){
   if(cell) cell.innerHTML=margin!==null?`${money(Math.round(margin))}${mpct!==null?`<small>${mpct}% margin</small>`:""}`:"—";
 }
 async function saveRateCard(){
+  // Build old→new description rename map before overwriting settings.rateCard.
+  // rcDraft entries are matched to the current card by position; if a desc changed,
+  // any line item using the old name gets updated to the new one.
+  const prevCard = settings.rateCard;
+  const renameMap = {};
+  rcDraft.forEach((c,i)=>{
+    const oldDesc = (prevCard[i]||{}).desc||"";
+    const newDesc = (c.desc||"").trim();
+    if(oldDesc && newDesc && oldDesc!==newDesc) renameMap[oldDesc]=newDesc;
+  });
+
   settings.rateCard = rcDraft
     .filter(c=>(c.desc||"").trim()!=="")
     .map(c=>{
@@ -1091,6 +1110,11 @@ async function saveRateCard(){
       return base;
     });
   if(!settings.rateCard.length) settings.rateCard=DEFAULT_SETTINGS.rateCard.map(x=>({...x}));
+
+  // Apply renames to current line items so they stay matched to the updated card.
+  if(Object.keys(renameMap).length){
+    items.forEach(it=>{ if(renameMap[it.desc]) it.desc=renameMap[it.desc]; });
+  }
   localStorage.setItem(K_SET, JSON.stringify(settings));
   if(proxyToken){
     try{
