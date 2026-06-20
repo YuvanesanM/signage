@@ -80,6 +80,7 @@
   .li-row input,.li-row select{padding:9px 10px;font-size:13px}
   .li-row input.num{text-align:center}
   .li-row input.tot{background:var(--accent-soft);border-color:#d3e7db;color:var(--accent-d);font-weight:600;text-align:right}
+  .li-row input.warn{border-color:var(--danger)!important;background:#fff5f5!important}
   .li-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;height:34px;font-size:16px;line-height:1;margin-top:2px}
   .li-del:hover{border-color:var(--danger);color:var(--danger)}
   .li-desc-wrap{display:flex;flex-direction:column;gap:4px}
@@ -703,6 +704,9 @@ function renderItems(){
     const isStudio=isStudioHourly(it.desc);
     const inRC=settings.rateCard.some(c=>c.desc===it.desc);
     const isCustom=!inRC && it.desc!=="";
+    const rcEntry=settings.rateCard.find(c=>c.desc===it.desc);
+    const minPrice=(rcEntry&&rcEntry.rate!==""&&rcEntry.rate!=null)?parseFloat(rcEntry.rate)||0:0;
+    const priceWarn=minPrice>0&&it.price!==""&&parseFloat(it.price)<minPrice;
     // Studio rental entries are hidden from the dropdown — that line is driven
     // by the Zone + Duration selectors above, not chosen here.
     const rcOpts=settings.rateCard
@@ -721,8 +725,8 @@ function renderItems(){
       <div class="li-desc-wrap">
         ${descCell}
       </div>
-      <input class="t num" data-i="${i}" data-k="price" type="number" min="0" placeholder="0" value="${esc(it.price)}">
-      <input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" placeholder="1" value="${esc(it.qty)}">
+      <input class="t num${priceWarn?' warn':''}" data-i="${i}" data-k="price" data-min="${minPrice}" type="number" min="${minPrice||0}" inputmode="decimal" placeholder="${minPrice||0}" value="${esc(it.price)}">
+      <input class="t num" data-i="${i}" data-k="qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">
       <input class="t tot" value="${money(lineTotal(it))}" readonly tabindex="-1">
       <button class="li-del" data-del="${i}" title="Remove">×</button>`;
     body.appendChild(row);
@@ -762,10 +766,26 @@ function renderItems(){
   body.querySelectorAll("input[data-k=\"price\"],input[data-k=\"qty\"]").forEach(inp=>{
     inp.addEventListener("input", e=>{
       const i=+e.target.dataset.i, k=e.target.dataset.k; items[i][k]=e.target.value;
+      if(k==="price"){
+        const min=parseFloat(e.target.dataset.min)||0;
+        e.target.classList.toggle("warn", min>0 && parseFloat(e.target.value||0)<min);
+      }
       const cell=e.target.closest(".li-row").querySelector(".tot");
       if(cell) cell.value=money(lineTotal(items[i]));
       render();
     });
+    if(inp.dataset.k==="price"){
+      inp.addEventListener("blur", e=>{
+        const i=+e.target.dataset.i, min=parseFloat(e.target.dataset.min)||0;
+        if(min>0 && (parseFloat(e.target.value)||0)<min){
+          e.target.value=String(min); items[i].price=String(min);
+          e.target.classList.remove("warn");
+          const cell=e.target.closest(".li-row").querySelector(".tot");
+          if(cell) cell.value=money(lineTotal(items[i]));
+          render(); toast("Price cannot go below selling rate");
+        }
+      });
+    }
   });
   body.querySelectorAll("[data-del]").forEach(b=>{
     b.addEventListener("click", e=>{
@@ -896,9 +916,9 @@ function renderRateCard(){
     row.innerHTML=`
       <td><input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}" style="min-width:170px"></td>
       <td><input data-i="${i}" data-k="sac" placeholder="997212" value="${esc(c.sac)}"></td>
-      <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" placeholder="0" value="${esc(c.cost)}" title="Pre-tax purchase cost"></td>
-      <td><input class="c" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" placeholder="18" value="${esc(c.gst)}"></td>
-      <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" placeholder="0" value="${esc(c.rate)}"></td>
+      <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" inputmode="decimal" placeholder="0" value="${esc(c.cost)}" title="Pre-tax purchase cost"></td>
+      <td><input class="c" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" inputmode="decimal" placeholder="18" value="${esc(c.gst)}"></td>
+      <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" inputmode="decimal" placeholder="0" value="${esc(c.rate)}"></td>
       <td class="td-margin">${margin!==null?money(Math.round(margin)):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</td>
       <td><button class="rc-del" data-del="${i}" title="Remove">×</button></td>`;
     body.appendChild(row);
