@@ -165,8 +165,14 @@
   .busy{opacity:.6;pointer-events:none}
 
   /* ============ RATE CARD VIEW ============ */
-  #rateView{height:calc(100vh - 59px);overflow-y:auto;padding:28px 32px 80px;background:var(--bg)}
-  #rateView[hidden]{display:none}
+  #configView{height:calc(100vh - 59px);overflow-y:auto;padding:0 32px 80px;background:var(--bg)}
+  #configView[hidden]{display:none}
+  .cfg-wrap{max-width:1020px;margin:0 auto}
+  .cfg-tabs{display:flex;align-items:center;gap:2px;border-bottom:2px solid var(--line);margin-bottom:28px;padding-top:24px;position:sticky;top:0;background:var(--bg);z-index:5;padding-bottom:0}
+  .cfg-tab{background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:10px 18px;font-size:13.5px;font-weight:500;color:var(--muted2);cursor:pointer;border-radius:8px 8px 0 0;transition:.15s;font-family:inherit}
+  .cfg-tab:hover{color:var(--ink)}
+  .cfg-tab.active{color:var(--accent-d);font-weight:700;border-bottom-color:var(--accent)}
+  .cfg-back-wrap{margin-left:auto;padding-bottom:4px}
   .rc-wrap{max-width:1020px;margin:0 auto}
   .rc-wrap h2{font-size:22px;font-weight:600;margin:0 0 4px}
   .rc-wrap .sd{color:var(--muted);font-size:13px;margin:0 0 22px}
@@ -257,7 +263,7 @@
     /* Collapse every structural container so it occupies NO print space.
        (visibility:hidden alone keeps the box model — that caused the giant
        app layout to be scaled down into a small box with big margins.)    */
-    header.bar, .form, #rateView, #login, .modal, .toast{ display:none !important }
+    header.bar, .form, #configView, #login, .modal, .toast{ display:none !important }
     #app{ display:block !important }
     main.work{ display:block !important; height:auto !important; grid-template-columns:none !important }
     .preview{ display:block !important; height:auto !important; margin:0 !important; padding:0 !important;
@@ -301,14 +307,11 @@
     </div>
     <div class="bar-actions">
       <!-- utility icon buttons -->
-      <button class="btn icon-btn" id="btnRate" title="Rate Card">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x=".75" y=".75" width="13.5" height="13.5" rx="1.75"/><line x1=".75" y1="5.25" x2="14.25" y2="5.25"/><line x1=".75" y1="9.75" x2="14.25" y2="9.75"/><line x1="5.25" y1="5.25" x2="5.25" y2="14.25"/></svg>
+      <button class="btn icon-btn" id="btnConfig" title="Rate Card & Settings">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="2.25"/><path d="M7.5 1.5V3M7.5 12V13.5M1.5 7.5H3M12 7.5h1.5M3.2 3.2l1.05 1.05M10.75 10.75l1.05 1.05M3.2 11.8l1.05-1.05M10.75 4.25l1.05-1.05"/></svg>
       </button>
       <button class="btn icon-btn quote-only" id="btnSaved" title="Saved Quotes">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 1.75h11a1 1 0 011 1V13l-6.5-2.5L1 13V2.75a1 1 0 011-1z"/></svg>
-      </button>
-      <button class="btn icon-btn quote-only" id="btnSettings" title="Settings">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="2.25"/><path d="M7.5 1.5V3M7.5 12V13.5M1.5 7.5H3M12 7.5h1.5M3.2 3.2l1.05 1.05M10.75 10.75l1.05 1.05M3.2 11.8l1.05-1.05M10.75 4.25l1.05-1.05"/></svg>
       </button>
       <div class="bar-sep quote-only"></div>
       <!-- primary action buttons -->
@@ -428,53 +431,55 @@
     </section>
   </main>
 
-  <!-- ====== RATE CARD ====== -->
-  <section id="rateView" hidden>
-    <div class="rc-wrap">
-      <h2>Rate Card</h2>
-      <p class="sd">Master pricing for Studio RYST services. The quote pulls the selling rate, SAC code and GST % from here. Purchase cost is internal — it never appears on the client quote.</p>
-      <div class="rc-table-wrap">
-        <table class="rc-table">
-          <thead><tr>
-            <th>Service description</th>
-            <th style="width:106px">SAC code</th>
-            <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(pre-tax)</span></th>
-            <th class="c" style="width:68px">GST %</th>
-            <th class="r" style="width:128px">Base rate/hr</th>
-            <th class="c" style="width:148px">Margin <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">/ Discount tiers</span></th>
-            <th style="width:36px"></th>
-          </tr></thead>
-          <tbody id="rcBody"></tbody>
-        </table>
+  <!-- ====== COMBINED CONFIG VIEW ====== -->
+  <section id="configView" hidden>
+    <div class="cfg-wrap">
+      <div class="cfg-tabs">
+        <button class="cfg-tab active" data-tab="rate">Rate Card</button>
+        <button class="cfg-tab" data-tab="settings">Studio Settings</button>
+        <div class="cfg-back-wrap"><button class="btn" id="cfgBack">← Back to quote</button></div>
       </div>
-      <button class="rc-add" id="rcAdd">+ Add service</button>
-      <div class="rc-foot">
-        <button class="btn primary" id="rcSave">Save rate card</button>
-        <button class="btn" id="rcBack">Back to quote</button>
+
+      <!-- Rate Card pane -->
+      <div id="cfgRatePane">
+        <p class="sd">Master pricing. The quote pulls selling rate, SAC code and GST % from here. Purchase cost is internal — never shown on client quote.</p>
+        <div class="rc-table-wrap">
+          <table class="rc-table">
+            <thead><tr>
+              <th>Service description</th>
+              <th style="width:106px">SAC code</th>
+              <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(pre-tax)</span></th>
+              <th class="c" style="width:68px">GST %</th>
+              <th class="r" style="width:128px">Base rate/hr</th>
+              <th class="c" style="width:148px">Margin <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">/ Discount tiers</span></th>
+              <th style="width:36px"></th>
+            </tr></thead>
+            <tbody id="rcBody"></tbody>
+          </table>
+        </div>
+        <button class="rc-add" id="rcAdd">+ Add service</button>
+        <div class="rc-foot">
+          <button class="btn primary" id="rcSave">Save rate card</button>
+        </div>
+      </div>
+
+      <!-- Studio Settings pane -->
+      <div id="cfgSettingsPane" hidden>
+        <p class="sd">Saved on this device. These appear on every quote.</p>
+        <label class="f"><span>Logo (PNG/JPG)</span><input type="file" id="logoFile" accept="image/*" class="t"></label>
+        <div id="logoPrev"></div>
+        <label class="f"><span>Payment QR (PNG/JPG)</span><input type="file" id="qrFile" accept="image/*" class="t"></label>
+        <div id="qrPrev"></div>
+        <label class="f"><span>Company header block (right of logo)</span><textarea class="t" id="setCompany" rows="5"></textarea></label>
+        <label class="f"><span>Bank / payment details block</span><textarea class="t" id="setBank" rows="6"></textarea></label>
+        <label class="f"><span>Default terms (one per line)</span><textarea class="t" id="setTerms" rows="8"></textarea></label>
+        <label class="f"><span>Quote no. prefix</span><input class="t" id="setPrefix" placeholder="RYST"></label>
+        <div class="rc-foot">
+          <button class="btn primary" id="setSave">Save settings</button>
+        </div>
       </div>
     </div>
   </section>
-</div>
-
-
-<!-- ===================== SETTINGS MODAL ===================== -->
-<div class="modal" id="settingsModal" hidden>
-  <div class="modal-card">
-    <h2>Studio settings</h2>
-    <p class="sd">Saved on this device. These appear on every quote.</p>
-    <label class="f"><span>Logo (PNG/JPG)</span><input type="file" id="logoFile" accept="image/*" class="t"></label>
-    <div id="logoPrev"></div>
-    <label class="f"><span>Payment QR (PNG/JPG)</span><input type="file" id="qrFile" accept="image/*" class="t"></label>
-    <div id="qrPrev"></div>
-    <label class="f"><span>Company header block (right of logo)</span><textarea class="t" id="setCompany" rows="5"></textarea></label>
-    <label class="f"><span>Bank / payment details block</span><textarea class="t" id="setBank" rows="6"></textarea></label>
-    <label class="f"><span>Default terms (one per line)</span><textarea class="t" id="setTerms" rows="8"></textarea></label>
-    <label class="f"><span>Quote no. prefix</span><input class="t" id="setPrefix" placeholder="RYST"></label>
-    <div class="modal-foot">
-      <button class="btn" id="setCancel">Cancel</button>
-      <button class="btn primary" id="setSave">Save settings</button>
-    </div>
-  </div>
 </div>
 
 <!-- ===================== SAVED MODAL ===================== -->
@@ -697,13 +702,12 @@ function bind(){
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", saveQuote);
   $("#btnPdf").addEventListener("click", downloadPdf);
-  $("#btnSettings").addEventListener("click", openSettings);
+  $("#btnConfig").addEventListener("click", ()=>openConfig("rate"));
   $("#btnSaved").addEventListener("click", openSaved);
-  $("#btnRate").addEventListener("click", openRateCard);
+  document.querySelectorAll(".cfg-tab").forEach(b=>b.addEventListener("click",()=>switchCfgTab(b.dataset.tab)));
+  $("#cfgBack").addEventListener("click", closeConfig);
   $("#rcAdd").addEventListener("click", ()=>{ rcDraft.push({desc:"",sac:"",cost:"",gst:18,rate:""}); renderRateCard(); });
   $("#rcSave").addEventListener("click", saveRateCard);
-  $("#rcBack").addEventListener("click", closeRateCard);
-  $("#setCancel").addEventListener("click", ()=>$("#settingsModal").hidden=true);
   $("#setSave").addEventListener("click", saveSettings);
   $("#savedClose").addEventListener("click", ()=>$("#savedModal").hidden=true);
   $("#logoFile").addEventListener("change", e=>pickImage(e,"logo","#logoPrev"));
@@ -921,21 +925,30 @@ function openSaved(){
   $("#savedModal").hidden=false;
 }
 
-/* ---------- RATE CARD ---------- */
-function openRateCard(){
+/* ---------- CONFIG (Rate Card + Settings) ---------- */
+function switchCfgTab(tab){
+  $("#cfgRatePane").hidden    = tab!=="rate";
+  $("#cfgSettingsPane").hidden = tab!=="settings";
+  document.querySelectorAll(".cfg-tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  $("#viewLabel").textContent = tab==="settings" ? "Studio settings" : "Rate card";
+}
+function openConfig(tab){
   rcDraft = settings.rateCard.map(c=>({...c}));
   renderRateCard();
+  $("#setCompany").value=settings.company; $("#setBank").value=settings.bank;
+  $("#setTerms").value=settings.terms; $("#setPrefix").value=settings.prefix;
+  renderImgPrev("logo","#logoPrev"); renderImgPrev("qr","#qrPrev");
+  switchCfgTab(tab||"rate");
   $("#quoteView").classList.add("hide");
-  $("#rateView").hidden=false;
+  $("#configView").hidden=false;
   document.querySelectorAll(".quote-only").forEach(b=>b.classList.add("hide"));
-  $("#btnRate").classList.add("hide");
-  $("#viewLabel").textContent="Rate card";
+  $("#btnConfig").classList.add("hide");
 }
-function closeRateCard(){
-  $("#rateView").hidden=true;
+function closeConfig(){
+  $("#configView").hidden=true;
   $("#quoteView").classList.remove("hide");
   document.querySelectorAll(".quote-only").forEach(b=>b.classList.remove("hide"));
-  $("#btnRate").classList.remove("hide");
+  $("#btnConfig").classList.remove("hide");
   $("#viewLabel").textContent="Quotation builder";
 }
 function renderRateCard(){
@@ -1008,16 +1021,11 @@ async function saveRateCard(){
     }catch(e){ console.error('Rate card push failed',e); }
   }
   toast("Rate card saved");
-  closeRateCard();
+  closeConfig();
 }
 
 /* ---------- SETTINGS ---------- */
-function openSettings(){
-  $("#setCompany").value=settings.company; $("#setBank").value=settings.bank;
-  $("#setTerms").value=settings.terms; $("#setPrefix").value=settings.prefix;
-  renderImgPrev("logo","#logoPrev"); renderImgPrev("qr","#qrPrev");
-  $("#settingsModal").hidden=false;
-}
+function openSettings(){ openConfig("settings"); }
 function renderImgPrev(key,sel){
   const v=settings[key];
   if(key==="logo") $(sel).innerHTML = v?`<div class="logo-preview"><img src="${v}"></div>`:`<p class="hint">No logo set.</p>`;
@@ -1028,7 +1036,7 @@ function saveSettings(){
   settings.company=$("#setCompany").value; settings.bank=$("#setBank").value;
   settings.terms=$("#setTerms").value; settings.prefix=$("#setPrefix").value.trim()||"RYST";
   localStorage.setItem(K_SET, JSON.stringify(settings));
-  $("#settingsModal").hidden=true; setBrandLogos(); render(); toast("Settings saved");
+  closeConfig(); setBrandLogos(); render(); toast("Settings saved");
 }
 
 /* ---------- PDF via native print → Save as PDF ---------- */
