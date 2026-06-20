@@ -28,6 +28,18 @@
   button{font-family:inherit;cursor:pointer}
   input,textarea,select{font-family:inherit}
 
+  /* ---------- HOME ---------- */
+  #homeView{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;background:radial-gradient(1100px 560px at 50% -8%,#ffffff 0%,var(--bg) 65%);z-index:40;padding:24px}
+  #homeView[hidden]{display:none}
+  #homeLogo{max-height:72px;max-width:220px;display:block}
+  .home-cards{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+  .home-card{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:32px 28px;width:210px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:.18s;text-align:center;font-family:inherit}
+  .home-card:hover{border-color:var(--accent);box-shadow:0 8px 28px rgba(60,100,60,.13);transform:translateY(-3px)}
+  .hc-icon{width:52px;height:52px;background:var(--accent-soft);border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--accent-d)}
+  .hc-title{font-size:15px;font-weight:700;color:var(--ink)}
+  .hc-sub{font-size:12px;color:var(--muted2);line-height:1.45}
+  @media(max-width:480px){.home-cards{flex-direction:column;align-items:center}.home-card{width:min(260px,100%)}}
+
   /* ---------- LOGIN ---------- */
   #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 560px at 50% -8%, #ffffff 0%, var(--bg) 65%);z-index:50;padding:24px}
   .login-card{width:min(380px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:34px 32px;text-align:center;box-shadow:0 18px 50px rgba(40,50,40,.10)}
@@ -297,11 +309,28 @@
   </div>
 </div>
 
+<!-- ===================== HOME ===================== -->
+<div id="homeView" hidden>
+  <img id="homeLogo" alt="Studio RYST">
+  <div class="home-cards">
+    <button class="home-card" id="goQuote">
+      <div class="hc-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+      <span class="hc-title">Quote Builder</span>
+      <span class="hc-sub">Create and manage client quotes</span>
+    </button>
+    <button class="home-card" id="goConfig">
+      <div class="hc-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      <span class="hc-title">Rate Card & Settings</span>
+      <span class="hc-sub">Update pricing and studio details</span>
+    </button>
+  </div>
+</div>
+
 <!-- ===================== APP ===================== -->
 <div id="app" hidden>
   <header class="bar">
     <div class="bar-left">
-      <img class="hdr-logo" id="hdrLogo" alt="Studio RYST">
+      <img class="hdr-logo" id="hdrLogo" alt="Studio RYST" style="cursor:pointer" title="Home">
       <div class="sub" id="viewLabel">Quotation builder</div>
       <span class="conn-dot" id="connDot" title="Cloud sync"></span>
     </div>
@@ -616,9 +645,25 @@ function nextQuoteNo(){
 
 /* ---------- BRAND LOGOS ---------- */
 function setBrandLogos(){
-  if(settings.logo){ $("#loginLogo").src=settings.logo; $("#hdrLogo").src=settings.logo; }
+  if(settings.logo){
+    ["#loginLogo","#hdrLogo","#homeLogo"].forEach(s=>{ const el=$(s); if(el) el.src=settings.logo; });
+  }
 }
 setBrandLogos();
+
+/* ---------- HOME ---------- */
+let initPromise = null;
+function showHome(){
+  if(!$("#configView").hidden) closeConfig();
+  $("#app").hidden = true;
+  $("#homeView").hidden = false;
+}
+async function goToTool(tool){
+  $("#homeView").hidden = true;
+  if(initPromise){ await initPromise; initPromise = null; }
+  $("#app").hidden = false;
+  if(tool === "config") openConfig("rate");
+}
 
 /* ---------- LOGIN ---------- */
 async function tryLogin(){
@@ -630,8 +675,9 @@ async function tryLogin(){
     const data=await res.json();
     if(data.ok && data.token){
       proxyToken=data.token; localStorage.setItem('ryst_proxy_token',data.token);
-      $("#login").style.display="none"; $("#app").hidden=false;
-      await initApp();
+      $("#login").style.display="none";
+      initPromise = initApp();
+      $("#homeView").hidden=false;
     } else {
       $("#loginErr").textContent=data.error||"Incorrect password."; $("#pw").select();
     }
@@ -647,7 +693,8 @@ $("#pw").addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
   $("#login").style.display="none";
   const res=await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
   if(res && res.ok){
-    $("#app").hidden=false; await initApp();
+    initPromise = initApp();
+    $("#homeView").hidden=false;
   } else {
     proxyToken=''; localStorage.removeItem('ryst_proxy_token');
     $("#login").style.display=""; // token rejected — show login
@@ -702,6 +749,9 @@ function bind(){
   $("#zone").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#hours").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
+  $("#goQuote").addEventListener("click", ()=>goToTool("quote"));
+  $("#goConfig").addEventListener("click", ()=>goToTool("config"));
+  $("#hdrLogo").addEventListener("click", showHome);
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", saveQuote);
   $("#btnPdf").addEventListener("click", downloadPdf);
