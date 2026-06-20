@@ -549,6 +549,8 @@ async function fetchRatesFromProxy(){
     const d = await res.json();
     if(Array.isArray(d.rateCard) && d.rateCard.length){
       settings.rateCard = d.rateCard;
+      // Cache locally so the rate card survives an offline / cold-start load
+      try{ localStorage.setItem(K_SET, JSON.stringify(settings)); }catch(e){}
     }
   }catch(e){ console.warn('Could not load rates from proxy', e); }
 }
@@ -640,12 +642,27 @@ function studioPrice(card, hours){
   else if(hours>=4 && card.disc4!=null) disc=parseFloat(card.disc4)||0;
   return String(Math.round(hours*base*(1-disc/100)));
 }
+// Resolve a studio rate card entry, falling back to the built-in default
+// for any field the loaded rate card is missing — so a new quote always
+// gets a sensible price even if the proxy/localStorage copy is stale.
+function studioCard(desc){
+  const found = findCard(desc) || {};
+  const def   = DEFAULT_SETTINGS.rateCard.find(c=>c.desc===desc) || {};
+  const pick  = (a,b)=> (a!=="" && a!=null) ? a : b;
+  return {
+    sac:   found.sac || def.sac || "997212",
+    gst:   found.gst ?? def.gst ?? FALLBACK_GST,
+    rate:  pick(found.rate,  def.rate),
+    disc4: found.disc4 ?? def.disc4,
+    disc8: found.disc8 ?? def.disc8,
+  };
+}
 function zoneItem(){
   const zone=$("#zone").value||ZONES[0];
   const hours=parseInt($("#hours").value,10)||MIN_HOURS;
   const desc=zoneRentalDesc(zone);
-  const card=findCard(desc)||{sac:"997212",gst:FALLBACK_GST,rate:""};
-  return {desc, sac:card.sac||"997212", price:studioPrice(card,hours), qty:String(hours), gst:(card.gst??FALLBACK_GST)};
+  const card=studioCard(desc);
+  return {desc, sac:card.sac, price:studioPrice(card,hours), qty:String(hours), gst:(card.gst??FALLBACK_GST)};
 }
 function syncZoneItem(){
   const zi=zoneItem();
