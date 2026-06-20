@@ -640,7 +640,7 @@ function studioPrice(card, hours){
   let disc=0;
   if(hours>=8 && card.disc8!=null) disc=parseFloat(card.disc8)||0;
   else if(hours>=4 && card.disc4!=null) disc=parseFloat(card.disc4)||0;
-  return String(Math.round(base*(1-disc/100)));
+  return String(Math.round(hours*base*(1-disc/100)));
 }
 // Resolve a studio rate card entry, falling back to the built-in default
 // for any field the loaded rate card is missing — so a new quote always
@@ -662,18 +662,13 @@ function zoneItem(){
   const hours=parseInt($("#hours").value,10)||MIN_HOURS;
   const desc=zoneRentalDesc(zone);
   const card=studioCard(desc);
-  return {desc, sac:card.sac, price:studioPrice(card,hours), qty:String(hours), gst:(card.gst??FALLBACK_GST)};
+  return {desc, sac:card.sac, price:studioPrice(card,hours), qty:"1", gst:(card.gst??FALLBACK_GST)};
 }
 function syncZoneItem(){
   const zi=zoneItem();
   const idx=items.findIndex(it=>isStudioHourly(it.desc));
   if(idx>=0) items[idx]=zi; else items.unshift(zi);
   renderItems();
-}
-function syncStudioHours(){
-  const h=String(parseInt($("#hours").value,10)||1); let changed=false;
-  items.forEach(it=>{ if(isStudioHourly(it.desc)){ it.qty=h; changed=true; } });
-  if(changed) renderItems();
 }
 function bind(){
   ["cname","cgst","caddr","terms","discountInp"].forEach(id=> $("#"+id).addEventListener("input", render));
@@ -735,8 +730,8 @@ function renderItems(){
       <div class="li-desc-wrap">
         ${descCell}
       </div>
-      <input class="t num${priceWarn?' warn':''}" data-i="${i}" data-k="price" data-min="${minPrice}" type="number" min="${minPrice||0}" inputmode="decimal" placeholder="${minPrice||0}" value="${esc(it.price)}">
-      <input class="t num" data-i="${i}" data-k="qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">
+      <input class="t num${isStudio?' locked':''}${priceWarn?' warn':''}" data-i="${i}" data-k="price" data-min="${minPrice}" type="number" min="${minPrice||0}" inputmode="decimal" placeholder="${minPrice||0}" value="${esc(it.price)}"${isStudio?" readonly tabindex=\"-1\" title=\"Set by Zone & Duration above\"":""}>
+      <input class="t num${isStudio?' locked':''}" data-i="${i}" data-k="qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}"${isStudio?" readonly tabindex=\"-1\" title=\"Qty fixed at 1 for studio rental\"":""}>
       <input class="t tot" value="${money(lineTotal(it))}" readonly tabindex="-1">
       <button class="li-del" data-del="${i}" title="Remove">×</button>`;
     body.appendChild(row);
@@ -758,7 +753,7 @@ function renderItems(){
           if(c){
             items[i].sac=c.sac||""; items[i].gst=(c.gst??FALLBACK_GST);
             items[i].price=(c.rate===""||c.rate==null)?"":String(c.rate);
-            if(isStudioHourly(val)) items[i].qty=String(parseInt($("#hours").value,10)||MIN_HOURS);
+            if(isStudioHourly(val)) items[i].qty="1";
             const pin=row.querySelector("[data-k=\"price\"]"); if(pin) pin.value=items[i].price;
             const qin=row.querySelector("[data-k=\"qty\"]"); if(qin) qin.value=items[i].qty;
           }
