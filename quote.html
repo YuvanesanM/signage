@@ -284,8 +284,8 @@
     </div>
     <div class="bar-actions">
       <!-- utility icon buttons -->
-      <button class="btn icon-btn" id="btnConfig" title="Rate Card & Settings">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="2.25"/><path d="M7.5 1.5V3M7.5 12V13.5M1.5 7.5H3M12 7.5h1.5M3.2 3.2l1.05 1.05M10.75 10.75l1.05 1.05M3.2 11.8l1.05-1.05M10.75 4.25l1.05-1.05"/></svg>
+      <button class="btn icon-btn" id="btnHome" title="Home">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.25 7.5 2l5.5 5.25"/><path d="M3.25 6.5V13h8.5V6.5"/><path d="M6 13V9h3v4"/></svg>
       </button>
       <button class="btn icon-btn quote-only" id="btnSaved" title="Saved Quotes">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 1.75h11a1 1 0 011 1V13l-6.5-2.5L1 13V2.75a1 1 0 011-1z"/></svg>
@@ -663,7 +663,7 @@ function bind(){
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", saveQuote);
   $("#btnPdf").addEventListener("click", downloadPdf);
-  $("#btnConfig").addEventListener("click", ()=>openConfig("rate"));
+  $("#btnHome").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnSaved").addEventListener("click", openSaved);
   document.querySelectorAll(".cfg-tab").forEach(b=>b.addEventListener("click",()=>switchCfgTab(b.dataset.tab)));
   $("#cfgBack").addEventListener("click", closeConfig);
@@ -903,13 +903,11 @@ function openConfig(tab){
   $("#quoteView").classList.add("hide");
   $("#configView").hidden=false;
   document.querySelectorAll(".quote-only").forEach(b=>b.classList.add("hide"));
-  $("#btnConfig").classList.add("hide");
 }
 function closeConfig(){
   $("#configView").hidden=true;
   $("#quoteView").classList.remove("hide");
   document.querySelectorAll(".quote-only").forEach(b=>b.classList.remove("hide"));
-  $("#btnConfig").classList.remove("hide");
   $("#viewLabel").textContent="Quotation builder";
 }
 function renderRateCard(){
