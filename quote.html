@@ -730,8 +730,12 @@ function renderItems(){
       <div class="li-desc-wrap">
         ${descCell}
       </div>
-      <input class="t num${isStudio?' locked':''}${priceWarn?' warn':''}" data-i="${i}" data-k="price" data-min="${minPrice}" type="number" min="${minPrice||0}" inputmode="decimal" placeholder="${minPrice||0}" value="${esc(it.price)}"${isStudio?" readonly tabindex=\"-1\" title=\"Set by Zone & Duration above\"":""}>
-      <input class="t num${isStudio?' locked':''}" data-i="${i}" data-k="qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}"${isStudio?" readonly tabindex=\"-1\" title=\"Qty fixed at 1 for studio rental\"":""}>
+      ${isStudio
+        ? `<input class="t num locked" data-i="${i}" data-k="price" type="text" tabindex="-1" readonly value="${esc(it.price)}" title="Set by Zone & Duration above">`
+        : `<input class="t num${priceWarn?' warn':''}" data-i="${i}" data-k="price" data-min="${minPrice}" type="number" min="${minPrice||0}" inputmode="decimal" placeholder="${minPrice||0}" value="${esc(it.price)}">`}
+      ${isStudio
+        ? `<input class="t num locked" data-i="${i}" data-k="qty" type="text" tabindex="-1" readonly value="1" title="Qty fixed at 1 for studio rental">`
+        : `<input class="t num" data-i="${i}" data-k="qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">`}
       <input class="t tot" value="${money(lineTotal(it))}" readonly tabindex="-1">
       <button class="li-del" data-del="${i}" title="Remove">×</button>`;
     body.appendChild(row);
