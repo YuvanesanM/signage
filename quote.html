@@ -181,6 +181,11 @@
   table.rc-table td input.c{text-align:center}
   .td-margin{font-size:12px;text-align:center;color:var(--accent-d);font-weight:600;white-space:nowrap;padding:0 10px !important}
   .td-margin small{display:block;color:var(--muted2);font-weight:400;font-size:10.5px}
+  .td-disc{padding:3px 6px !important}
+  .disc-row{display:flex;align-items:center;gap:4px;margin:2px 0}
+  .disc-lbl{font-size:10px;color:var(--muted2);font-weight:600;width:30px;text-align:right;flex-shrink:0}
+  .disc-inp{width:58px !important;padding:4px 6px !important;font-size:12px !important;text-align:right}
+  .disc-pct{font-size:11px;color:var(--muted2);flex-shrink:0}
   .rc-del{background:transparent;border:1px solid var(--line);color:var(--muted2);border-radius:8px;width:30px;height:30px;font-size:16px;line-height:1;padding:0}
   .rc-del:hover{border-color:var(--danger);color:var(--danger)}
   .rc-foot{display:flex;gap:10px;margin-top:18px}
@@ -424,8 +429,8 @@
             <th style="width:106px">SAC code</th>
             <th class="r" style="width:148px">Purchase cost<br><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(pre-tax)</span></th>
             <th class="c" style="width:68px">GST %</th>
-            <th class="r" style="width:128px">Selling rate</th>
-            <th class="c" style="width:148px">Margin</th>
+            <th class="r" style="width:128px">Base rate/hr</th>
+            <th class="c" style="width:148px">Margin <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">/ Discount tiers</span></th>
             <th style="width:36px"></th>
           </tr></thead>
           <tbody id="rcBody"></tbody>
@@ -480,7 +485,7 @@
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 let proxyToken = localStorage.getItem('ryst_proxy_token') || '';
 const ZONES = ["Podcast", "Photography", "Culinary", "Multi-Zone"];
-const MIN_HOURS = 2;
+const MIN_HOURS = 1;
 const MAX_HOURS = 12;
 const FALLBACK_GST = 18;
 
@@ -503,10 +508,10 @@ Branch: KILPAUK
 Account Type: CURRENT`,
   prefix: "RYST",
   rateCard: [
-    {desc:"Studio Rental — Podcast (per hour)", sac:"997212", cost:"", gst:18, rate:1500},
-    {desc:"Studio Rental — Photography (per hour)", sac:"997212", cost:"", gst:18, rate:1200},
-    {desc:"Studio Rental — Culinary (per hour)", sac:"997212", cost:"", gst:18, rate:1200},
-    {desc:"Studio Rental — Multi-Zone (per hour)", sac:"997212", cost:"", gst:18, rate:2500},
+    {desc:"Studio Rental — Podcast (per hour)",     sac:"997212", cost:"", gst:18, rate:2250, disc4:11.11, disc8:16.67},
+    {desc:"Studio Rental — Photography (per hour)", sac:"997212", cost:"", gst:18, rate:2750, disc4:9.09,  disc8:18.18},
+    {desc:"Studio Rental — Culinary (per hour)",    sac:"997212", cost:"", gst:18, rate:3000, disc4:0,     disc8:8.33},
+    {desc:"Studio Rental — Multi-Zone (per hour)",  sac:"997212", cost:"", gst:18, rate:2500, disc4:10,    disc8:15},
     {desc:"Professional Videography Services with Camera", sac:"998386", cost:"", gst:18, rate:5400},
     {desc:"Video Post-Production & Editing Services", sac:"998386", cost:"", gst:18, rate:""}
   ],
@@ -647,12 +652,20 @@ function init(){
 
 function isStudioHourly(desc){ return /studio rental/i.test(desc||"") && /per hour/i.test(desc||""); }
 function zoneRentalDesc(zone){ return `Studio Rental — ${zone} (per hour)`; }
+function studioPrice(card, hours){
+  const base=parseFloat(card.rate)||0;
+  if(!base) return "";
+  let disc=0;
+  if(hours>=8 && card.disc8!=null) disc=parseFloat(card.disc8)||0;
+  else if(hours>=4 && card.disc4!=null) disc=parseFloat(card.disc4)||0;
+  return String(Math.round(hours*base*(1-disc/100)));
+}
 function zoneItem(){
   const zone=$("#zone").value||ZONES[0];
-  const h=String(parseInt($("#hours").value,10)||MIN_HOURS);
+  const hours=parseInt($("#hours").value,10)||MIN_HOURS;
   const desc=zoneRentalDesc(zone);
   const card=findCard(desc)||{sac:"997212",gst:FALLBACK_GST,rate:""};
-  return {desc, sac:card.sac||"997212", price:(card.rate===""||card.rate==null)?"":String(card.rate), qty:h, gst:(card.gst??FALLBACK_GST)};
+  return {desc, sac:card.sac||"997212", price:studioPrice(card,hours), qty:String(hours), gst:(card.gst??FALLBACK_GST)};
 }
 function syncZoneItem(){
   const zi=zoneItem();
@@ -668,7 +681,7 @@ function syncStudioHours(){
 function bind(){
   ["cname","cgst","caddr","terms"].forEach(id=> $("#"+id).addEventListener("input", render));
   $("#zone").addEventListener("input", ()=>{ syncZoneItem(); render(); });
-  $("#hours").addEventListener("input", ()=>{ syncStudioHours(); render(); });
+  $("#hours").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", saveQuote);
@@ -906,12 +919,19 @@ function closeRateCard(){
 function renderRateCard(){
   const body=$("#rcBody"); body.innerHTML="";
   rcDraft.forEach((c,i)=>{
+    const isStudio=isStudioHourly(c.desc);
     const hasCost = c.cost!=="" && c.cost!=null;
     const hasRate = c.rate!=="" && c.rate!=null;
     const rateNum = parseFloat(c.rate)||0;
     const costNum = hasCost ? (parseFloat(c.cost)||0) : null;
     const margin  = (costNum!==null&&hasRate) ? rateNum - costNum : null;
     const mpct    = (margin!==null&&rateNum>0) ? Math.round(margin/rateNum*100) : null;
+    const lastCol = isStudio
+      ? `<td class="td-disc">
+           <div class="disc-row"><span class="disc-lbl">4–7hr</span><input class="disc-inp" data-i="${i}" data-k="disc4" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0" value="${esc(c.disc4??'')}"><span class="disc-pct">%</span></div>
+           <div class="disc-row"><span class="disc-lbl">8+hr</span><input class="disc-inp" data-i="${i}" data-k="disc8" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0" value="${esc(c.disc8??'')}"><span class="disc-pct">%</span></div>
+         </td>`
+      : `<td class="td-margin">${margin!==null?money(Math.round(margin)):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</td>`;
     const row=document.createElement("tr"); row.dataset.row=String(i);
     row.innerHTML=`
       <td><input data-i="${i}" data-k="desc" placeholder="Service description" value="${esc(c.desc)}" style="min-width:170px"></td>
@@ -919,14 +939,16 @@ function renderRateCard(){
       <td><input class="r" data-i="${i}" data-k="cost" type="number" min="0" inputmode="decimal" placeholder="0" value="${esc(c.cost)}" title="Pre-tax purchase cost"></td>
       <td><input class="c" data-i="${i}" data-k="gst" type="number" min="0" step="0.5" inputmode="decimal" placeholder="18" value="${esc(c.gst)}"></td>
       <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" inputmode="decimal" placeholder="0" value="${esc(c.rate)}"></td>
-      <td class="td-margin">${margin!==null?money(Math.round(margin)):"—"}${mpct!==null?`<small>${mpct}% margin</small>`:""}</td>
+      ${lastCol}
       <td><button class="rc-del" data-del="${i}" title="Remove">×</button></td>`;
     body.appendChild(row);
   });
   body.querySelectorAll("input[data-i]").forEach(inp=>{
     inp.addEventListener("input", e=>{
-      const i=+e.target.dataset.i, k=e.target.dataset.k; rcDraft[i][k]=e.target.value;
-      if(["cost","rate"].includes(k)) updateRcMargin(i);
+      const i=+e.target.dataset.i, k=e.target.dataset.k;
+      const val=e.target.value;
+      rcDraft[i][k]= (k==="disc4"||k==="disc8") ? (val===""?"":parseFloat(val)) : val;
+      if(["cost","rate"].includes(k) && !isStudioHourly(rcDraft[i].desc)) updateRcMargin(i);
     });
   });
   body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", e=>{ rcDraft.splice(+e.target.dataset.del,1); renderRateCard(); }));
@@ -945,7 +967,14 @@ function updateRcMargin(i){
 async function saveRateCard(){
   settings.rateCard = rcDraft
     .filter(c=>(c.desc||"").trim()!=="")
-    .map(c=>({desc:c.desc.trim(), sac:(c.sac||"").trim(), cost:c.cost, gst:(c.gst===""||c.gst==null)?FALLBACK_GST:parseFloat(c.gst), rate:c.rate}));
+    .map(c=>{
+      const base={desc:c.desc.trim(), sac:(c.sac||"").trim(), cost:c.cost, gst:(c.gst===""||c.gst==null)?FALLBACK_GST:parseFloat(c.gst), rate:c.rate};
+      if(isStudioHourly(c.desc)){
+        base.disc4 = (c.disc4===""||c.disc4==null) ? 0 : parseFloat(c.disc4);
+        base.disc8 = (c.disc8===""||c.disc8==null) ? 0 : parseFloat(c.disc8);
+      }
+      return base;
+    });
   if(!settings.rateCard.length) settings.rateCard=DEFAULT_SETTINGS.rateCard.map(x=>({...x}));
   localStorage.setItem(K_SET, JSON.stringify(settings));
   if(proxyToken){
