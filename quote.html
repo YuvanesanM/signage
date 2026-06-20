@@ -482,7 +482,7 @@
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 let proxyToken = localStorage.getItem('ryst_proxy_token') || '';
 const ZONES = ["Podcast", "Photography", "Culinary", "Multi-Zone"];
-const MIN_HOURS = 2;
+const MIN_HOURS = 1;
 const MAX_HOURS = 12;
 const FALLBACK_GST = 18;
 
@@ -890,7 +890,7 @@ function loadQuote(qno){
   editingKey=q.qno; curQno=q.qno; curDateISO=q.date;
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
-  $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:"4";
+  $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(MIN_HOURS);
   $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
