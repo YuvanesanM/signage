@@ -28,30 +28,6 @@
   button{font-family:inherit;cursor:pointer}
   input,textarea,select{font-family:inherit}
 
-  /* ---------- HOME ---------- */
-  #homeView{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;background:radial-gradient(1100px 560px at 50% -8%,#ffffff 0%,var(--bg) 65%);z-index:40;padding:24px}
-  #homeView[hidden]{display:none}
-  #homeLogo{max-height:72px;max-width:220px;display:block}
-  .home-cards{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
-  .home-card{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:32px 28px;width:210px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:.18s;text-align:center;font-family:inherit}
-  .home-card:hover{border-color:var(--accent);box-shadow:0 8px 28px rgba(60,100,60,.13);transform:translateY(-3px)}
-  .hc-icon{width:52px;height:52px;background:var(--accent-soft);border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--accent-d)}
-  .hc-title{font-size:15px;font-weight:700;color:var(--ink)}
-  .hc-sub{font-size:12px;color:var(--muted2);line-height:1.45}
-  @media(max-width:480px){.home-cards{flex-direction:column;align-items:center}.home-card{width:min(260px,100%)}}
-
-  /* ---------- LOGIN ---------- */
-  #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 560px at 50% -8%, #ffffff 0%, var(--bg) 65%);z-index:50;padding:24px}
-  .login-card{width:min(380px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:34px 32px;text-align:center;box-shadow:0 18px 50px rgba(40,50,40,.10)}
-  .login-card img{height:84px;margin:0 auto 6px;display:block}
-  .login-card h1{font-weight:600;font-size:19px;margin:10px 0 4px;letter-spacing:.2px}
-  .login-card p{color:var(--muted);font-size:13px;margin:0 0 22px}
-  .login-card input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:15px;text-align:center;letter-spacing:1px}
-  .login-card input:focus{outline:none;border-color:var(--accent)}
-  .login-card button{width:100%;margin-top:12px;padding:13px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:14px;letter-spacing:.3px}
-  .login-card button:hover{background:var(--accent-d)}
-  .login-err{color:var(--danger);font-size:12.5px;min-height:16px;margin-top:10px}
-
   /* ---------- APP SHELL ---------- */
   #app[hidden]{display:none}
   header.bar{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20;flex-wrap:wrap}
@@ -275,7 +251,7 @@
     /* Collapse every structural container so it occupies NO print space.
        (visibility:hidden alone keeps the box model — that caused the giant
        app layout to be scaled down into a small box with big margins.)    */
-    header.bar, .form, #configView, #login, .modal, .toast{ display:none !important }
+    header.bar, .form, #configView, .modal, .toast{ display:none !important }
     #app{ display:block !important }
     main.work{ display:block !important; height:auto !important; grid-template-columns:none !important }
     .preview{ display:block !important; height:auto !important; margin:0 !important; padding:0 !important;
@@ -297,39 +273,6 @@
 </head>
 <body>
 
-<!-- ===================== LOGIN ===================== -->
-<div id="login">
-  <div class="login-card">
-    <img id="loginLogo" alt="Studio RYST">
-    <h1>Quote Generator</h1>
-    <p>Coordinator access</p>
-    <input id="pw" type="password" placeholder="Enter password" autocomplete="current-password" />
-    <button id="loginBtn">Unlock</button>
-    <div class="login-err" id="loginErr"></div>
-  </div>
-</div>
-
-<!-- ===================== HOME ===================== -->
-<div id="homeView" hidden>
-  <img id="homeLogo" alt="Studio RYST">
-  <div class="home-cards">
-    <button class="home-card" id="goQuote">
-      <div class="hc-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-      <span class="hc-title">Quote Builder</span>
-      <span class="hc-sub">Create and manage client quotes</span>
-    </button>
-    <button class="home-card" id="goConfig">
-      <div class="hc-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
-      <span class="hc-title">Rate Card & Settings</span>
-      <span class="hc-sub">Update pricing and studio details</span>
-    </button>
-    <button class="home-card" id="goSchedule">
-      <div class="hc-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <span class="hc-title">Schedule Manager</span>
-      <span class="hc-sub">View and manage studio bookings</span>
-    </button>
-  </div>
-</div>
 
 <!-- ===================== APP ===================== -->
 <div id="app" hidden>
@@ -650,59 +593,20 @@ function nextQuoteNo(){
 
 /* ---------- BRAND LOGOS ---------- */
 function setBrandLogos(){
-  if(settings.logo){
-    ["#loginLogo","#hdrLogo","#homeLogo"].forEach(s=>{ const el=$(s); if(el) el.src=settings.logo; });
-  }
+  if(settings.logo){ const el=$("#hdrLogo"); if(el) el.src=settings.logo; }
 }
 setBrandLogos();
 
-/* ---------- HOME ---------- */
-let initPromise = null;
-function showHome(){
-  if(!$("#configView").hidden) closeConfig();
-  $("#app").hidden = true;
-  $("#homeView").hidden = false;
-}
-async function goToTool(tool){
-  $("#homeView").hidden = true;
-  if(initPromise){ await initPromise; initPromise = null; }
-  $("#app").hidden = false;
-  if(tool === "config") openConfig("rate");
-}
-
-/* ---------- LOGIN ---------- */
-async function tryLogin(){
-  const pwd=$("#pw").value; if(!pwd) return;
-  $("#loginBtn").disabled=true; $("#loginBtn").textContent="Verifying…";
-  try{
-    const res=await fetch(PROXY_URL+'/auth',{method:'POST',
-      headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pwd})});
-    const data=await res.json();
-    if(data.ok && data.token){
-      proxyToken=data.token; localStorage.setItem('ryst_proxy_token',data.token);
-      $("#login").style.display="none";
-      initPromise = initApp();
-      $("#homeView").hidden=false;
-    } else {
-      $("#loginErr").textContent=data.error||"Incorrect password."; $("#pw").select();
-    }
-  }catch(e){ $("#loginErr").textContent="Cannot reach proxy — check connection"; }
-  $("#loginBtn").disabled=false; $("#loginBtn").textContent="Unlock";
-}
-$("#loginBtn").addEventListener("click", tryLogin);
-$("#pw").addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
-// Auto-unlock if token already valid
+// Redirect to login if no valid token; init app otherwise
 (async function bootAuth(){
-  if(!proxyToken) return;
-  // Hide login immediately — avoids the flash while we validate
-  $("#login").style.display="none";
+  if(!proxyToken){ window.location.href='login.html'; return; }
   const res=await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
   if(res && res.ok){
-    initPromise = initApp();
-    $("#homeView").hidden=false;
+    await initApp();
+    if(new URLSearchParams(location.search).get('config')==='1') openConfig('rate');
   } else {
     proxyToken=''; localStorage.removeItem('ryst_proxy_token');
-    $("#login").style.display=""; // token rejected — show login
+    window.location.href='login.html';
   }
 })();
 
@@ -711,6 +615,7 @@ async function initApp(){
   await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
   setConnected(true);
   init();
+  $("#app").hidden = false;
 }
 function init(){
   setBrandLogos();
@@ -754,10 +659,7 @@ function bind(){
   $("#zone").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#hours").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
-  $("#goQuote").addEventListener("click", ()=>goToTool("quote"));
-  $("#goConfig").addEventListener("click", ()=>goToTool("config"));
-  $("#goSchedule").addEventListener("click", ()=>{ window.location.href="set.html"; });
-  $("#hdrLogo").addEventListener("click", showHome);
+  $("#hdrLogo").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", saveQuote);
   $("#btnPdf").addEventListener("click", downloadPdf);
