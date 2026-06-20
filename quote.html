@@ -667,7 +667,8 @@ function studioPrice(card, hours){
   let disc=0;
   if(hours>=8 && card.disc8!=null) disc=parseFloat(card.disc8)||0;
   else if(hours>=4 && card.disc4!=null) disc=parseFloat(card.disc4)||0;
-  return String(Math.round(hours*base*(1-disc/100)));
+  const perHour=Math.round(base*(1-disc/100));
+  return String(perHour*hours);
 }
 // Resolve a studio rate card entry, falling back to the built-in default
 // for any field the loaded rate card is missing — so a new quote always
