@@ -632,8 +632,14 @@ function init(){
   bind();
 }
 
-function isStudioHourly(desc){ return /studio rental/i.test(desc||"") && /per hour/i.test(desc||""); }
-function zoneRentalDesc(zone){ return `Studio Rental — ${zone} (per hour)`; }
+function isStudioHourly(desc){ return /studio\s*rental/i.test(desc||""); }
+function zoneRentalDesc(zone){
+  // Link to the actual rate-card entry for this zone (handles renamed
+  // services, e.g. dropping the "(per hour)" suffix); fall back to the
+  // canonical name if the card has no matching studio entry.
+  const hit=settings.rateCard.find(c=>isStudioHourly(c.desc) && (c.desc||"").toLowerCase().includes(zone.toLowerCase()));
+  return hit ? hit.desc : `Studio Rental — ${zone} (per hour)`;
+}
 function studioPrice(card, hours){
   const base=parseFloat(card.rate)||0;
   if(!base) return "";
