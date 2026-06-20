@@ -89,8 +89,13 @@
   .add-li:hover{border-color:var(--accent);color:var(--accent-d)}
 
   .totals-mini{margin-top:14px;padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;font-size:13px}
-  .totals-mini div{display:flex;justify-content:space-between;padding:3px 0;color:var(--muted)}
+  .totals-mini div{display:flex;justify-content:space-between;align-items:center;padding:3px 0;color:var(--muted)}
   .totals-mini div.grand{color:var(--ink);font-weight:700;border-top:1px solid var(--line);margin-top:6px;padding-top:9px}
+  .totals-mini .disc-line{gap:10px}
+  .disc-amt-inp{width:130px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;font-size:13px;font-family:inherit;color:var(--ink);text-align:right;flex-shrink:0}
+  .disc-amt-inp:focus{outline:none;border-color:var(--accent)}
+  .disc-amt-inp.warn{border-color:var(--danger)!important}
+  .totals-mini .disc-applied{color:#b00;font-weight:600}
   .hint{font-size:11.5px;color:var(--muted2);line-height:1.5;margin-top:6px}
 
   .preview{overflow:auto;background:#dfe1dc;padding:30px;display:flex;justify-content:center;align-items:flex-start}
@@ -131,6 +136,7 @@
   .q-sums .grand{margin-top:2px}
   .q-sums .grand .sl{font-weight:700;color:#1a1a1a}
   .q-sums .grand .sv{background:var(--quote-green);color:#fff;font-weight:700;padding:7px 14px;border-radius:4px;text-align:center}
+  .q-sums .disc-row .sv{color:#b00;font-weight:600}
 
   .q-divider2{height:2px;background:var(--quote-green);opacity:.85;margin:11px 0 8px;border-radius:2px}
   .pay-title{font-size:15px;font-weight:700;color:#1a1a1a;letter-spacing:.4px;margin:0 0 8px;text-transform:uppercase}
@@ -343,6 +349,10 @@
         <div class="totals-mini">
           <div><span>Subtotal</span><b id="mSub">₹0</b></div>
           <div><span>GST</span><b id="mGst">₹0</b></div>
+          <div class="disc-line">
+            <span>Discount</span>
+            <input type="number" min="0" inputmode="decimal" id="discountInp" class="disc-amt-inp" placeholder="Max ₹0">
+          </div>
           <div class="grand"><span>Total Inc. of GST</span><b id="mTot">₹0</b></div>
         </div>
         <p class="hint">Prices, SAC codes and GST are pulled from the Rate Card when you pick a service. You can still override the price or quantity per line.</p>
@@ -390,6 +400,7 @@
         <div class="q-sums">
           <div class="sline"><div class="sl">Subtotal</div><div class="sv" id="pSub"></div></div>
           <div class="sline"><div class="sl" id="pGstLbl">GST</div><div class="sv" id="pGst"></div></div>
+          <div class="sline disc-row" id="pDiscRow" style="display:none"><div class="sl">Discount</div><div class="sv" id="pDisc"></div></div>
           <div class="sline grand"><div class="sl">Total Inc. of GST</div><div class="sv" id="pTot"></div></div>
         </div>
 
@@ -679,7 +690,7 @@ function syncStudioHours(){
   if(changed) renderItems();
 }
 function bind(){
-  ["cname","cgst","caddr","terms"].forEach(id=> $("#"+id).addEventListener("input", render));
+  ["cname","cgst","caddr","terms","discountInp"].forEach(id=> $("#"+id).addEventListener("input", render));
   $("#zone").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#hours").addEventListener("input", ()=>{ syncZoneItem(); render(); });
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
@@ -705,7 +716,7 @@ function newQuote(){
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(MIN_HOURS);
-  $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms;
+  $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
   items=[zoneItem()];
   renderItems(); render();
 }
@@ -847,13 +858,23 @@ function render(){
 
   const sub=items.reduce((s,it)=>s+lineTotal(it),0);
   const gst=items.reduce((s,it)=>s+lineGst(it),0);
-  const tot=sub+gst;
+  const maxDisc=Math.floor(sub*0.10);
+  const discInp=$("#discountInp");
+  discInp.placeholder=`Max ${money(maxDisc)}`;
+  discInp.max=String(maxDisc);
+  const rawDisc=parseFloat(discInp.value)||0;
+  const discount=Math.min(rawDisc,maxDisc);
+  if(rawDisc>maxDisc){ discInp.value=String(maxDisc); discInp.classList.add("warn"); setTimeout(()=>discInp.classList.remove("warn"),600); toast("Discount capped at 10% of pre-tax value"); }
+  const tot=sub+gst-discount;
   const rates=[...new Set(active.filter(it=>lineTotal(it)>0).map(it=>parseFloat(it.gst)||0))];
   const gstLbl = rates.length===1 ? `GST (${rates[0]}%)` : "GST";
 
   $("#pGstLbl").textContent=gstLbl;
   $("#pSub").textContent=money(sub);
   $("#pGst").textContent=money(Math.round(gst));
+  const pDiscRow=$("#pDiscRow");
+  if(discount>0){ pDiscRow.style.display=""; $("#pDisc").textContent="− "+money(Math.round(discount)); }
+  else { pDiscRow.style.display="none"; }
   $("#pTot").textContent=money(Math.round(tot));
   $("#mSub").textContent=money(sub);
   $("#mGst").textContent=money(Math.round(gst));
@@ -867,6 +888,7 @@ function render(){
 function collect(){
   return { qno:curQno, date:curDateISO, zone:$("#zone").value, hours:$("#hours").value, req:reqText(),
     cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
+    discount: parseFloat($("#discountInp").value)||0,
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
 async function saveQuote(){
@@ -883,7 +905,7 @@ function loadQuote(qno){
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:"4";
-  $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms;
+  $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
 }
