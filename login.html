@@ -132,17 +132,22 @@ async function tryLogin(){
 // Apply any custom logo immediately (embedded default shows otherwise)
 applyCustomLogo();
 
-// Auto-show home if token is valid
-(async function bootAuth(){
-  if(!proxyToken) return;
-  document.getElementById('loginView').style.display='none'; // hide while validating
-  const res = await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
-  if(res && res.ok){
-    showHome();
-  } else {
-    proxyToken=''; localStorage.removeItem('ryst_proxy_token');
-    document.getElementById('loginView').style.display=''; // restore
-  }
+// If a token exists, show the home screen instantly and validate in the
+// background. This avoids a blank page during Render cold starts (the
+// /quotes fetch can take 30–60s). We only drop back to the login form on an
+// explicit auth rejection (401) — a transient network error keeps the user
+// on home, and the tool pages re-validate when opened.
+(function bootAuth(){
+  if(!proxyToken) return; // no token → stay on the login form
+  showHome();
+  fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).then(res=>{
+    if(res && res.status===401){
+      proxyToken=''; localStorage.removeItem('ryst_proxy_token');
+      document.getElementById('homeView').setAttribute('hidden','');
+      document.getElementById('loginView').removeAttribute('hidden');
+      document.getElementById('loginView').style.display='';
+    }
+  }).catch(()=>{});
 })();
 
 document.getElementById('loginBtn').addEventListener('click', tryLogin);
