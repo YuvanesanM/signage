@@ -643,11 +643,14 @@ $("#pw").addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
 // Auto-unlock if token already valid
 (async function bootAuth(){
   if(!proxyToken) return;
+  // Hide login immediately — avoids the flash while we validate
+  $("#login").style.display="none";
   const res=await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
   if(res && res.ok){
-    $("#login").style.display="none"; $("#app").hidden=false; await initApp();
+    $("#app").hidden=false; await initApp();
   } else {
     proxyToken=''; localStorage.removeItem('ryst_proxy_token');
+    $("#login").style.display=""; // token rejected — show login
   }
 })();
 
