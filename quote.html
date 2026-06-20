@@ -199,7 +199,7 @@
   }
 
   /* ============ PRINT → SAVE AS PDF ============ */
-  @page{ size:A4; margin:8mm 5mm 5mm }
+  @page{ size:A4; margin:7mm 5mm 6mm }
   @media print{
     /* Map the page 1:1 to A4 width so nothing is scaled down */
     html,body{ width:210mm !important; min-width:0 !important; margin:0 !important; padding:0 !important; background:#fff !important }
@@ -211,24 +211,20 @@
     main.work{ display:block !important; height:auto !important; grid-template-columns:none !important }
     .preview{ display:block !important; height:auto !important; margin:0 !important; padding:0 !important;
               background:#fff !important; overflow:visible !important; }
+    /* Print the EXACT web layout (full-size logo, native title pull → the
+       header the user already approved on screen) and use one uniform zoom
+       to guarantee a single page. min-height fills the printable area so the
+       footer stays pinned to the bottom. The @page top margin keeps desktop
+       browsers from clipping the top. */
     #quoteDoc{
-      position:static !important; width:200mm !important; min-height:280mm !important;
-      margin:0 !important; padding:1mm 8mm 4mm !important;
+      position:static !important; width:210mm !important; min-height:300mm !important;
+      margin:0 auto !important; padding:6mm 13mm 6mm !important;
       box-shadow:none !important; border:none !important; overflow:visible !important;
-      zoom:0.97 !important;
+      zoom:0.94 !important;
       display:flex !important; flex-direction:column !important;
     }
-    /* keep desktop quote layout regardless of device viewport width */
+    /* neutralize the screen-only -9mm logo pull so the top isn't clipped */
     #quoteDoc .q-logo{ margin-top:0 !important }
-    /* keep the header's negative title pull (it saves a page) but cap the
-       logo and trim divider/section gaps to free room for top padding so
-       the company text isn't clipped, while staying on one page */
-    #quoteDoc .q-title{ font-size:30px !important }
-    #quoteDoc .q-logo{ max-height:84px !important }
-    #quoteDoc .q-divider{ margin:6px 0 8px !important }
-    #quoteDoc .q-divider2{ margin:8px 0 6px !important }
-    #quoteDoc .q-terms{ margin-top:6px !important }
-    #quoteDoc .q-foot{ padding-top:6px !important }
     #quoteDoc .q-pay{ display:flex !important; flex-direction:row !important; gap:24px !important; align-items:flex-start !important }
     #quoteDoc .q-qr{ flex:0 0 auto !important }
     /* force coloured backgrounds (green header bars, total chip) to print */
