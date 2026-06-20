@@ -508,7 +508,7 @@ Account Type: CURRENT`,
     {desc:"Studio Rental — Podcast (per hour)",     sac:"997212", cost:"", gst:18, rate:2250, disc4:11.11, disc8:16.67},
     {desc:"Studio Rental — Photography (per hour)", sac:"997212", cost:"", gst:18, rate:2750, disc4:9.09,  disc8:18.18},
     {desc:"Studio Rental — Culinary (per hour)",    sac:"997212", cost:"", gst:18, rate:3000, disc4:0,     disc8:8.33},
-    {desc:"Studio Rental — Multi-Zone (per hour)",  sac:"997212", cost:"", gst:18, rate:2500, disc4:10,    disc8:15},
+    {desc:"Studio Rental — Multi-Zone (per hour)",  sac:"997212", cost:"", gst:18, rate:3250, disc4:0,     disc8:8.33},
     {desc:"Professional Videography Services with Camera", sac:"998386", cost:"", gst:18, rate:5400},
     {desc:"Video Post-Production & Editing Services", sac:"998386", cost:"", gst:18, rate:""}
   ],
@@ -537,6 +537,7 @@ function loadSettings(){
   try{
     const s = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(K_SET)||"{}"));
     if(!Array.isArray(s.rateCard) || !s.rateCard.length) s.rateCard = DEFAULT_SETTINGS.rateCard.map(x=>({...x}));
+    normalizeRateCard(s.rateCard);
     return s;
   }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
 }
@@ -548,7 +549,7 @@ async function fetchRatesFromProxy(){
     if(!res.ok) return;
     const d = await res.json();
     if(Array.isArray(d.rateCard) && d.rateCard.length){
-      settings.rateCard = d.rateCard;
+      settings.rateCard = normalizeRateCard(d.rateCard);
       // Cache locally so the rate card survives an offline / cold-start load
       try{ localStorage.setItem(K_SET, JSON.stringify(settings)); }catch(e){}
     }
@@ -633,6 +634,26 @@ function init(){
 }
 
 function isStudioHourly(desc){ return /studio\s*rental/i.test(desc||""); }
+// Match a studio rate-card entry to its built-in default by zone, so we can
+// backfill 4hr/8hr discounts that an older save may have dropped.
+function studioDefaultFor(desc){
+  const d=(desc||"").toLowerCase();
+  const zone=ZONES.find(z=>d.includes(z.toLowerCase()));
+  if(!zone) return null;
+  return DEFAULT_SETTINGS.rateCard.find(c=>isStudioHourly(c.desc) && (c.desc||"").toLowerCase().includes(zone.toLowerCase())) || null;
+}
+// Ensure studio entries carry disc4/disc8 — restores discounts that a prior
+// save stripped before studio detection was fixed.
+function normalizeRateCard(card){
+  if(Array.isArray(card)) card.forEach(c=>{
+    if(isStudioHourly(c.desc)){
+      const def=studioDefaultFor(c.desc)||{};
+      if(c.disc4===""||c.disc4==null) c.disc4=def.disc4??0;
+      if(c.disc8===""||c.disc8==null) c.disc8=def.disc8??0;
+    }
+  });
+  return card;
+}
 function zoneRentalDesc(zone){
   // Link to the actual rate-card entry for this zone (handles renamed
   // services, e.g. dropping the "(per hour)" suffix); fall back to the
