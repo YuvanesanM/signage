@@ -199,7 +199,7 @@
   }
 
   /* ============ PRINT → SAVE AS PDF ============ */
-  @page{ size:A4; margin:0 }
+  @page{ size:A4; margin:8mm 5mm 5mm }
   @media print{
     /* Map the page 1:1 to A4 width so nothing is scaled down */
     html,body{ width:210mm !important; min-width:0 !important; margin:0 !important; padding:0 !important; background:#fff !important }
@@ -212,8 +212,8 @@
     .preview{ display:block !important; height:auto !important; margin:0 !important; padding:0 !important;
               background:#fff !important; overflow:visible !important; }
     #quoteDoc{
-      position:static !important; width:210mm !important; min-height:295mm !important;
-      margin:0 !important; padding:9mm 13mm 5mm !important;
+      position:static !important; width:200mm !important; min-height:280mm !important;
+      margin:0 !important; padding:1mm 8mm 4mm !important;
       box-shadow:none !important; border:none !important; overflow:visible !important;
       zoom:0.97 !important;
       display:flex !important; flex-direction:column !important;
