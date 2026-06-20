@@ -999,6 +999,19 @@ async function saveRateCard(){
       if(res.status===401) handleExpired();
     }catch(e){ console.error('Rate card push failed',e); }
   }
+  // Re-render the builder so renamed services / new prices flow through
+  // immediately. The auto-driven studio line gets its price refreshed from
+  // the updated card; regular items keep any manually-entered price but the
+  // dropdown now lists the current service names.
+  const sIdx=items.findIndex(it=>isStudioHourly(it.desc));
+  if(sIdx>=0){
+    const hours=parseInt($("#hours").value,10)||MIN_HOURS;
+    const card=studioCard(items[sIdx].desc);
+    items[sIdx].price=studioPrice(card,hours);
+    items[sIdx].sac=card.sac;
+    items[sIdx].gst=card.gst??FALLBACK_GST;
+  }
+  renderItems(); render();
   toast("Rate card saved");
   closeConfig();
 }
