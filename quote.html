@@ -652,14 +652,11 @@ async function initApp(){
   if(res && res.ok){
     await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
     setConnected(true);
-    // Refresh studio line price now that real rates are loaded.
-    const sIdx=items.findIndex(it=>isStudioHourly(it.desc));
-    if(sIdx>=0){
-      const hours=parseInt($("#hours").value,10)||MIN_HOURS;
-      const card=studioCard(items[sIdx].desc);
-      items[sIdx].price=studioPrice(card,hours);
-    }
-    renderItems(); render();
+    // Rebuild the studio line from the freshly-loaded rate card so its
+    // description and price reflect the real (possibly renamed) entry,
+    // not the default used during the instant first paint.
+    syncZoneItem();
+    render();
   }
 }
 function init(){
@@ -671,14 +668,23 @@ function init(){
   bind();
 }
 
-function isStudioHourly(desc){ return /studio\s*rental/i.test(desc||""); }
+// A zone studio entry is detected structurally — by the zone name in the
+// description ("Podcast", "Photography", "Culinary", "Multi-Zone") plus the
+// word "studio" — so it survives renames like "Studio Rental" → "Studio
+// Facility" or dropping the "(per hour)" suffix. Multi-Zone is checked first
+// so it isn't shadowed by a partial match.
+function zoneOf(desc){
+  const d=(desc||"").toLowerCase();
+  const ordered=[...ZONES].sort((a,b)=>b.length-a.length);
+  return ordered.find(z=>d.includes(z.toLowerCase())) || null;
+}
+function isStudioHourly(desc){ return /studio/i.test(desc||"") && !!zoneOf(desc); }
 // Match a studio rate-card entry to its built-in default by zone, so we can
 // backfill 4hr/8hr discounts that an older save may have dropped.
 function studioDefaultFor(desc){
-  const d=(desc||"").toLowerCase();
-  const zone=ZONES.find(z=>d.includes(z.toLowerCase()));
+  const zone=zoneOf(desc);
   if(!zone) return null;
-  return DEFAULT_SETTINGS.rateCard.find(c=>isStudioHourly(c.desc) && (c.desc||"").toLowerCase().includes(zone.toLowerCase())) || null;
+  return DEFAULT_SETTINGS.rateCard.find(c=>isStudioHourly(c.desc) && zoneOf(c.desc)===zone) || null;
 }
 // Ensure studio entries carry disc4/disc8 — restores discounts that a prior
 // save stripped before studio detection was fixed.
@@ -694,9 +700,8 @@ function normalizeRateCard(card){
 }
 function zoneRentalDesc(zone){
   // Link to the actual rate-card entry for this zone (handles renamed
-  // services, e.g. dropping the "(per hour)" suffix); fall back to the
-  // canonical name if the card has no matching studio entry.
-  const hit=settings.rateCard.find(c=>isStudioHourly(c.desc) && (c.desc||"").toLowerCase().includes(zone.toLowerCase()));
+  // services); fall back to the canonical name if the card has no entry.
+  const hit=settings.rateCard.find(c=>isStudioHourly(c.desc) && zoneOf(c.desc)===zone);
   return hit ? hit.desc : `Studio Rental — ${zone} (per hour)`;
 }
 function studioPrice(card, hours){
