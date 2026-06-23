@@ -836,14 +836,19 @@ function loadQuote(qno){
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
 }
-function openSaved(){
-  const list=$("#savedList"), all=getQuotes().slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+async function openSaved(){
+  const list=$("#savedList");
+  // Show modal immediately with a loading state
+  list.innerHTML = `<div class="empty">Loading…</div>`;
+  $("#savedModal").hidden=false;
+  // Always fetch fresh from proxy before rendering
+  await fetchQuotesFromProxy();
+  const all=getQuotes().slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
   list.innerHTML = !all.length ? `<div class="empty">No saved quotes yet.</div>`
     : all.map(q=>`<div class="saved-item"><div class="si-main"><div class="si-no">${esc(q.qno)}</div>
         <div class="si-sub">${esc(q.cname||"—")} · ${esc(q.zone||"")} · ${fmtDate(q.date)}</div></div>
         <button data-load="${esc(q.qno)}">Open</button></div>`).join("");
   list.querySelectorAll("[data-load]").forEach(b=>b.addEventListener("click",()=>loadQuote(b.dataset.load)));
-  $("#savedModal").hidden=false;
 }
 
 /* ---------- PDF via native print → Save as PDF ---------- */
