@@ -1,3 +1,13 @@
 {
-  "sessions": []
+  "sessions": [
+    {
+      "name": "Musaffar",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "13:00",
+      "date": "2026-02-06",
+      "mobile": "8139848700",
+      "charges": 4500
+    }
+  ]
 }
