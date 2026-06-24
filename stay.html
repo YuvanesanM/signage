@@ -827,7 +827,7 @@ function render(){
 
   // Guest acceptance signature shown on both invoice and quote
   $("#pGuestSign").style.display = "flex";
-  $("#pGuestSignName").textContent = ($("#guest").value || "Guest") + " · Signature & Date";
+  $("#pGuestSignName").textContent = ($("#guest").value || "Guest") + ($("#date").value ? "  " + fmtDate($("#date").value) : "");
 }
 
 /* ---------- SAVE / LOAD ---------- */
