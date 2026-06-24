@@ -799,7 +799,7 @@ function loadDoc(no){
   $("#guest").value=d.guest||""; $("#email").value=d.email||""; $("#phone").value=d.phone||""; $("#guests").value=d.guests||"";
   $("#ref").value=d.ref||""; $("#checkin").value=d.checkin||""; $("#checkout").value=d.checkout||""; $("#mode").value=d.mode||"";
   $("#deposit").value=d.deposit||""; $("#advance").value=d.advance||"";
-  $("#discountInp").value=d.discount||"";
+  $("#discountInp").value=d.discount!=null ? String(d.discount) : "";
   $("#nights").value = nightsBetween(d.checkin,d.checkout)||"";
   items = (d.items&&d.items.length)? d.items.map(x=>({desc:x.desc||"",qty:(x.qty!=null?x.qty:"1"),rate:x.rate||""})) : [{desc:"",qty:"1",rate:""}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+d.no);
@@ -845,7 +845,7 @@ async function openBookings(){
       <div class="si-main">
         <div class="si-no">${esc(d.no)}${tag}</div>
         <div style="font-size:13px;font-weight:600;margin-top:4px">${esc(d.guest||"—")}</div>
-        <div class="si-sub">${fmtDate(d.checkin)} → ${fmtDate(d.checkout)} · ${nights} night${nights!==1?"s":""}</div>
+        <div class="si-sub">${esc(fmtDate(d.checkin))} → ${esc(fmtDate(d.checkout))} · ${nights} night${nights!==1?"s":""}</div>
       </div>
       <button data-load="${esc(d.no)}" onclick="document.getElementById('bookingsModal').hidden=true">Open</button>
     </div>`;
