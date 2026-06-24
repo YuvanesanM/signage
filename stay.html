@@ -305,7 +305,7 @@
           <label class="f"><span>Security deposit (refundable)</span><input class="t" id="deposit" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
           <label class="f"><span>Booking advance received</span><input class="t" id="advance" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
         </div>
-        <p class="hint">Balance due = Grand total + Security deposit − Advance received.</p>
+        <p class="hint">Balance due = Grand total − Advance received. Security deposit is collected separately and refundable.</p>
       </div>
     </section>
 
@@ -356,9 +356,9 @@
             </tfoot>
           </table>
           <div class="d-side">
-            <div class="side-box"><div class="sb-l">Security Deposit <small>(refundable)</small></div><div class="sb-v" id="pDeposit"></div></div>
             <div class="side-box"><div class="sb-l">Booking Advance Received</div><div class="sb-v" id="pAdvance"></div></div>
             <div class="side-box bal"><div class="sb-l">Balance Due <small>(if any)</small></div><div class="sb-v" id="pBalance"></div></div>
+            <div class="side-box"><div class="sb-l">Security Deposit <small>(refundable, collected separately)</small></div><div class="sb-v" id="pDeposit"></div></div>
           </div>
         </div>
 
@@ -788,7 +788,7 @@ function render(){
   const grand = Math.max(0, sub - discount);
   const deposit = parseFloat($("#deposit").value)||0;
   const advance = parseFloat($("#advance").value)||0;
-  const balance = Math.max(0, grand + deposit - advance);
+  const balance = Math.max(0, grand - advance);
 
   $("#discountInp").placeholder = maxDisc > 0 ? String(maxDisc) : "0";
 
