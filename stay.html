@@ -241,6 +241,9 @@
           <label class="f"><span id="noLbl">Invoice no. (auto)</span><input class="t locked" id="no" readonly tabindex="-1"></label>
           <label class="f"><span id="dateLbl">Invoice date</span><input class="t" id="date" type="date"></label>
         </div>
+        <label class="f" id="loadQuoteRow" style="display:none"><span>Load from quote</span>
+          <select class="t" id="loadQuoteSel"><option value="">— pick a quote —</option></select>
+        </label>
         <label class="f"><span>Booking reference <span style="color:var(--muted2)">(optional)</span></span><input class="t" id="ref" placeholder="e.g. WhatsApp / Airbnb #"></label>
       </div>
 
@@ -558,6 +561,7 @@ async function initApp(){
     renderItems();
     // refresh the auto number (prefixes may come from settings) now that data is known
     if(!editingKey){ curNo=nextNo(docType); $("#no").value=curNo; }
+    if(docType==="invoice") populateLoadQuoteSel();
     render();
   }
 }
@@ -584,6 +588,7 @@ function bind(){
   $("#savedClose").addEventListener("click", ()=> $("#savedModal").hidden=true);
   $("#btnBookings").addEventListener("click", openBookings);
   $("#bookingsClose").addEventListener("click", ()=> $("#bookingsModal").hidden=true);
+  $("#loadQuoteSel").addEventListener("change", e=>{ if(e.target.value) loadFromQuote(e.target.value); });
 }
 
 function setType(t){
@@ -595,7 +600,33 @@ function setType(t){
   $("#dateLbl").textContent = isInv ? "Invoice date" : "Quote date";
   // regenerate number for the new type only if this is a fresh (unsaved) doc
   if(!editingKey){ curNo=nextNo(t); $("#no").value=curNo; }
+  const row = $("#loadQuoteRow");
+  if(row){ row.style.display = isInv ? "" : "none"; if(isInv) populateLoadQuoteSel(); }
   render();
+}
+function populateLoadQuoteSel(){
+  const sel = $("#loadQuoteSel"); if(!sel) return;
+  const quotes = getStays().filter(d=> (d.no||"").startsWith(settings.qtPrefix||"RYST109A/QT")).sort((a,b)=>b.no.localeCompare(a.no));
+  sel.innerHTML = `<option value="">— pick a quote —</option>`
+    + quotes.map(d=>`<option value="${esc(d.no)}">${esc(d.no)} · ${esc(d.guest||"?")}${d.checkin?" ("+fmtDate(d.checkin)+")":""}</option>`).join("");
+}
+function loadFromQuote(qno){
+  const d = getStays().find(s=>s.no===qno); if(!d) return;
+  $("#guest").value   = d.guest||"";
+  $("#email").value   = d.email||"";
+  $("#phone").value   = d.phone||"";
+  $("#guests").value  = d.guests||"";
+  $("#checkin").value = d.checkin||"";
+  $("#checkout").value= d.checkout||"";
+  syncNights();
+  $("#mode").value    = d.mode||"";
+  $("#ref").value     = d.ref||"";
+  $("#deposit").value = d.deposit||"";
+  $("#advance").value = d.advance||"";
+  $("#discountInp").value = d.discount!=null ? String(d.discount) : "";
+  items = d.items ? JSON.parse(JSON.stringify(d.items)) : [];
+  renderItems(); render();
+  $("#loadQuoteSel").value = "";
 }
 
 function syncNights(){
