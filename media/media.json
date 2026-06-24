@@ -19,6 +19,11 @@
       "name": "kitchen area.jpeg",
       "type": "image",
       "url": "/media/kitchen area.jpeg"
+    },
+    {
+      "name": "stay-payment-qr.png",
+      "type": "image",
+      "url": "/media/stay-payment-qr.png"
     }
   ]
 }
