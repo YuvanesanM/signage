@@ -382,9 +382,11 @@
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 let proxyToken = localStorage.getItem('ryst_proxy_token') || '';
 
-const K_SET = "ryst_stay_settings";
+const K_SET = "ryst_stay_settings";   // local cache; master copy synced via proxy /stay-settings
 
-// Static villa business info. Editable here; per-document data lives in the form.
+// Villa business info, bank & pricing. These are the built-in defaults — the
+// live values are configured in settings.html (Stay tab) and synced through the
+// proxy /stay-settings endpoint. Keep this object identical to settings.html.
 const DEFAULTS = {
   company:
 `109A, Pearl Beach Site, Parmankeni,
@@ -407,12 +409,14 @@ Account Type: Savings`,
     "This document is issued by an individual owner and not by a GST-registered entity.",
     "Jurisdiction shall be Chennai, Tamil Nadu."
   ],
-  chargeSuggestions: [
-    "Villa Rental Charges",
-    "Additional Guest Charges",
-    "Cleaning & Maintenance Charges",
-    "Event / Gathering Charges",
-    "Other Charges"
+  // Pricing catalog — description + default per-unit rate. Picking a charge in
+  // the builder auto-fills its rate; the rate stays editable per document.
+  rates: [
+    {desc:"Villa Rental Charges",            rate:""},
+    {desc:"Additional Guest Charges",        rate:""},
+    {desc:"Cleaning & Maintenance Charges",  rate:""},
+    {desc:"Event / Gathering Charges",       rate:""},
+    {desc:"Other Charges",                   rate:""}
   ]
 };
 
@@ -425,9 +429,28 @@ function loadSettings(){
   try{
     const s = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(K_SET)||"{}"));
     if(!Array.isArray(s.terms) || !s.terms.length) s.terms = DEFAULTS.terms.slice();
-    if(!Array.isArray(s.chargeSuggestions) || !s.chargeSuggestions.length) s.chargeSuggestions = DEFAULTS.chargeSuggestions.slice();
+    if(!Array.isArray(s.rates) || !s.rates.length) s.rates = DEFAULTS.rates.map(r=>({...r}));
     return s;
   }catch(e){ return JSON.parse(JSON.stringify(DEFAULTS)); }
+}
+// Pull the master stay settings (business info, bank, pricing) from the proxy.
+async function fetchStaySettings(){
+  if(!proxyToken) return;
+  try{
+    const res = await fetch(PROXY_URL+'/stay-settings',{headers:{'X-Token':proxyToken}});
+    if(!res.ok) return;
+    const d = await res.json();
+    if(d && typeof d==='object'){
+      settings = Object.assign({}, DEFAULTS, d);
+      if(!Array.isArray(settings.terms) || !settings.terms.length) settings.terms = DEFAULTS.terms.slice();
+      if(!Array.isArray(settings.rates) || !settings.rates.length) settings.rates = DEFAULTS.rates.map(r=>({...r}));
+      try{ localStorage.setItem(K_SET, JSON.stringify(settings)); }catch(e){}
+    }
+  }catch(e){ console.warn('Could not load stay settings', e); }
+}
+function rateFor(desc){
+  const hit=(settings.rates||[]).find(r=>r.desc===desc);
+  return hit && hit.rate!=="" && hit.rate!=null ? String(hit.rate) : "";
 }
 let settings = loadSettings();
 
@@ -494,10 +517,12 @@ async function initApp(){
   const res = await fetch(PROXY_URL+'/stays',{headers:{'X-Token':proxyToken}}).catch(()=>null);
   if(res && res.status===401){ handleExpired(); return; }
   if(res && res.ok){
-    await fetchStaysFromProxy();
+    await Promise.all([fetchStaySettings(), fetchStaysFromProxy()]);
     setConnected(true);
-    // refresh the auto number now that saved docs are known
-    if(!editingKey){ curNo=nextNo(docType); $("#no").value=curNo; render(); }
+    renderItems();
+    // refresh the auto number (prefixes may come from settings) now that data is known
+    if(!editingKey){ curNo=nextNo(docType); $("#no").value=curNo; }
+    render();
   }
 }
 
@@ -552,14 +577,14 @@ function newDoc(){
   $("#no").value=curNo; $("#date").value=curDateISO;
   ["guest","email","phone","guests","ref","checkin","checkout","nights","deposit","advance"].forEach(id=> $("#"+id).value="");
   $("#mode").value="";
-  items=[{desc:"Villa Rental Charges",qty:"1",rate:""}];
+  items=[{desc:"Villa Rental Charges",qty:"1",rate:rateFor("Villa Rental Charges")}];
   renderItems(); render();
 }
 
 /* ---------- LINE ITEMS ---------- */
 function renderItems(){
   const body=$("#liBody"); body.innerHTML="";
-  const sugg = settings.chargeSuggestions;
+  const sugg = (settings.rates||[]).map(r=>r.desc);
   items.forEach((it,i)=>{
     const inList = sugg.includes(it.desc);
     const isCustom = !inList && it.desc!=="";
@@ -586,7 +611,15 @@ function renderItems(){
       const wrap=e.target.closest(".li-desc-wrap");
       const customInp=wrap.querySelector(".custom-desc");
       if(val==="__custom"){ customInp.classList.remove("hide"); customInp.focus(); items[i].desc=customInp.value||""; }
-      else { customInp.classList.add("hide"); items[i].desc=val; }
+      else {
+        customInp.classList.add("hide"); items[i].desc=val;
+        // auto-fill the catalog rate if this line has no rate yet
+        if(val && (items[i].rate===""||items[i].rate==null)){
+          const r=rateFor(val);
+          if(r!==""){ items[i].rate=r; }
+        }
+        renderItems();
+      }
       render();
     });
   });
