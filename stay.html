@@ -124,7 +124,10 @@
   .side-box.bal{background:var(--accent-soft);border-color:#bfe0e0}
   .side-box.bal .sb-v{color:var(--navy)}
 
-  .d-pay{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+  .d-pay{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;margin-bottom:12px;align-items:start}
+  .d-pay-qr{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .d-pay-qr img{width:70px;height:70px;display:block}
+  .d-pay-qr .qr-label{font-size:9px;letter-spacing:.8px;color:#6a7a76;text-transform:uppercase;text-align:center}
   .pb-h{font-weight:700;font-size:12px;letter-spacing:1.2px;color:var(--sea-d);margin-bottom:6px}
   .pb-body{font-size:12.5px;line-height:1.7;color:#2c3633}
   .decl{font-size:11.5px;line-height:1.55;color:#52605c}
@@ -349,6 +352,10 @@
           <div>
             <div class="pb-h">PAYMENT / BANK DETAILS</div>
             <div class="pb-body" id="pBank"></div>
+          </div>
+          <div class="d-pay-qr">
+            <img src="/media/stay-payment-qr.png" alt="Scan to pay">
+            <div class="qr-label">Scan to Pay</div>
           </div>
           <div>
             <div class="pb-h">DECLARATION</div>
