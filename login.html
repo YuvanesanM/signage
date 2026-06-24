@@ -44,7 +44,15 @@
   .hc-icon{width:52px;height:52px;background:var(--accent-soft);border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--accent-d)}
   .hc-title{font-size:15px;font-weight:700;color:var(--ink)}
   .hc-sub{font-size:12px;color:var(--muted2);line-height:1.45}
-  @media(max-width:480px){.home-cards{flex-direction:column;align-items:center}.home-card{width:min(260px,100%)}}
+  @media(max-width:600px){
+    #homeView{overflow-y:auto;justify-content:flex-start;padding-top:32px;padding-bottom:32px}
+    .home-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+    .home-card{width:100%;padding:22px 14px;gap:9px}
+    .hc-icon{width:42px;height:42px;border-radius:10px}
+    .hc-title{font-size:13.5px}
+    .hc-sub{font-size:11px}
+    #homeLogo{max-height:52px}
+  }
 </style>
 </head>
 <body>
