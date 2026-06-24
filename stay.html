@@ -87,11 +87,14 @@
   .d-foot{margin-top:auto;padding-top:10px}
 
   .d-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
-  .d-brand .bt-wave{color:var(--sea);font-size:20px;line-height:1;letter-spacing:2px}
-  .d-brand .bt-name{font-weight:700;font-size:30px;letter-spacing:1px;color:var(--navy);line-height:1.05}
-  .d-brand .bt-name span{color:var(--sand)}
-  .d-brand .bt-villa{font-weight:600;font-size:17px;letter-spacing:6px;color:var(--sea-d);margin-top:1px}
-  .d-brand .bt-tag{font-size:10.5px;letter-spacing:3px;color:var(--muted);margin-top:4px}
+  .d-brand{display:flex;align-items:flex-start;gap:10px}
+  .d-brand-logo{height:80px;width:auto;display:block;object-fit:contain}
+  .d-brand-logo[src=""]{display:none}
+  .d-brand-text .bt-wave{color:var(--sea);font-size:20px;line-height:1;letter-spacing:2px}
+  .d-brand-text .bt-name{font-weight:700;font-size:30px;letter-spacing:1px;color:var(--navy);line-height:1.05}
+  .d-brand-text .bt-name span{color:var(--sand)}
+  .d-brand-text .bt-villa{font-weight:600;font-size:17px;letter-spacing:6px;color:var(--sea-d);margin-top:1px}
+  .d-brand-text .bt-tag{font-size:10.5px;letter-spacing:3px;color:var(--muted);margin-top:4px}
   .d-co{text-align:right;color:#33433f;font-size:12.5px;line-height:1.6;padding-top:6px}
   .d-co .pan{font-weight:600;color:var(--sea-d);margin-top:3px}
 
@@ -303,10 +306,13 @@
       <div class="doc" id="stayDoc">
         <div class="d-top">
           <div class="d-brand">
-            <div class="bt-wave">≈≈≈</div>
-            <div class="bt-name">RYST <span>109A</span></div>
-            <div class="bt-villa">BEACH&nbsp;VILLA</div>
-            <div class="bt-tag">PRIVATE COASTAL RETREAT</div>
+            <img class="d-brand-logo" src="/assets/stay-logo.png" alt="RYST 109A">
+            <div class="d-brand-text">
+              <div class="bt-wave">≈≈≈</div>
+              <div class="bt-name">RYST <span>109A</span></div>
+              <div class="bt-villa">BEACH&nbsp;VILLA</div>
+              <div class="bt-tag">PRIVATE COASTAL RETREAT</div>
+            </div>
           </div>
           <div class="d-co" id="coBlock"></div>
         </div>
