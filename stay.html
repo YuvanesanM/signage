@@ -97,6 +97,7 @@
   .d-brand-text .bt-tag{font-size:10.5px;letter-spacing:3px;color:var(--muted);margin-top:4px}
   .d-co{text-align:right;color:#33433f;font-size:12.5px;line-height:1.6;padding-top:6px}
   .d-co .pan{font-weight:600;color:var(--sea-d);margin-top:3px}
+  .addr-link{color:inherit;text-decoration:none;cursor:pointer}
 
   .d-title{text-align:center;color:#fff;background:var(--sea);font-weight:700;font-size:22px;letter-spacing:4px;padding:8px;border-radius:6px;margin:14px 0 14px}
 
@@ -714,7 +715,7 @@ function render(){
   $("#pNoLbl").textContent  = isInv ? "Invoice No" : "Quote No";
   $("#pDateLbl").textContent= isInv ? "Invoice Date" : "Quote Date";
 
-  $("#coBlock").innerHTML = esc(settings.company).replace(/\n/g,"<br>") + `<div class="pan">PAN: ${esc(settings.pan)}</div>`;
+  $("#coBlock").innerHTML = `<a href="https://maps.app.goo.gl/taBGtjLgbcMWL6mUA" target="_blank" class="addr-link">${esc(settings.company).replace(/\n/g,"<br>")}</a>` + `<div class="pan">PAN: ${esc(settings.pan)}</div>`;
 
   $("#pGuest").textContent  = $("#guest").value || "—";
   $("#pEmail").textContent  = $("#email").value || "—";
