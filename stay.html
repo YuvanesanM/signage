@@ -571,7 +571,7 @@ async function initApp(){
     renderItems();
     // refresh the auto number (prefixes may come from settings) now that data is known
     if(!editingKey){ curNo=nextNo(docType); $("#no").value=curNo; }
-    if(docType==="invoice") populateLoadQuoteSel();
+    if(docType==="invoice"){ populateLoadQuoteSel(); $("#loadQuoteRow").style.display=""; }
     render();
   }
 }
@@ -660,6 +660,7 @@ function newDoc(){
   $("#discountInp").value="";
   $("#mode").value="";
   items=[{desc:"Villa Rental Charges",qty:"1",rate:rateFor("Villa Rental Charges")}];
+  if(docType==="invoice"){ populateLoadQuoteSel(); $("#loadQuoteRow").style.display=""; }
   renderItems(); render();
 }
 
