@@ -240,9 +240,9 @@
         <label class="f"><span>Guest name</span><input class="t" id="guest" placeholder="Mr. / Ms. ..."></label>
         <div class="row2">
           <label class="f"><span>Email ID</span><input class="t" id="email" placeholder="guest@email.com"></label>
-          <label class="f"><span>Phone</span><input class="t" id="phone" placeholder="+91 ..."></label>
+          <label class="f"><span>Phone</span><input class="t" id="phone" inputmode="tel" type="tel" placeholder="+91 ..."></label>
         </div>
-        <label class="f"><span>No. of guests</span><input class="t" id="guests" type="number" min="1" step="1" placeholder="2"></label>
+        <label class="f"><span>No. of guests</span><input class="t" id="guests" type="number" min="1" step="1" inputmode="numeric" placeholder="2"></label>
       </div>
 
       <div class="group">
@@ -287,8 +287,8 @@
       <div class="group">
         <p class="gh">Deposit & advance</p>
         <div class="row2">
-          <label class="f"><span>Security deposit (refundable)</span><input class="t" id="deposit" type="number" min="0" step="1" placeholder="0"></label>
-          <label class="f"><span>Booking advance received</span><input class="t" id="advance" type="number" min="0" step="1" placeholder="0"></label>
+          <label class="f"><span>Security deposit (refundable)</span><input class="t" id="deposit" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+          <label class="f"><span>Booking advance received</span><input class="t" id="advance" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
         </div>
         <p class="hint">Balance due = Grand total + Security deposit − Advance received.</p>
       </div>
@@ -364,8 +364,7 @@
         <div class="d-sign">
           <div class="sign-for">For RYST 109A</div>
           <div class="sign-blank"></div>
-          <div class="sign-name-cursive">Yuvanesan M</div>
-          <div class="sign-name">YUVANESAN MUTHUKUMARESAN</div>
+          <div class="sign-name">YUVANESAN M</div>
         </div>
 
         <div class="d-foot" id="pFoot"></div>
@@ -628,7 +627,9 @@ function renderItems(){
         </select>
         <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">
       </div>
-      <input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">
+      ${/villa.*rental/i.test(it.desc||"")?
+        `<input class="t num locked" data-i="${i}" data-k="qty" type="number" value="${esc(it.qty)}" readonly tabindex="-1" title="Auto-calculated from nights">`
+        :`<input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">`}
       <input class="t num${rateWarn?" warn-rate":""}" data-i="${i}" data-k="rate" data-min="${esc(minRate)}" type="number" min="0" step="0.01" inputmode="decimal" placeholder="${esc(minRate||"0")}" title="${esc(rateTitle)}" value="${esc(it.rate)}">
       <input class="t tot" value="${money(lineAmt(it))}" readonly tabindex="-1">
       <button class="li-del" data-del="${i}" title="Remove">×</button>`;
