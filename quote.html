@@ -36,6 +36,7 @@
   .btn:hover{border-color:var(--accent);color:var(--accent-d)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .btn.primary:hover{background:var(--accent-d);color:#fff}
+  .btn.primary:disabled{opacity:.38;cursor:not-allowed;background:var(--accent);border-color:var(--accent)}
   .btn.icon-btn{padding:0;width:34px;height:34px;justify-content:center;flex-shrink:0}
   .bar-sep{width:1px;height:22px;background:var(--line);flex-shrink:0;margin:0 2px}
   .hide{display:none !important}
@@ -635,7 +636,7 @@ function bind(){
 
 /* ---------- NEW QUOTE ---------- */
 function newQuote(){
-  editingKey=null;
+  editingKey=null; syncPdfBtn();
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(MIN_HOURS);
@@ -822,13 +823,13 @@ async function saveQuote(){
   const q=collect(); if(!q.qno){ toast("No quote number"); return; }
   const all=getQuotes(); const key=editingKey||q.qno; const idx=all.findIndex(x=>x.qno===key);
   if(idx>=0) all[idx]=q; else all.push(q);
-  setQuotes(all); editingKey=q.qno;
+  setQuotes(all); editingKey=q.qno; syncPdfBtn();
   await pushQuotes();
   toast("Quote "+q.qno+" saved");
 }
 function loadQuote(qno){
   const q=getQuotes().find(x=>x.qno===qno); if(!q) return;
-  editingKey=q.qno; curQno=q.qno; curDateISO=q.date;
+  editingKey=q.qno; syncPdfBtn(); curQno=q.qno; curDateISO=q.date;
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(MIN_HOURS);
@@ -852,6 +853,11 @@ async function openSaved(){
 }
 
 /* ---------- PDF via native print → Save as PDF ---------- */
+function syncPdfBtn(){
+  const b=$("#btnPdf"); if(!b) return;
+  b.disabled=!editingKey;
+  b.title=editingKey?"Download PDF":"Save the document first, then download PDF";
+}
 async function downloadPdf(){
   try{ await document.fonts.ready; }catch(e){}
   // Suggest the quote number as the saved filename (browsers use document.title)

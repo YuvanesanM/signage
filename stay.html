@@ -37,6 +37,7 @@
   .btn:hover{border-color:var(--accent);color:var(--accent-d)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .btn.primary:hover{background:var(--accent-d);color:#fff}
+  .btn.primary:disabled{opacity:.38;cursor:not-allowed;background:var(--accent);border-color:var(--accent)}
   .btn.icon-btn{padding:0;width:34px;height:34px;justify-content:center;flex-shrink:0}
   .bar-sep{width:1px;height:22px;background:var(--line);flex-shrink:0;margin:0 2px}
   .hide{display:none !important}
@@ -596,7 +597,7 @@ function syncNights(){
 
 /* ---------- NEW DOC ---------- */
 function newDoc(){
-  editingKey=null;
+  editingKey=null; syncPdfBtn();
   curNo=nextNo(docType); curDateISO=new Date().toISOString().slice(0,10);
   $("#no").value=curNo; $("#date").value=curDateISO;
   ["guest","email","phone","guests","ref","checkin","checkout","nights","deposit","advance"].forEach(id=> $("#"+id).value="");
@@ -782,13 +783,13 @@ async function saveDoc(){
   if(!doc.guest.trim()){ toast("Add a guest name first"); return; }
   const all=getStays(); const key=editingKey||doc.no; const idx=all.findIndex(x=>x.no===key);
   if(idx>=0) all[idx]=doc; else all.push(doc);
-  staysCache=all; editingKey=doc.no;
+  staysCache=all; editingKey=doc.no; syncPdfBtn();
   await pushStays();
   toast((doc.type==="invoice"?"Invoice":"Quote")+" saved");
 }
 function loadDoc(no){
   const d=getStays().find(x=>x.no===no); if(!d) return;
-  editingKey=d.no;
+  editingKey=d.no; syncPdfBtn();
   docType = (d.type==="quote") ? "quote" : "invoice";
   $("#typeSeg").querySelectorAll("button").forEach(b=> b.classList.toggle("on", b.dataset.type===docType));
   const isInv = docType==="invoice";
@@ -854,6 +855,11 @@ async function openBookings(){
 }
 
 /* ---------- PDF ---------- */
+function syncPdfBtn(){
+  const b=$("#btnPdf"); if(!b) return;
+  b.disabled=!editingKey;
+  b.title=editingKey?"Download PDF":"Save the document first, then download PDF";
+}
 async function downloadPdf(){
   try{ await document.fonts.ready; }catch(e){}
   const prevTitle=document.title;
