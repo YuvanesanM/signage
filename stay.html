@@ -825,8 +825,8 @@ function render(){
     ? "Thank you for joining us at RYST 109A Beach Villa!"
     : "PLEASE JOIN US FOR A RELAXING, WARM & WONDERFUL STAY";
 
-  // Guest acceptance signature shows on quotes only (acts as booking agreement)
-  $("#pGuestSign").style.display = docType==="invoice" ? "none" : "flex";
+  // Guest acceptance signature shown on both invoice and quote
+  $("#pGuestSign").style.display = "flex";
   $("#pGuestSignName").textContent = ($("#guest").value || "Guest") + " · Signature & Date";
 }
 
