@@ -467,7 +467,8 @@ Account Type: Savings`,
     {desc:"Event / Gathering Charges",       rate:""},
     {desc:"Other Charges",                   rate:""}
   ],
-  maxGuests: 4
+  maxGuests: 4,
+  guestCapacity: 10
 };
 
 const $ = s => document.querySelector(s);
@@ -495,8 +496,16 @@ async function fetchStaySettings(){
       if(!Array.isArray(settings.terms) || !settings.terms.length) settings.terms = DEFAULTS.terms.slice();
       if(!Array.isArray(settings.rates) || !settings.rates.length) settings.rates = DEFAULTS.rates.map(r=>({...r}));
       try{ localStorage.setItem(K_SET, JSON.stringify(settings)); }catch(e){}
+      applyGuestCap();
     }
   }catch(e){ console.warn('Could not load stay settings', e); }
+}
+function applyGuestCap(){
+  const cap = parseInt(settings.guestCapacity) || 0;
+  const inp = $("#guests");
+  if(!inp) return;
+  inp.max = cap > 0 ? String(cap) : "";
+  if(cap > 0 && parseInt(inp.value||0) > cap){ inp.value = String(cap); syncGuestCharges(); render(); }
 }
 function rateFor(desc){
   const hit=(settings.rates||[]).find(r=>r.desc===desc);
@@ -584,7 +593,14 @@ function init(){
 
 function bind(){
   ["guest","email","phone","ref","mode","deposit","advance"].forEach(id=> $("#"+id).addEventListener("input", render));
-  $("#guests").addEventListener("input", ()=>{ syncGuestCharges(); render(); });
+  $("#guests").addEventListener("input", ()=>{
+    const cap = parseInt(settings.guestCapacity) || 0;
+    if(cap > 0 && parseInt($("#guests").value||0) > cap){
+      $("#guests").value = String(cap);
+      toast("Maximum capacity is "+cap+" guests");
+    }
+    syncGuestCharges(); render();
+  });
   $("#date").addEventListener("input", e=>{ curDateISO=e.target.value; render(); });
   $("#checkin").addEventListener("input", syncNights);
   $("#checkout").addEventListener("input", syncNights);
