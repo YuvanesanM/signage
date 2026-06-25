@@ -154,20 +154,6 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 
 <div class="container">
 
-  <!-- Proxy status card -->
-  <div class="card" id="config-card">
-    <div class="card-title">Connection</div>
-    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div id="proxy-dot" style="width:10px;height:10px;border-radius:50%;background:var(--mist)"></div>
-        <span id="proxy-label" style="font-size:14px;color:var(--stone)">Connecting to proxy…</span>
-      </div>
-      <div class="sb-spacer" style="flex:1"></div>
-      <button class="btn btn-ghost" onclick="loadSchedule()">↺ Refresh</button>
-      <a class="preview-link" href="/" target="_blank">📺 Open TV Display</a>
-    </div>
-  </div>
-
   <!-- Today's Sessions -->
   <div class="card">
     <div class="sessions-header">
@@ -238,6 +224,10 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 
 <div class="status-bar">
   <span class="status-msg" id="status-msg">Ready. Load schedule to begin.</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div id="proxy-dot" style="width:9px;height:9px;border-radius:50%;background:var(--mist)"></div>
+    <span id="proxy-label">Connecting to proxy…</span>
+  </div>
   <span id="status-time"></span>
 </div>
 
@@ -570,15 +560,34 @@ function addBackButton(){
   const btn=document.createElement('button');
   btn.textContent='← Menu';
   btn.title='Back to menu';
-  btn.style.cssText='margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
+  btn.style.cssText='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
   btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.95)');
   btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.6)');
   btn.onclick=()=>{ window.location.href='login.html'; };
   hdr.appendChild(btn);
 }
 
+function addToolButtons(){
+  const hdr=document.querySelector('header');
+  if(!hdr) return;
+  const mk=(label,first)=>{
+    const b=document.createElement('button');
+    b.textContent=label;
+    b.style.cssText=(first?'margin-left:auto;':'')+'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
+    b.addEventListener('mouseenter',()=>b.style.color='rgba(255,255,255,.95)');
+    b.addEventListener('mouseleave',()=>b.style.color='rgba(255,255,255,.6)');
+    return b;
+  };
+  const refresh=mk('↺ Refresh', true);
+  refresh.onclick=()=>loadSchedule();
+  const tv=mk('📺 Open TV Display', false);
+  tv.onclick=()=>window.open('/','_blank');
+  hdr.appendChild(refresh);
+  hdr.appendChild(tv);
+}
+
 // Boot on load
-window.addEventListener('load',()=>{ bootAuth(); addBackButton(); addLockButton(); });
+window.addEventListener('load',()=>{ bootAuth(); addToolButtons(); addBackButton(); addLockButton(); });
 
 </script>
 
