@@ -564,8 +564,21 @@ function addLockButton(){
   hdr.appendChild(btn);
 }
 
+function addBackButton(){
+  const hdr=document.querySelector('header');
+  if(!hdr) return;
+  const btn=document.createElement('button');
+  btn.textContent='← Menu';
+  btn.title='Back to menu';
+  btn.style.cssText='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;margin-right:6px;flex-shrink:0';
+  btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.95)');
+  btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.6)');
+  btn.onclick=()=>{ window.location.href='login.html'; };
+  hdr.insertBefore(btn, hdr.firstChild);
+}
+
 // Boot on load
-window.addEventListener('load',()=>{ bootAuth(); addLockButton(); });
+window.addEventListener('load',()=>{ bootAuth(); addBackButton(); addLockButton(); });
 
 </script>
 
