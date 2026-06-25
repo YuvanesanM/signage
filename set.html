@@ -10,7 +10,7 @@
 :root{--teal:#0D7A8A;--teal2:#0A5E6B;--amber:#F5A623;--ink:#1E242C;--snow:#F9F8F6;--silver:#ECEDF0;--stone:#8A919C;--red:#D63B2F;--green:#2C7A4B;--white:#fff}
 body{font-family:'DM Sans',sans-serif;background:var(--snow);color:var(--ink);min-height:100vh;padding-bottom:80px}
 header{background:var(--ink);padding:20px 40px;display:flex;align-items:center;gap:20px}
-header img{height:56px;object-fit:contain;filter:brightness(0) invert(1)}
+header img{height:56px;object-fit:contain}
 header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:rgba(255,255,255,.85);font-style:italic}
 .sub{font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-top:2px}
 .container{max-width:1000px;margin:40px auto;padding:0 40px}
@@ -551,7 +551,7 @@ function addLockButton(){
   if(!hdr) return;
   const btn=document.createElement('button');
   btn.textContent='🔒 Log out';
-  btn.style.cssText='margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px';
+  btn.style.cssText='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px';
   btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.9)');
   btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.5)');
   btn.onclick=()=>{
@@ -570,7 +570,7 @@ function addBackButton(){
   const btn=document.createElement('button');
   btn.textContent='← Menu';
   btn.title='Back to menu';
-  btn.style.cssText='margin-left:auto;margin-right:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
+  btn.style.cssText='margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
   btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.95)');
   btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.6)');
   btn.onclick=()=>{ window.location.href='login.html'; };
