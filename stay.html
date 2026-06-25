@@ -702,30 +702,36 @@ function newDoc(){
 /* ---------- LINE ITEMS ---------- */
 function renderItems(){
   const body=$("#liBody"); body.innerHTML="";
-  const sugg = (settings.rates||[]).map(r=>r.desc);
+  const allSugg = (settings.rates||[]).map(r=>r.desc);
+  // Descriptions that are auto-managed and should not appear as manual options
+  const autoDescs = allSugg.filter(s=> /villa.*rental/i.test(s) || /additional.*guest/i.test(s));
+  const manualSugg = allSugg.filter(s=> !autoDescs.includes(s));
   items.forEach((it,i)=>{
-    const inList = sugg.includes(it.desc);
+    const isAutoRow = /villa.*rental/i.test(it.desc||"") || it._autoLocked;
+    const inList = allSugg.includes(it.desc);
     const isCustom = !inList && it.desc!=="";
-    const opts = sugg.map(s=>`<option value="${esc(s)}"${s===it.desc?" selected":""}>${esc(s)}</option>`).join("");
+    const opts = manualSugg.map(s=>`<option value="${esc(s)}"${s===it.desc?" selected":""}>${esc(s)}</option>`).join("");
     const row=document.createElement("div"); row.className="li-row";
     const minRate = rateFor(it.desc);
     const rateWarn = minRate!=="" && parseFloat(it.rate||0) < parseFloat(minRate) && it.rate!=="";
     const rateTitle = minRate!=="" ? `Min catalog price: ₹${inr(minRate)}` : "";
     row.innerHTML=`
       <div class="li-desc-wrap">
-        <select class="t li-sel" data-i="${i}">
-          <option value="">— choose —</option>
-          ${opts}
-          <option value="__custom"${isCustom?" selected":""}>Other…</option>
-        </select>
-        <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">
+        ${isAutoRow
+          ? `<input class="t li-sel locked" value="${esc(it.desc)}" readonly tabindex="-1" title="Auto-managed">`
+          : `<select class="t li-sel" data-i="${i}">
+              <option value="">— choose —</option>
+              ${opts}
+              <option value="__custom"${isCustom?" selected":""}>Other…</option>
+            </select>
+            <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">` }
       </div>
       ${(/villa.*rental/i.test(it.desc||"") || it._autoLocked)?
         `<input class="t num locked" data-i="${i}" data-k="qty" type="number" value="${esc(it.qty)}" readonly tabindex="-1" title="${it._autoLocked?"Auto-calculated from guest count":"Auto-calculated from nights"}">`
         :`<input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">`}
       <input class="t num${rateWarn?" warn-rate":""}" data-i="${i}" data-k="rate" data-min="${esc(minRate)}" type="number" min="0" step="0.01" inputmode="decimal" placeholder="${esc(minRate||"0")}" title="${esc(rateTitle)}" value="${esc(it.rate)}">
       <input class="t tot" value="${money(lineAmt(it))}" readonly tabindex="-1">
-      ${it._autoLocked?`<span class="li-del" style="visibility:hidden">×</span>`:`<button class="li-del" data-del="${i}" title="Remove">×</button>`}`;
+      ${isAutoRow?`<span class="li-del" style="visibility:hidden">×</span>`:`<button class="li-del" data-del="${i}" title="Remove">×</button>`}`;
     body.appendChild(row);
   });
   body.querySelectorAll(".li-sel").forEach(sel=>{
