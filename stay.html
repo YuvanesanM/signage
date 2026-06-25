@@ -653,7 +653,7 @@ function loadFromQuote(qno){
   $("#advance").value = d.advance||"";
   $("#discountInp").value = d.discount!=null ? String(d.discount) : "";
   items = d.items ? JSON.parse(JSON.stringify(d.items)) : [];
-  renderItems(); render();
+  syncGuestCharges(); renderItems(); render();
   $("#loadQuoteSel").value = "";
 }
 
@@ -663,7 +663,7 @@ function syncNights(){
   $("#nights").value = n ? String(n) : "";
   // keep villa rental line qty in sync with nights count whenever dates change
   if(n){
-    const villaIdx = items.findIndex(it=> /villa.*rental/i.test(it.desc||""));
+    const villaIdx = items.findIndex(it=> it._villaRow);
     if(villaIdx>=0){ items[villaIdx].qty = String(n); renderItems(); }
   }
   render();
@@ -694,7 +694,7 @@ function newDoc(){
   ["guest","email","phone","guests","ref","checkin","checkout","nights","deposit","advance"].forEach(id=> $("#"+id).value="");
   $("#discountInp").value="";
   $("#mode").value="";
-  items=[{desc:"Villa Rental Charges",qty:"1",rate:rateFor("Villa Rental Charges")}];
+  items=[{desc:"Villa Rental Charges",qty:"1",rate:rateFor("Villa Rental Charges"),_villaRow:true}];
   if(docType==="invoice"){ populateLoadQuoteSel(); $("#loadQuoteRow").style.display=""; }
   renderItems(); render();
 }
@@ -703,11 +703,10 @@ function newDoc(){
 function renderItems(){
   const body=$("#liBody"); body.innerHTML="";
   const allSugg = (settings.rates||[]).map(r=>r.desc);
-  // Descriptions that are auto-managed and should not appear as manual options
-  const autoDescs = allSugg.filter(s=> /villa.*rental/i.test(s) || /additional.*guest/i.test(s));
-  const manualSugg = allSugg.filter(s=> !autoDescs.includes(s));
+  const autoDescs = new Set(items.filter(it=>it._villaRow||it._autoLocked).map(it=>it.desc));
+  const manualSugg = allSugg.filter(s=> !autoDescs.has(s));
   items.forEach((it,i)=>{
-    const isAutoRow = /villa.*rental/i.test(it.desc||"") || it._autoLocked;
+    const isAutoRow = !!(it._villaRow || it._autoLocked);
     const inList = allSugg.includes(it.desc);
     const isCustom = !inList && it.desc!=="";
     const opts = manualSugg.map(s=>`<option value="${esc(s)}"${s===it.desc?" selected":""}>${esc(s)}</option>`).join("");
@@ -734,7 +733,7 @@ function renderItems(){
       ${isAutoRow?`<span class="li-del" style="visibility:hidden">×</span>`:`<button class="li-del" data-del="${i}" title="Remove">×</button>`}`;
     body.appendChild(row);
   });
-  body.querySelectorAll(".li-sel").forEach(sel=>{
+  body.querySelectorAll("select.li-sel").forEach(sel=>{
     sel.addEventListener("change", e=>{
       const i=+e.target.dataset.i, val=e.target.value;
       const wrap=e.target.closest(".li-desc-wrap");
@@ -879,7 +878,7 @@ function collect(){
     ref:$("#ref").value, checkin:$("#checkin").value, checkout:$("#checkout").value, mode:$("#mode").value,
     deposit: parseFloat($("#deposit").value)||0, advance: parseFloat($("#advance").value)||0,
     discount: parseFloat($("#discountInp").value)||0,
-    items: items.map(({desc,qty,rate})=>({desc,qty,rate})),
+    items: items.map(({desc,qty,rate,_villaRow,_autoLocked})=>({desc,qty,rate,...(_villaRow&&{_villaRow:true}),...(_autoLocked&&{_autoLocked:true})})),
     savedAt: Date.now()
   };
 }
@@ -907,8 +906,8 @@ function loadDoc(no){
   $("#deposit").value=d.deposit||""; $("#advance").value=d.advance||"";
   $("#discountInp").value=d.discount!=null ? String(d.discount) : "";
   $("#nights").value = nightsBetween(d.checkin,d.checkout)||"";
-  items = (d.items&&d.items.length)? d.items.map(x=>({desc:x.desc||"",qty:(x.qty!=null?x.qty:"1"),rate:x.rate||""})) : [{desc:"",qty:"1",rate:""}];
-  renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+d.no);
+  items = (d.items&&d.items.length)? d.items.map(x=>({desc:x.desc||"",qty:(x.qty!=null?x.qty:"1"),rate:x.rate||"",...(x._villaRow&&{_villaRow:true}),...(x._autoLocked&&{_autoLocked:true})})) : [{desc:"",qty:"1",rate:""}];
+  syncGuestCharges(); renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+d.no);
 }
 async function openSaved(){
   const list=$("#savedList");

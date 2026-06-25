@@ -241,6 +241,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 //  PROXY CONFIG — PAT never touches the browser
 // ═══════════════════════════════════════════════════
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com'; // update after Render deploy
+const esc = s => (s||"").toString().replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 let scheduleData = {sessions:[]};
 let sessionToken = localStorage.getItem('ryst_proxy_token') || '';
@@ -351,15 +352,15 @@ function renderList(id, list, withStatus){
   el.innerHTML=list.map((s,i)=>{
     const st=withStatus?sessionStatus(s):'';
     const badge=st==='live'?'<span class="si-badge badge-live">● Live</span>':st==='upcoming'?'<span class="si-badge badge-upcoming">Upcoming</span>':st==='done'?'<span class="si-badge badge-done">Done</span>':'';
-    const zoneLabel=({podcast:'🎙️ Podcast',photography:'📷 Photography',culinary:'🍳 Culinary'}[s.zone]||s.zone);
-    const dateInfo=s.date?s.date:(s.days?s.days.join(', '):'Today');
+    const zoneLabel=({podcast:'🎙️ Podcast',photography:'📷 Photography',culinary:'🍳 Culinary'}[s.zone]||esc(s.zone));
+    const dateInfo=s.date?esc(s.date):(s.days?s.days.map(esc).join(', '):'Today');
     const idx=scheduleData.sessions.indexOf(s);
     return `<div class="session-item${st==='live'?' active-now':st==='done'?' past':''}">
       <div>
-        <div class="si-name">${s.name||'Unnamed'} ${badge}</div>
+        <div class="si-name">${esc(s.name||'Unnamed')} ${badge}</div>
         <div class="si-meta">
           <span>${zoneLabel}</span>
-          <span>⏰ ${fmt12(s.start)} – ${s.end?fmt12(s.end):'?'}</span>
+          <span>⏰ ${esc(fmt12(s.start))} – ${s.end?esc(fmt12(s.end)):'?'}</span>
           <span>📅 ${dateInfo}</span>
         </div>
       </div>

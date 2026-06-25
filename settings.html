@@ -473,6 +473,9 @@ async function saveStay(){
   stay.maxGuests = mgVal!=="" ? parseInt(mgVal)||0 : STAY_DEFAULTS.maxGuests;
   const gcVal=document.getElementById("stayGuestCapacity").value;
   stay.guestCapacity = gcVal!=="" ? parseInt(gcVal)||0 : STAY_DEFAULTS.guestCapacity;
+  if(stay.maxGuests > 0 && stay.guestCapacity > 0 && stay.maxGuests > stay.guestCapacity){
+    toast("⚠️ Max included guests ("+stay.maxGuests+") exceeds guest capacity ("+stay.guestCapacity+") — additional charge line can never appear");
+  }
   stay.bank=document.getElementById("stayBank").value;
   stay.declaration=document.getElementById("stayDecl").value;
   stay.terms=(document.getElementById("stayTerms").value||"").split("\n").map(t=>t.trim()).filter(Boolean);
@@ -575,9 +578,11 @@ async function saveRateCard(){
 
 /* ---------- SETTINGS ---------- */
 function renderImgPrev(key,sel){
-  const v=settings[key];
-  if(key==="logo") $(sel).innerHTML=v?`<div class="logo-preview"><img src="${v}"></div>`:`<p class="hint">No logo set.</p>`;
-  else $(sel).innerHTML=v?`<div class="qr-preview"><img src="${v}"></div>`:`<p class="hint">No QR set.</p>`;
+  const v=settings[key]; const container=$(sel);
+  if(!v){ container.innerHTML=`<p class="hint">No ${key==="logo"?"logo":"QR"} set.</p>`; return; }
+  const wrap=document.createElement("div"); wrap.className=key==="logo"?"logo-preview":"qr-preview";
+  const img=document.createElement("img"); img.src=v; wrap.appendChild(img);
+  container.innerHTML=""; container.appendChild(wrap);
 }
 function pickImage(e,key,sel){
   const f=e.target.files[0]; if(!f) return;
