@@ -535,15 +535,27 @@ function toggleEye(){
   else { inp.type='password'; btn.textContent='👁'; }
 }
 
-// Add lock button to header
+// Header icon buttons
+const ICONS = {
+  refresh:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+  tv:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+  home:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  logout:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
+};
+function makeIconBtn(icon, title, first){
+  const b=document.createElement('button');
+  b.innerHTML=ICONS[icon];
+  b.title=title; b.setAttribute('aria-label',title);
+  b.style.cssText=(first?'margin-left:auto;':'')+'display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:9px 12px;border-radius:8px;cursor:pointer;flex-shrink:0';
+  b.addEventListener('mouseenter',()=>b.style.color='rgba(255,255,255,.95)');
+  b.addEventListener('mouseleave',()=>b.style.color='rgba(255,255,255,.6)');
+  return b;
+}
+
 function addLockButton(){
   const hdr=document.querySelector('header');
   if(!hdr) return;
-  const btn=document.createElement('button');
-  btn.textContent='🔒 Log out';
-  btn.style.cssText='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px';
-  btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.9)');
-  btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.5)');
+  const btn=makeIconBtn('logout','Log out', false);
   btn.onclick=()=>{
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('ryst_set_pwd_hash');
@@ -557,12 +569,7 @@ function addLockButton(){
 function addBackButton(){
   const hdr=document.querySelector('header');
   if(!hdr) return;
-  const btn=document.createElement('button');
-  btn.textContent='← Menu';
-  btn.title='Back to menu';
-  btn.style.cssText='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
-  btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.95)');
-  btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.6)');
+  const btn=makeIconBtn('home','Home menu', false);
   btn.onclick=()=>{ window.location.href='login.html'; };
   hdr.appendChild(btn);
 }
@@ -570,17 +577,9 @@ function addBackButton(){
 function addToolButtons(){
   const hdr=document.querySelector('header');
   if(!hdr) return;
-  const mk=(label,first)=>{
-    const b=document.createElement('button');
-    b.textContent=label;
-    b.style.cssText=(first?'margin-left:auto;':'')+'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
-    b.addEventListener('mouseenter',()=>b.style.color='rgba(255,255,255,.95)');
-    b.addEventListener('mouseleave',()=>b.style.color='rgba(255,255,255,.6)');
-    return b;
-  };
-  const refresh=mk('↺ Refresh', true);
+  const refresh=makeIconBtn('refresh','Refresh schedule', true);
   refresh.onclick=()=>loadSchedule();
-  const tv=mk('📺 Open TV Display', false);
+  const tv=makeIconBtn('tv','Open TV Display', false);
   tv.onclick=()=>window.open('/','_blank');
   hdr.appendChild(refresh);
   hdr.appendChild(tv);
