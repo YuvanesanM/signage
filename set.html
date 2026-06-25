@@ -112,7 +112,8 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 #app-shell.unlocked{filter:none;pointer-events:auto}
 
 
-.header-logo{height:56px;width:auto;object-fit:contain;background:#fff;border-radius:8px;padding:4px 8px}
+.header-logo{height:56px;width:auto;object-fit:contain;background:#fff;border-radius:8px;padding:4px 8px;cursor:pointer;transition:opacity .15s}
+.header-logo:hover{opacity:.85}
 </style>
 </head>
 <body>
@@ -601,8 +602,15 @@ function addToolButtons(){
   hdr.appendChild(tv);
 }
 
+function makeLogoClickable(){
+  const logo=document.querySelector('.header-logo');
+  if(!logo) return;
+  logo.title='Back to menu';
+  logo.onclick=()=>{ window.location.href='login.html'; };
+}
+
 // Boot on load
-window.addEventListener('load',()=>{ bootAuth(); addToolButtons(); addBackButton(); });
+window.addEventListener('load',()=>{ bootAuth(); addToolButtons(); addBackButton(); makeLogoClickable(); });
 
 </script>
 
