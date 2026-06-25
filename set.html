@@ -58,12 +58,8 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 .preview-link{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(13,122,138,.08);border:1px solid rgba(13,122,138,.2);border-radius:8px;font-size:13px;font-weight:600;color:var(--teal);text-decoration:none;margin-top:8px}
 
 /* ═══════════ LOCK SCREEN ═══════════ */
-#lock-screen{
-  position:fixed;inset:0;background:var(--ink);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:9999;gap:32px;
-}
-#lock-screen.unlocked{display:none}
+/* Lock screen retired — auth handled by login.html. Kept hidden as a no-op. */
+#lock-screen{display:none !important}
 .lock-logo{height:100px;width:auto;object-fit:contain;filter:brightness(0) invert(1);opacity:.9}
 .lock-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
   font-style:italic;color:rgba(255,255,255,.6);letter-spacing:2px;text-align:center}
@@ -459,18 +455,17 @@ async function verifyToken(token){
   return expected === sig;
 }
 
-async function bootAuth(){
+function bootAuth(){
   const proxyToken = localStorage.getItem('ryst_proxy_token');
-  // The proxy token (issued by login.html or a prior unlock here) is the
-  // server-validated credential. If present, honor the existing session so
-  // users logged in via the main login aren't prompted again.
+  // Auth is centralised in login.html. If there's no session token, send the
+  // user there (same pattern as the other landing pages); otherwise reveal app.
   if(proxyToken){
     sessionToken = proxyToken;
     unlock(false);
   } else {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('ryst_proxy_token');
-    setTimeout(()=>document.getElementById('lock-pwd').focus(), 300);
+    window.location.href = 'login.html';
   }
 }
 
@@ -555,7 +550,7 @@ function addLockButton(){
   const hdr=document.querySelector('header');
   if(!hdr) return;
   const btn=document.createElement('button');
-  btn.textContent='🔒 Lock';
+  btn.textContent='🔒 Log out';
   btn.style.cssText='margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px';
   btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.9)');
   btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.5)');
@@ -564,7 +559,7 @@ function addLockButton(){
     localStorage.removeItem('ryst_set_pwd_hash');
     localStorage.removeItem('ryst_proxy_token');
     sessionToken = '';
-    location.reload();
+    window.location.href = 'login.html';
   };
   hdr.appendChild(btn);
 }
