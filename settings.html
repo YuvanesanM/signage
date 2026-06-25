@@ -177,10 +177,11 @@
 
     <p class="gh-mini" style="margin-top:26px">Business &amp; payment</p>
     <label class="f"><span>Property address block (under the wordmark)</span><textarea class="t" id="stayCompany" rows="3"></textarea></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
       <label class="f"><span>PAN</span><input class="t" id="stayPan" placeholder="ADVPJ1491D"></label>
       <label class="f"><span>Invoice no. prefix</span><input class="t" id="stayInvPrefix" placeholder="RYST109A/INV"></label>
       <label class="f"><span>Quote no. prefix</span><input class="t" id="stayQtPrefix" placeholder="RYST109A/QT"></label>
+      <label class="f"><span>Max guests (incl.)</span><input class="t" id="stayMaxGuests" type="number" min="0" step="1" placeholder="4"></label>
     </div>
     <label class="f"><span>Bank / payment details block</span><textarea class="t" id="stayBank" rows="6"></textarea></label>
     <label class="f"><span>GST declaration</span><textarea class="t" id="stayDecl" rows="3"></textarea></label>
@@ -280,7 +281,8 @@ Account Type: Savings`,
     {desc:"Cleaning & Maintenance Charges",  rate:""},
     {desc:"Event / Gathering Charges",       rate:""},
     {desc:"Other Charges",                   rate:""}
-  ]
+  ],
+  maxGuests: 4
 };
 let stay = JSON.parse(JSON.stringify(STAY_DEFAULTS));
 let stayRcDraft = [];
@@ -427,6 +429,7 @@ async function loadStayPanel(){
   document.getElementById("stayPan").value=stay.pan||"";
   document.getElementById("stayInvPrefix").value=stay.invPrefix||"";
   document.getElementById("stayQtPrefix").value=stay.qtPrefix||"";
+  document.getElementById("stayMaxGuests").value=stay.maxGuests!=null?stay.maxGuests:"";
   document.getElementById("stayBank").value=stay.bank||"";
   document.getElementById("stayDecl").value=stay.declaration||"";
   document.getElementById("stayTerms").value=(stay.terms||[]).join("\n");
@@ -463,6 +466,8 @@ async function saveStay(){
   stay.pan=(document.getElementById("stayPan").value||"").trim();
   stay.invPrefix=(document.getElementById("stayInvPrefix").value||"").trim()||STAY_DEFAULTS.invPrefix;
   stay.qtPrefix=(document.getElementById("stayQtPrefix").value||"").trim()||STAY_DEFAULTS.qtPrefix;
+  const mgVal=document.getElementById("stayMaxGuests").value;
+  stay.maxGuests = mgVal!=="" ? parseInt(mgVal)||0 : STAY_DEFAULTS.maxGuests;
   stay.bank=document.getElementById("stayBank").value;
   stay.declaration=document.getElementById("stayDecl").value;
   stay.terms=(document.getElementById("stayTerms").value||"").split("\n").map(t=>t.trim()).filter(Boolean);

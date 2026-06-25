@@ -466,7 +466,8 @@ Account Type: Savings`,
     {desc:"Cleaning & Maintenance Charges",  rate:""},
     {desc:"Event / Gathering Charges",       rate:""},
     {desc:"Other Charges",                   rate:""}
-  ]
+  ],
+  maxGuests: 4
 };
 
 const $ = s => document.querySelector(s);
@@ -582,7 +583,8 @@ function init(){
 }
 
 function bind(){
-  ["guest","email","phone","guests","ref","mode","deposit","advance"].forEach(id=> $("#"+id).addEventListener("input", render));
+  ["guest","email","phone","ref","mode","deposit","advance"].forEach(id=> $("#"+id).addEventListener("input", render));
+  $("#guests").addEventListener("input", ()=>{ syncGuestCharges(); render(); });
   $("#date").addEventListener("input", e=>{ curDateISO=e.target.value; render(); });
   $("#checkin").addEventListener("input", syncNights);
   $("#checkout").addEventListener("input", syncNights);
@@ -651,6 +653,23 @@ function syncNights(){
   render();
 }
 
+function syncGuestCharges(){
+  const guests = parseInt($("#guests").value) || 0;
+  const max = parseInt(settings.maxGuests) || 0;
+  const extra = max > 0 ? Math.max(0, guests - max) : 0;
+  const idx = items.findIndex(it=> /additional.*guest/i.test(it.desc||"") && it._autoLocked);
+  if(extra > 0){
+    if(idx >= 0){
+      items[idx].qty = String(extra);
+    } else {
+      items.push({desc:"Additional Guest Charges", qty:String(extra), rate:rateFor("Additional Guest Charges"), _autoLocked:true});
+    }
+  } else {
+    if(idx >= 0) items.splice(idx, 1);
+  }
+  renderItems();
+}
+
 /* ---------- NEW DOC ---------- */
 function newDoc(){
   editingKey=null; syncPdfBtn();
@@ -685,12 +704,12 @@ function renderItems(){
         </select>
         <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">
       </div>
-      ${/villa.*rental/i.test(it.desc||"")?
-        `<input class="t num locked" data-i="${i}" data-k="qty" type="number" value="${esc(it.qty)}" readonly tabindex="-1" title="Auto-calculated from nights">`
+      ${(/villa.*rental/i.test(it.desc||"") || it._autoLocked)?
+        `<input class="t num locked" data-i="${i}" data-k="qty" type="number" value="${esc(it.qty)}" readonly tabindex="-1" title="${it._autoLocked?"Auto-calculated from guest count":"Auto-calculated from nights"}">`
         :`<input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">`}
       <input class="t num${rateWarn?" warn-rate":""}" data-i="${i}" data-k="rate" data-min="${esc(minRate)}" type="number" min="0" step="0.01" inputmode="decimal" placeholder="${esc(minRate||"0")}" title="${esc(rateTitle)}" value="${esc(it.rate)}">
       <input class="t tot" value="${money(lineAmt(it))}" readonly tabindex="-1">
-      <button class="li-del" data-del="${i}" title="Remove">×</button>`;
+      ${it._autoLocked?`<span class="li-del" style="visibility:hidden">×</span>`:`<button class="li-del" data-del="${i}" title="Remove">×</button>`}`;
     body.appendChild(row);
   });
   body.querySelectorAll(".li-sel").forEach(sel=>{
