@@ -44,6 +44,8 @@
   .hc-icon{width:52px;height:52px;background:var(--accent-soft);border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--accent-d)}
   .hc-title{font-size:15px;font-weight:700;color:var(--ink)}
   .hc-sub{font-size:12px;color:var(--muted2);line-height:1.45}
+  .logout-btn{margin-top:8px;background:transparent;border:1.5px solid var(--line);color:var(--muted2);padding:10px 24px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:.18s}
+  .logout-btn:hover{border-color:var(--danger,#c0584b);color:var(--danger,#c0584b)}
   @media(max-width:600px){
     #homeView{overflow-y:auto;justify-content:flex-start;padding-top:32px;padding-bottom:32px}
     .home-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
@@ -93,6 +95,7 @@
       <span class="hc-sub">Update pricing and studio details</span>
     </button>
   </div>
+  <button id="logoutBtn" class="logout-btn" type="button">⎋ Log out</button>
 </div>
 
 <script>
@@ -164,6 +167,18 @@ applyCustomLogo();
 
 document.getElementById('loginBtn').addEventListener('click', tryLogin);
 document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+
+function logout(){
+  proxyToken='';
+  localStorage.removeItem('ryst_proxy_token');
+  localStorage.removeItem('ryst_set_token');
+  localStorage.removeItem('ryst_set_pwd_hash');
+  document.getElementById('homeView').setAttribute('hidden','');
+  document.getElementById('loginView').removeAttribute('hidden');
+  document.getElementById('loginView').style.display='';
+  const pw=document.getElementById('pw'); if(pw){ pw.value=''; pw.focus(); }
+}
+document.getElementById('logoutBtn').addEventListener('click', logout);
 </script>
 </body>
 </html>

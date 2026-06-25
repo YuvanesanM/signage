@@ -582,20 +582,6 @@ function makeIconBtn(icon, title, first){
   return b;
 }
 
-function addLockButton(){
-  const hdr=document.querySelector('header');
-  if(!hdr) return;
-  const btn=makeIconBtn('logout','Log out', false);
-  btn.onclick=()=>{
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem('ryst_set_pwd_hash');
-    localStorage.removeItem('ryst_proxy_token');
-    sessionToken = '';
-    window.location.href = 'login.html';
-  };
-  hdr.appendChild(btn);
-}
-
 function addBackButton(){
   const hdr=document.querySelector('header');
   if(!hdr) return;
@@ -616,7 +602,7 @@ function addToolButtons(){
 }
 
 // Boot on load
-window.addEventListener('load',()=>{ bootAuth(); addToolButtons(); addBackButton(); addLockButton(); });
+window.addEventListener('load',()=>{ bootAuth(); addToolButtons(); addBackButton(); });
 
 </script>
 
