@@ -460,9 +460,11 @@ async function verifyToken(token){
 }
 
 async function bootAuth(){
-  const localToken = localStorage.getItem(TOKEN_KEY);
   const proxyToken = localStorage.getItem('ryst_proxy_token');
-  if(localToken && await verifyToken(localToken) && proxyToken){
+  // The proxy token (issued by login.html or a prior unlock here) is the
+  // server-validated credential. If present, honor the existing session so
+  // users logged in via the main login aren't prompted again.
+  if(proxyToken){
     sessionToken = proxyToken;
     unlock(false);
   } else {
