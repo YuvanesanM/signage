@@ -1,6 +1,12 @@
 {
   "sessions": [
     {
+      "name": "test",
+      "zone": "podcast",
+      "start": "07:15",
+      "end": "07:16"
+    },
+    {
       "name": "Musaffar",
       "zone": "podcast",
       "start": "11:00",
