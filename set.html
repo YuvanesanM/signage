@@ -109,7 +109,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 #app-shell.unlocked{filter:none;pointer-events:auto}
 
 
-.header-logo{height:56px;width:auto;object-fit:contain;filter:brightness(0) invert(1)}
+.header-logo{height:56px;width:auto;object-fit:contain;background:#fff;border-radius:8px;padding:4px 8px}
 </style>
 </head>
 <body>
@@ -570,11 +570,11 @@ function addBackButton(){
   const btn=document.createElement('button');
   btn.textContent='← Menu';
   btn.title='Back to menu';
-  btn.style.cssText='background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;margin-right:6px;flex-shrink:0';
+  btn.style.cssText='margin-left:auto;margin-right:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.5px;flex-shrink:0';
   btn.addEventListener('mouseenter',()=>btn.style.color='rgba(255,255,255,.95)');
   btn.addEventListener('mouseleave',()=>btn.style.color='rgba(255,255,255,.6)');
   btn.onclick=()=>{ window.location.href='login.html'; };
-  hdr.insertBefore(btn, hdr.firstChild);
+  hdr.appendChild(btn);
 }
 
 // Boot on load
