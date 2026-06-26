@@ -22,6 +22,12 @@
       "date": "2026-06-27",
       "mobile": "8139848700",
       "charges": 4500
+    },
+    {
+      "name": "Mr. Karan",
+      "zone": "podcast",
+      "start": "17:30",
+      "end": "18:30"
     }
   ]
 }
