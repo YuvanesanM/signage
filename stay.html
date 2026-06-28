@@ -664,8 +664,10 @@ function syncNights(){
   // keep villa rental line qty in sync with nights count whenever dates change
   if(n){
     const villaIdx = items.findIndex(it=> it._villaRow);
-    if(villaIdx>=0){ items[villaIdx].qty = String(n); renderItems(); }
+    if(villaIdx>=0){ items[villaIdx].qty = String(n); }
   }
+  // additional-guest qty is per-guest per-night, so it also depends on nights
+  syncGuestCharges();
   render();
 }
 
@@ -673,12 +675,14 @@ function syncGuestCharges(){
   const guests = parseInt($("#guests").value) || 0;
   const max = parseInt(settings.maxGuests) || 0;
   const extra = max > 0 ? Math.max(0, guests - max) : 0;
+  const nights = nightsBetween($("#checkin").value, $("#checkout").value) || 1;
+  const qty = extra * nights;
   const idx = items.findIndex(it=> /additional.*guest/i.test(it.desc||"") && it._autoLocked);
   if(extra > 0){
     if(idx >= 0){
-      items[idx].qty = String(extra);
+      items[idx].qty = String(qty);
     } else {
-      items.push({desc:"Additional Guest Charges", qty:String(extra), rate:rateFor("Additional Guest Charges"), _autoLocked:true});
+      items.push({desc:"Additional Guest Charges", qty:String(qty), rate:rateFor("Additional Guest Charges"), _autoLocked:true});
     }
   } else {
     if(idx >= 0) items.splice(idx, 1);
@@ -726,7 +730,7 @@ function renderItems(){
             <input class="t custom-desc${isCustom?"":" hide"}" data-i="${i}" placeholder="Custom description" value="${esc(isCustom?it.desc:"")}">` }
       </div>
       ${(/villa.*rental/i.test(it.desc||"") || it._autoLocked)?
-        `<input class="t num locked" data-i="${i}" data-k="qty" type="number" value="${esc(it.qty)}" readonly tabindex="-1" title="${it._autoLocked?"Auto-calculated from guest count":"Auto-calculated from nights"}">`
+        `<input class="t num locked" data-i="${i}" data-k="qty" type="number" value="${esc(it.qty)}" readonly tabindex="-1" title="${it._autoLocked?"Auto-calculated: extra guests × nights":"Auto-calculated from nights"}">`
         :`<input class="t num" data-i="${i}" data-k="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="1" value="${esc(it.qty)}">`}
       <input class="t num${rateWarn?" warn-rate":""}" data-i="${i}" data-k="rate" data-min="${esc(minRate)}" type="number" min="0" step="0.01" inputmode="decimal" placeholder="${esc(minRate||"0")}" title="${esc(rateTitle)}" value="${esc(it.rate)}">
       <input class="t tot" value="${money(lineAmt(it))}" readonly tabindex="-1">
