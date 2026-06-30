@@ -531,6 +531,10 @@ async function initApp(){
   if(res && res.ok){
     await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
     setConnected(true);
+    // Now that the full quote history is loaded from the cloud, refresh the
+    // auto quote number so a new (unsaved) quote always shows the next free
+    // number — the first paint computed it from stale/empty localStorage.
+    if(!editingKey){ curQno=nextQuoteNo(); $("#qno").value=curQno; }
     // Rebuild the studio line from the freshly-loaded rate card so its
     // description and price reflect the real (possibly renamed) entry,
     // not the default used during the instant first paint.
