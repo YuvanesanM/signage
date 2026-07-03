@@ -33,6 +33,13 @@
     {
       "name": "Shalaj",
       "zone": "podcast",
+      "start": "16:00",
+      "end": "18:00",
+      "date": "2026-07-03"
+    },
+    {
+      "name": "Shalaj",
+      "zone": "podcast",
       "start": "18:00",
       "end": "20:00",
       "date": "2026-07-01"
