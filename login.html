@@ -28,10 +28,6 @@
   .login-card img[src=""]{display:none}
   .login-card h1{font-weight:600;font-size:19px;letter-spacing:.2px}
   .login-card p{color:var(--muted);font-size:13px}
-  .login-card input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:15px;text-align:center;letter-spacing:1px;outline:none}
-  .login-card input:focus{border-color:var(--accent)}
-  .login-card button{width:100%;padding:13px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:14px;letter-spacing:.3px}
-  .login-card button:hover{background:var(--accent-d)}
   .login-err{color:var(--danger);font-size:12.5px;min-height:16px}
 
   /* ── HOME ── */
@@ -190,8 +186,6 @@ window.addEventListener('load', () => {
 function logout(){
   proxyToken='';
   localStorage.removeItem('ryst_proxy_token');
-  localStorage.removeItem('ryst_set_token');
-  localStorage.removeItem('ryst_set_pwd_hash');
   document.getElementById('homeView').setAttribute('hidden','');
   document.getElementById('loginView').removeAttribute('hidden');
   document.getElementById('loginView').style.display='';
