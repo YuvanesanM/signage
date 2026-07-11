@@ -115,7 +115,6 @@
 <div class="cfg-tabs">
   <button class="cfg-tab active" data-tab="rate">Rate Card</button>
   <button class="cfg-tab" data-tab="studio">Studio Settings</button>
-  <button class="cfg-tab" data-tab="stay">Stay (109A)</button>
 </div>
 
 <div class="cfg-body">
@@ -155,40 +154,6 @@
     <label class="f"><span>Quote no. prefix</span><input class="t" id="setPrefix" placeholder="RYST"></label>
     <div class="rc-foot">
       <button class="btn primary" id="setSave">Save settings</button>
-    </div>
-  </div>
-
-  <!-- Stay (RYST 109A) pane -->
-  <div id="paneStay" hidden>
-    <p class="sd">Settings for the <b>RYST 109A Beach Villa</b> invoice / quote builder. Pricing, bank details and business info sync to the cloud and load automatically in the Stay builder.</p>
-
-    <p class="gh-mini">Charge pricing</p>
-    <div class="rc-table-wrap">
-      <table class="rc-table">
-        <thead><tr>
-          <th>Charge description</th>
-          <th class="r" style="width:180px">Default rate (₹)</th>
-          <th style="width:36px"></th>
-        </tr></thead>
-        <tbody id="stayRcBody"></tbody>
-      </table>
-    </div>
-    <button class="rc-add" id="stayRcAdd">+ Add charge</button>
-
-    <p class="gh-mini" style="margin-top:26px">Business &amp; payment</p>
-    <label class="f"><span>Property address block (under the wordmark)</span><textarea class="t" id="stayCompany" rows="3"></textarea></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px">
-      <label class="f"><span>PAN</span><input class="t" id="stayPan" placeholder="ADVPJ1491D"></label>
-      <label class="f"><span>Invoice no. prefix</span><input class="t" id="stayInvPrefix" placeholder="RYST109A/INV"></label>
-      <label class="f"><span>Quote no. prefix</span><input class="t" id="stayQtPrefix" placeholder="RYST109A/QT"></label>
-      <label class="f"><span>Max guests (incl.)</span><input class="t" id="stayMaxGuests" type="number" min="0" step="1" placeholder="4"></label>
-      <label class="f"><span>Guest capacity (hard cap)</span><input class="t" id="stayGuestCapacity" type="number" min="0" step="1" placeholder="10"></label>
-    </div>
-    <label class="f"><span>Bank / payment details block</span><textarea class="t" id="stayBank" rows="6"></textarea></label>
-    <label class="f"><span>GST declaration</span><textarea class="t" id="stayDecl" rows="3"></textarea></label>
-    <label class="f"><span>Terms &amp; conditions (one per line)</span><textarea class="t" id="stayTerms" rows="7"></textarea></label>
-    <div class="rc-foot">
-      <button class="btn primary" id="staySave">Save stay settings</button>
     </div>
   </div>
 </div>
@@ -254,40 +219,6 @@ One complimentary reschedule is permitted if requested at least 48 hours prior t
 No refund or reschedule is available within 48 hours of the booked slot.
 Prices are inclusive of GST at prevailing rates.`
 };
-
-/* ---------- STAY (RYST 109A) SETTINGS ---------- */
-const K_STAY = 'ryst_stay_settings';
-const STAY_DEFAULTS = {
-  company:`109A, Pearl Beach Site, Parmankeni,
-Cheyyur - 603305`,
-  pan:"ADVPJ1491D",
-  invPrefix:"RYST109A/INV",
-  qtPrefix:"RYST109A/QT",
-  bank:`Account Holder: Yuvanesan Muthukumaresan
-Account Number: 50100XXXXXXXXX
-IFSC: HDFCXXXXXXX
-Bank Name: HDFC Bank
-Account Type: Savings`,
-  declaration:`Supplier is not registered under GST as the turnover is below the prescribed threshold limit under the GST Act. Hence, GST has not been charged on this invoice.`,
-  terms:[
-    "Full payment is due as per booking confirmation.",
-    "Security deposit, if collected, shall be refunded within 7–10 working days after check-out, subject to inspection of the property.",
-    "Any damage to the property, furnishings, fixtures or equipment may be deducted from the security deposit.",
-    "This document is issued by an individual owner and not by a GST-registered entity.",
-    "Jurisdiction shall be Chennai, Tamil Nadu."
-  ],
-  rates:[
-    {desc:"Villa Rental Charges",            rate:""},
-    {desc:"Additional Guest Charges",        rate:""},
-    {desc:"Cleaning & Maintenance Charges",  rate:""},
-    {desc:"Event / Gathering Charges",       rate:""},
-    {desc:"Other Charges",                   rate:""}
-  ],
-  maxGuests: 4,
-  guestCapacity: 10
-};
-let stay = JSON.parse(JSON.stringify(STAY_DEFAULTS));
-let stayRcDraft = [];
 
 function zoneOf(desc){
   const d=(desc||"").toLowerCase();
@@ -376,7 +307,6 @@ async function checkPin(){
 function switchTab(tab){
   document.getElementById("paneRate").hidden    = tab!=="rate";
   document.getElementById("paneStudio").hidden  = tab!=="studio";
-  document.getElementById("paneStay").hidden    = tab!=="stay";
   document.querySelectorAll(".cfg-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
 }
 document.querySelectorAll(".cfg-tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
@@ -405,95 +335,7 @@ async function loadPanel(){
   document.getElementById("setPrefix").value=settings.prefix||"RYST";
   renderImgPrev("logo","#logoPrev");
   renderImgPrev("qr","#qrPrev");
-  await loadStayPanel();
   bindSettings();
-}
-
-/* ---------- STAY: LOAD ---------- */
-async function loadStayPanel(){
-  // local cache first, then refresh from proxy
-  try{ stay=Object.assign({},STAY_DEFAULTS,JSON.parse(localStorage.getItem(K_STAY)||"{}")); }catch(e){ stay=JSON.parse(JSON.stringify(STAY_DEFAULTS)); }
-  if(proxyToken){
-    try{
-      const res=await fetch(PROXY_URL+'/stay-settings',{headers:{'X-Token':proxyToken}});
-      if(res.ok){
-        const d=await res.json();
-        if(d && typeof d==='object' && (d.bank||d.rates||d.company)) stay=Object.assign({},STAY_DEFAULTS,d);
-      }
-    }catch(e){}
-  }
-  if(!Array.isArray(stay.terms)||!stay.terms.length) stay.terms=STAY_DEFAULTS.terms.slice();
-  if(!Array.isArray(stay.rates)||!stay.rates.length) stay.rates=STAY_DEFAULTS.rates.map(r=>({...r}));
-  localStorage.setItem(K_STAY,JSON.stringify(stay));
-  stayRcDraft=stay.rates.map(r=>({...r}));
-  renderStayRates();
-  document.getElementById("stayCompany").value=stay.company||"";
-  document.getElementById("stayPan").value=stay.pan||"";
-  document.getElementById("stayInvPrefix").value=stay.invPrefix||"";
-  document.getElementById("stayQtPrefix").value=stay.qtPrefix||"";
-  document.getElementById("stayMaxGuests").value=stay.maxGuests!=null?stay.maxGuests:"";
-  document.getElementById("stayGuestCapacity").value=stay.guestCapacity!=null?stay.guestCapacity:"";
-  document.getElementById("stayBank").value=stay.bank||"";
-  document.getElementById("stayDecl").value=stay.declaration||"";
-  document.getElementById("stayTerms").value=(stay.terms||[]).join("\n");
-}
-
-/* ---------- STAY: RATE TABLE ---------- */
-function renderStayRates(){
-  const body=document.getElementById("stayRcBody"); body.innerHTML="";
-  stayRcDraft.forEach((r,i)=>{
-    const row=document.createElement("tr");
-    row.innerHTML=`
-      <td><input data-i="${i}" data-k="desc" placeholder="Charge description" value="${esc(r.desc)}" style="min-width:200px"></td>
-      <td><input class="r" data-i="${i}" data-k="rate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" value="${esc(r.rate)}"></td>
-      <td><button class="rc-del" data-del="${i}" title="Remove">×</button></td>`;
-    body.appendChild(row);
-  });
-  body.querySelectorAll("input[data-i]").forEach(inp=>{
-    inp.addEventListener("input",e=>{ const i=+e.target.dataset.i,k=e.target.dataset.k; stayRcDraft[i][k]=e.target.value; });
-  });
-  body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",e=>{
-    stayRcDraft.splice(+e.target.dataset.del,1); renderStayRates();
-  }));
-}
-
-/* ---------- STAY: SAVE ---------- */
-async function saveStay(){
-  const btn=document.getElementById("staySave");
-  btn.disabled=true; btn.textContent="Saving…";
-  stay.rates = stayRcDraft
-    .filter(r=>(r.desc||"").trim()!=="")
-    .map(r=>({desc:r.desc.trim(), rate:(r.rate===""||r.rate==null)?"":parseFloat(r.rate)}));
-  if(!stay.rates.length) stay.rates=STAY_DEFAULTS.rates.map(r=>({...r}));
-  stay.company=document.getElementById("stayCompany").value;
-  stay.pan=(document.getElementById("stayPan").value||"").trim();
-  stay.invPrefix=(document.getElementById("stayInvPrefix").value||"").trim()||STAY_DEFAULTS.invPrefix;
-  stay.qtPrefix=(document.getElementById("stayQtPrefix").value||"").trim()||STAY_DEFAULTS.qtPrefix;
-  const mgVal=document.getElementById("stayMaxGuests").value;
-  stay.maxGuests = mgVal!=="" ? parseInt(mgVal)||0 : STAY_DEFAULTS.maxGuests;
-  const gcVal=document.getElementById("stayGuestCapacity").value;
-  stay.guestCapacity = gcVal!=="" ? parseInt(gcVal)||0 : STAY_DEFAULTS.guestCapacity;
-  if(stay.maxGuests > 0 && stay.guestCapacity > 0 && stay.maxGuests > stay.guestCapacity){
-    toast("⚠️ Max included guests ("+stay.maxGuests+") exceeds guest capacity ("+stay.guestCapacity+") — additional charge line can never appear");
-  }
-  stay.bank=document.getElementById("stayBank").value;
-  stay.declaration=document.getElementById("stayDecl").value;
-  stay.terms=(document.getElementById("stayTerms").value||"").split("\n").map(t=>t.trim()).filter(Boolean);
-  if(!stay.terms.length) stay.terms=STAY_DEFAULTS.terms.slice();
-  localStorage.setItem(K_STAY,JSON.stringify(stay));
-  if(proxyToken){
-    try{
-      const res=await fetch(PROXY_URL+'/stay-settings',{method:'PUT',
-        headers:{'X-Token':proxyToken,'Content-Type':'application/json'},
-        body:JSON.stringify(Object.assign({version:1},stay))});
-      if(res.status===401){ localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; return; }
-      if(!res.ok) toast("Saved locally — cloud sync failed ("+res.status+")");
-      else toast("Stay settings saved");
-    }catch(e){ toast("Saved locally — cloud unreachable"); }
-  } else { toast("Saved locally"); }
-  btn.disabled=false; btn.textContent="Save stay settings";
-  stayRcDraft=stay.rates.map(r=>({...r}));
-  renderStayRates();
 }
 
 /* ---------- RATE CARD RENDER ---------- */
@@ -609,8 +451,6 @@ function bindSettings(){
   document.getElementById("setSave").addEventListener("click",saveSettings);
   document.getElementById("logoFile").addEventListener("change",e=>pickImage(e,"logo","#logoPrev"));
   document.getElementById("qrFile").addEventListener("change",e=>pickImage(e,"qr","#qrPrev"));
-  document.getElementById("stayRcAdd").addEventListener("click",()=>{ stayRcDraft.push({desc:"",rate:""}); renderStayRates(); });
-  document.getElementById("staySave").addEventListener("click",saveStay);
 }
 
 /* ---------- TOAST ---------- */
