@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "float": 0,
+  "categories": [
+    "Groceries",
+    "Utilities",
+    "Repairs & Maintenance",
+    "Housekeeping",
+    "Guest Supplies",
+    "Transport",
+    "Staff",
+    "Gardening",
+    "Pool",
+    "Miscellaneous"
+  ],
+  "entries": [
+    {
+      "id": "e_mrgdldf9_ff4e6a",
+      "type": "expense",
+      "date": "2026-07-11",
+      "category": "Groceries",
+      "amount": 10,
+      "note": "",
+      "receipt": null,
+      "status": "pending",
+      "reimbursementId": null,
+      "createdBy": "mailyuvanesh@gmail.com",
+      "createdAt": 1783775024181
+    }
+  ]
+}
