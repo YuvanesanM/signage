@@ -115,6 +115,38 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 
 .header-logo{height:56px;width:auto;object-fit:contain;background:#fff;border-radius:8px;padding:4px 8px;cursor:pointer;transition:opacity .15s}
 .header-logo:hover{opacity:.85}
+
+/* ── Booking calendar ── */
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.cal-nav{display:flex;align-items:center;gap:8px}
+.cal-label{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;color:var(--ink);min-width:180px;text-align:center}
+.cal-arrow{height:38px;width:38px;border-radius:9px;border:1.5px solid var(--silver);background:var(--white);color:var(--ink);font-size:18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.cal-arrow:hover{border-color:var(--teal);color:var(--teal)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--stone);text-transform:uppercase;padding:2px 0 6px}
+.cal-cell{min-height:98px;border:1.5px solid var(--silver);border-radius:10px;padding:6px 6px 7px;background:var(--white);cursor:pointer;transition:border .15s,box-shadow .15s;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cal-cell:hover{border-color:var(--teal);box-shadow:0 4px 12px rgba(13,122,138,.08)}
+.cal-cell.other{background:var(--snow);opacity:.5}
+.cal-cell.today{border-color:var(--teal);box-shadow:inset 0 0 0 1.5px var(--teal)}
+.cal-daynum{font-size:12px;font-weight:700;color:var(--ink);align-self:flex-end;line-height:1}
+.cal-cell.today .cal-daynum{color:var(--teal)}
+.cal-chip{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;cursor:pointer}
+.cal-chip:hover{filter:brightness(.96)}
+.cal-chip.podcast{background:rgba(13,122,138,.13);color:var(--teal2)}
+.cal-chip.photography{background:rgba(245,166,35,.18);color:#9a6710}
+.cal-chip.culinary{background:rgba(44,122,75,.15);color:var(--green)}
+.cal-more{font-size:10px;color:var(--stone);font-weight:700;padding-left:2px}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--stone);align-items:center}
+.cal-legend span{display:inline-flex;align-items:center;gap:6px}
+.cal-dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.cal-dot.podcast{background:var(--teal)}.cal-dot.photography{background:var(--amber)}.cal-dot.culinary{background:var(--green)}
+.cal-hint{margin-left:auto;color:var(--stone);font-size:11.5px}
+@media(max-width:640px){
+  .cal-cell{min-height:62px;padding:4px}
+  .cal-chip{font-size:9px;padding:1px 4px}
+  .cal-label{font-size:20px;min-width:130px}
+  .cal-hint{display:none}
+}
 </style>
 </head>
 <body>
@@ -214,6 +246,27 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
 
     <div class="session-list" id="session-list">
       <div class="empty-state"><div class="emoji">📅</div><div>No sessions loaded. Connect to GitHub and click Load Schedule.</div></div>
+    </div>
+  </div>
+
+  <!-- Booking Calendar -->
+  <div class="card">
+    <div class="cal-head">
+      <div class="card-title" style="margin:0">Booking Calendar</div>
+      <div class="cal-nav">
+        <button class="cal-arrow" onclick="calShift(-1)" title="Previous month" aria-label="Previous month">‹</button>
+        <div class="cal-label" id="cal-label">—</div>
+        <button class="cal-arrow" onclick="calShift(1)" title="Next month" aria-label="Next month">›</button>
+        <button class="btn btn-ghost btn-sm" onclick="calToday()" style="margin-left:6px">Today</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><i class="cal-dot podcast"></i> Podcast</span>
+      <span><i class="cal-dot photography"></i> Photography</span>
+      <span><i class="cal-dot culinary"></i> Culinary</span>
+      <span>↻ recurring</span>
+      <span class="cal-hint">Tap a day to add a booking · tap a chip to edit</span>
     </div>
   </div>
 
@@ -334,6 +387,78 @@ function sessionStatus(s){
   return 'upcoming';
 }
 
+// ── BOOKING CALENDAR ──
+let calCursor = (()=>{ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
+const CAL_DOW = ['sun','mon','tue','wed','thu','fri','sat'];
+const ZONE_EMOJI = {podcast:'🎙️', photography:'📷', culinary:'🍳'};
+function calYmd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+// Sessions that fall on a given calendar day: one-off (date match), recurring
+// (weekday in days[]), or floating (no date & no days → shown on real today).
+function sessionsOnDate(dateObj){
+  const iso=calYmd(dateObj);
+  const dow=CAL_DOW[dateObj.getDay()];
+  const todayIso=calYmd(new Date());
+  const out=[];
+  scheduleData.sessions.forEach((s,idx)=>{
+    let hit=false;
+    if(s.date) hit = s.date===iso;
+    else if(s.days && s.days.length) hit = s.days.map(d=>d.toLowerCase().slice(0,3)).includes(dow);
+    else hit = iso===todayIso;
+    if(hit) out.push({s, idx});
+  });
+  return out.sort((a,b)=>(a.s.start||'').localeCompare(b.s.start||''));
+}
+
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid');
+  if(!grid) return;
+  const year=calCursor.getFullYear(), month=calCursor.getMonth();
+  const lbl=document.getElementById('cal-label');
+  if(lbl) lbl.textContent=calCursor.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const startOffset=new Date(year,month,1).getDay();
+  const todayIso=calYmd(new Date());
+  let html='';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>html+=`<div class="cal-dow">${d}</div>`);
+  for(let i=0;i<42;i++){
+    const cell=new Date(year, month, 1 - startOffset + i);
+    const iso=calYmd(cell);
+    const inMonth=cell.getMonth()===month;
+    const list=sessionsOnDate(cell);
+    const chips=list.slice(0,3).map(({s,idx})=>{
+      const zone=s.zone||'podcast';
+      const rec=(!s.date && s.days && s.days.length)?'↻ ':'';
+      const tm=(s.start?fmt12(s.start):'')+(s.end?' – '+fmt12(s.end):'');
+      const tip=(s.name||'Unnamed')+(tm?' · '+tm:'');
+      return `<div class="cal-chip ${esc(zone)}" title="${esc(tip)}" onclick="event.stopPropagation();editSession(${idx})">${ZONE_EMOJI[zone]||'•'} ${rec}${esc(s.name||'Unnamed')}</div>`;
+    }).join('');
+    const more=list.length>3?`<div class="cal-more">+${list.length-3} more</div>`:'';
+    html+=`<div class="cal-cell${inMonth?'':' other'}${iso===todayIso?' today':''}" onclick="calAdd('${iso}')">`
+        + `<div class="cal-daynum">${cell.getDate()}</div>${chips}${more}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function calShift(delta){ calCursor.setMonth(calCursor.getMonth()+delta); renderCalendar(); }
+function calToday(){ calCursor=new Date(); calCursor.setDate(1); calCursor.setHours(0,0,0,0); renderCalendar(); }
+
+// Open the Add form pre-filled for the clicked day.
+function calAdd(iso){
+  editingIndex=null;
+  document.getElementById('form-save-btn').textContent='Save Session';
+  document.getElementById('f-name').value='';
+  document.getElementById('f-zone').value='podcast';
+  document.getElementById('f-start').value='10:00';
+  document.getElementById('f-end').value='11:00';
+  document.getElementById('f-date').value=iso;
+  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('sel'));
+  const f=document.getElementById('add-form');
+  f.classList.add('open');
+  f.scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('f-name').focus();
+  setStatus('New booking on '+iso+' — fill in the details and save','');
+}
+
 function renderSessions(){
   const today=new Date().toISOString().slice(0,10);
   const todayDay=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
@@ -344,6 +469,7 @@ function renderSessions(){
   });
   renderList('session-list', todaySessions, true);
   renderList('all-sessions-list', scheduleData.sessions, false);
+  renderCalendar();
 }
 
 function renderList(id, list, withStatus){
@@ -537,6 +663,8 @@ function unlock(animate){
     ls.classList.add('unlocked');
     app.classList.add('unlocked');
   }
+  // Show the calendar frame immediately; it fills in once the schedule loads.
+  renderCalendar();
   // Auto-load schedule after unlock
   setTimeout(()=>loadSchedule(), 800);
 }
