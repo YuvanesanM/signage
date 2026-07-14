@@ -45,6 +45,7 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
 .badge-live{background:rgba(214,59,47,.12);color:var(--red)}
 .badge-done{background:rgba(139,145,156,.12);color:var(--stone)}
 .si-actions{display:flex;gap:8px}
+.si-locked{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--stone);background:var(--snow);border:1.5px solid var(--silver);border-radius:8px;padding:8px 12px;white-space:nowrap}
 .add-form{display:none;background:rgba(13,122,138,.04);border:1.5px solid rgba(13,122,138,.2);border-radius:12px;padding:24px;margin-top:16px}
 .add-form.open{display:block}
 .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px}
@@ -341,6 +342,29 @@ const esc = s => (s||"").toString().replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt
 let scheduleData = {sessions:[]};
 let sessionToken = localStorage.getItem('ryst_proxy_token') || '';
 
+// ── Completed-session edit lock ──
+// studioryst01@gmail.com may view but not edit or delete completed sessions.
+// (Also enforced server-side on save; this is the matching UI.)
+const CURRENT_EMAIL = (localStorage.getItem('ryst_user_email')||'').toLowerCase();
+const LOCK_COMPLETED_EMAILS = ['studioryst01@gmail.com'];
+
+// A one-off session is "completed" once its date is past, or it has ended today.
+// Recurring (days[]) and undated sessions are never completed.
+function isCompletedSession(s){
+  if(!s || !s.date) return false;
+  const now=new Date();
+  const today=now.toISOString().slice(0,10);
+  if(s.date < today) return true;
+  if(s.date > today) return false;
+  if(!s.end) return false;
+  const hhmm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  return hhmm >= s.end;
+}
+// False → this account must not edit/delete this session.
+function canModifySession(s){
+  return !(LOCK_COMPLETED_EMAILS.includes(CURRENT_EMAIL) && isCompletedSession(s));
+}
+
 function setStatus(msg, type=''){
   const el = document.getElementById('status-msg');
   el.textContent = msg;
@@ -532,15 +556,18 @@ function renderList(id, list, withStatus){
           <span>📅 ${dateInfo}</span>
         </div>
       </div>
-      <div class="si-actions">
+      <div class="si-actions">${ canModifySession(s) ? `
         <button class="btn btn-edit btn-iconly" title="Edit session" aria-label="Edit session" onclick="editSession(${idx})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
-        <button class="btn btn-danger btn-iconly" title="Delete session" aria-label="Delete session" onclick="deleteSession(${idx})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+        <button class="btn btn-danger btn-iconly" title="Delete session" aria-label="Delete session" onclick="deleteSession(${idx})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>`
+      : `<span class="si-locked" title="Completed sessions are locked for your account">🔒 Locked</span>` }
       </div>
     </div>`;
   }).join('');
 }
 
 function deleteSession(idx){
+  const s=scheduleData.sessions[idx];
+  if(s && !canModifySession(s)){ setStatus('Completed sessions are locked for your account','err'); return; }
   if(!confirm('Delete this session?')) return;
   scheduleData.sessions.splice(idx,1);
   renderSessions();
@@ -571,6 +598,7 @@ function toggleAddForm(){
 function editSession(idx){
   const s=scheduleData.sessions[idx];
   if(!s) return;
+  if(!canModifySession(s)){ setStatus('Completed sessions are locked for your account','err'); return; }
   editingIndex=idx;
   document.getElementById('f-name').value=s.name||'';
   document.getElementById('f-zone').value=s.zone||'podcast';
