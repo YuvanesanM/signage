@@ -1,6 +1,13 @@
 {
   "sessions": [
     {
+      "name": "The reel deal",
+      "zone": "podcast",
+      "start": "08:00",
+      "end": "09:00",
+      "date": "2026-08-05"
+    },
+    {
       "name": "Praveen",
       "zone": "podcast",
       "start": "10:30",
