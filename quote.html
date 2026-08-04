@@ -393,7 +393,8 @@
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 let proxyToken = localStorage.getItem('ryst_proxy_token') || '';
 const ZONES = ["Podcast", "Photography", "Culinary", "Multi-Zone"];
-const MIN_HOURS = 2;
+const MIN_HOURS = 1;       // shortest bookable duration (1 hour allowed)
+const DEFAULT_HOURS = 2;   // pre-selected duration for a new quote
 const MAX_HOURS = 12;
 const FALLBACK_GST = 18;
 
@@ -613,7 +614,7 @@ function studioCard(desc){
 }
 function zoneItem(){
   const zone=$("#zone").value||ZONES[0];
-  const hours=parseInt($("#hours").value,10)||MIN_HOURS;
+  const hours=parseInt($("#hours").value,10)||DEFAULT_HOURS;
   const desc=zoneRentalDesc(zone);
   const card=studioCard(desc);
   return {desc, sac:card.sac, price:studioPrice(card,hours), qty:"1", gst:(card.gst??FALLBACK_GST)};
@@ -643,7 +644,7 @@ function newQuote(){
   editingKey=null; syncPdfBtn();
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
-  $("#zone").value=ZONES[0]; $("#hours").value=String(MIN_HOURS);
+  $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
   $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
   items=[zoneItem()];
   renderItems(); render();
@@ -836,7 +837,7 @@ function loadQuote(qno){
   editingKey=q.qno; syncPdfBtn(); curQno=q.qno; curDateISO=q.date;
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
-  $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(MIN_HOURS);
+  $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
