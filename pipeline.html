@@ -62,10 +62,30 @@
   .ach.hi{color:var(--s-booked);background:#e7f4ec}.ach.mid{color:var(--s-contacted);background:#fbf3e6}.ach.lo{color:var(--danger);background:#fbecea}
 
   /* Leads grid */
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
   .toolbar input,.toolbar select{padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;background:var(--panel2);font-size:13px;color:var(--ink);outline:none}
   .toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
   .toolbar .search{flex:1;min-width:150px}
+
+  /* Collapsed-by-default filter drawer, tucked under the main toolbar */
+  .filters-more{margin:-2px 0 14px}
+  .filters-more>summary{cursor:pointer;list-style:none;font-size:12px;color:var(--muted2);font-weight:600;padding:3px 0;display:flex;align-items:center;gap:5px;width:fit-content}
+  .filters-more>summary::-webkit-details-marker{display:none}
+  .filters-more>summary::before{content:'▸';display:inline-block;transition:transform .15s;font-size:11px}
+  .filters-more[open]>summary::before{transform:rotate(90deg)}
+  .filters-more>summary:hover{color:var(--accent-d)}
+  .filters-more-body{display:flex;gap:9px;flex-wrap:wrap;margin-top:9px}
+  .filters-more-body select{padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;background:var(--panel2);font-size:13px;color:var(--ink);outline:none}
+
+  /* Analytics tucked behind a single collapsed toggle — collapsed by default */
+  .insights{margin-top:14px}
+  .insights>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:13px 18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;font-size:13.5px;font-weight:700;color:var(--ink);box-shadow:0 6px 18px rgba(40,50,40,.04)}
+  .insights>summary::-webkit-details-marker{display:none}
+  .insights>summary::before{content:'▸';color:var(--muted2);font-size:12px;transition:transform .15s}
+  .insights[open]>summary::before{transform:rotate(90deg)}
+  .insights>summary:hover{border-color:var(--accent)}
+  .insights .ins-hint{font-weight:500;color:var(--muted2);font-size:12px}
+  .insights-body{margin-top:12px}
   .btn{border:none;border-radius:9px;padding:10px 16px;font-size:13.5px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px}
   .btn.primary{background:var(--accent);color:#fff}.btn.primary:hover{background:var(--accent-d)}
   .btn.ghost{background:var(--panel);border:1.5px solid var(--line);color:var(--ink)}.btn.ghost:hover{border-color:var(--accent);color:var(--accent-d)}
@@ -152,20 +172,6 @@
     <div class="kpi"><div class="lbl">Booked revenue</div><div class="val" id="kRev">—</div><div class="sub" id="kRevSub"></div></div>
   </div>
 
-  <div class="grid">
-    <div class="panel"><h2>Pipeline by stage</h2><div class="cap">All leads</div><div class="hbars" id="stages"></div></div>
-    <div class="panel"><h2>Lead sources</h2><div class="cap">Where leads come from</div><div class="hbars" id="sources"></div></div>
-  </div>
-
-  <div class="panel" style="margin-bottom:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <h2 style="margin:0">Monthly booked vs target</h2>
-      <button class="btn ghost" id="editTargets" style="display:none;padding:7px 12px;font-size:12.5px">✎ Edit targets</button>
-    </div>
-    <div class="cap">Booked revenue by month against target · <span style="border-left:2px solid var(--ink);padding-left:5px">target</span></div>
-    <div class="months" id="months"></div>
-  </div>
-
   <div class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
       <h2 style="margin:0">Leads</h2>
@@ -178,18 +184,41 @@
     <div class="cap" id="leadsCap">Capture, track and convert enquiries</div>
     <div class="toolbar">
       <input class="search" id="search" placeholder="Search name, phone, invoice…" />
-      <select id="fStage"><option value="All">All stages</option></select>
-      <select id="fSource"><option value="All">All sources</option></select>
-      <select id="fZone"><option value="All">All zones</option></select>
       <button class="btn ghost" id="dueChip" style="padding:9px 13px">⏰ Follow-ups due</button>
       <button class="btn ghost" id="owedChip" style="padding:9px 13px">💰 Payment due</button>
       <button class="btn ghost" id="staleChip" style="padding:9px 13px">🕸 Stale</button>
     </div>
+    <details class="filters-more">
+      <summary>Filter by stage, source or zone</summary>
+      <div class="filters-more-body">
+        <select id="fStage"><option value="All">All stages</option></select>
+        <select id="fSource"><option value="All">All sources</option></select>
+        <select id="fZone"><option value="All">All zones</option></select>
+      </div>
+    </details>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Lead</th><th>Phone</th><th>Zone</th><th>Stage</th><th>Source</th><th>Follow-up</th><th style="text-align:right">Value</th><th style="width:60px"></th></tr></thead>
+      <thead><tr><th>Lead</th><th>Phone</th><th>Zone</th><th>Stage</th><th>Follow-up</th><th style="text-align:right">Value</th><th style="width:60px"></th></tr></thead>
       <tbody id="leads"></tbody>
     </table></div>
   </div>
+
+  <details class="insights">
+    <summary>📊 Pipeline insights <span class="ins-hint">— stage breakdown, sources, monthly vs target</span></summary>
+    <div class="insights-body">
+      <div class="grid">
+        <div class="panel"><h2>Pipeline by stage</h2><div class="cap">All leads</div><div class="hbars" id="stages"></div></div>
+        <div class="panel"><h2>Lead sources</h2><div class="cap">Where leads come from</div><div class="hbars" id="sources"></div></div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <h2 style="margin:0">Monthly booked vs target</h2>
+          <button class="btn ghost" id="editTargets" style="display:none;padding:7px 12px;font-size:12.5px">✎ Edit targets</button>
+        </div>
+        <div class="cap">Booked revenue by month against target · <span style="border-left:2px solid var(--ink);padding-left:5px">target</span></div>
+        <div class="months" id="months"></div>
+      </div>
+    </div>
+  </details>
 </div>
 
 <!-- Lead modal -->
@@ -524,7 +553,7 @@ function renderLeads(){
   const rows=DOC.leads.filter(passFilter);
   $('#leadsCap').textContent=`${rows.length} of ${DOC.leads.length} lead${DOC.leads.length===1?'':'s'}`;
   const tb=$('#leads');
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="8" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
   const tISO=todayISO();
   tb.innerHTML=rows.map(l=>{
     const val=leadValue(l);
@@ -535,7 +564,6 @@ function renderLeads(){
       <td>${l.phone?`<a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'<span class="lead-sub">—</span>'}</td>
       <td>${l.zone?`<span class="zpill" style="background:${zColor(l.zone)}22;color:${zColor(l.zone)}">${esc(l.zone)}</span>`:'—'}</td>
       <td><span class="stpill" style="background:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${esc(l.stage||'New')}</span></td>
-      <td class="lead-sub">${esc(l.source||'—')}</td>
       <td style="${fStyle};font-size:11.5px">${esc(l.followup||'—')}</td>
       <td class="r">${val?money(val):'—'}</td>
       <td><button class="rowbtn edit" title="Edit">✎</button></td>
