@@ -256,7 +256,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
   <div class="card">
     <div class="sessions-header">
       <div class="card-title" style="margin:0">Today's Sessions</div>
-      <button class="btn btn-primary" onclick="goToQuoteForNewSession()" title="Bookings are created from a quote">+ Add Session</button>
+      <button class="btn btn-primary" onclick="goToQuoteForNewSession()" title="Bookings are created from a quote">+ New Quote</button>
     </div>
 
     <!-- Add Form -->
@@ -526,9 +526,8 @@ function renderCalendar(){
 function calShift(delta){ calCursor.setMonth(calCursor.getMonth()+delta); renderCalendar(); }
 function calToday(){ calCursor=new Date(); calCursor.setDate(1); calCursor.setHours(0,0,0,0); renderCalendar(); }
 
-// Open the Add form pre-filled for the clicked day.
 // All bookings originate from a quote (Quote Builder → Add to schedule) —
-// clicking a day or "+ Add Session" hands off there instead of opening a
+// clicking a day or "+ New Quote" hands off there instead of opening a
 // blank session form. Editing an EXISTING session (editSession/saveSession
 // below) is unaffected — that's managing a booking, not originating one.
 function calAdd(iso){
