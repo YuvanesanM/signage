@@ -572,7 +572,7 @@ function sessionCardHTML(s, idx, badge, extra){
     : `<span class="si-locked" title="Completed sessions are locked for your account">🔒 Locked</span>`;
   return `<div class="session-item${auto}${extra||''}">
       <div>
-        <div class="si-name">${s.leadId?'<span title="From a CRM lead" style="color:var(--teal)">🔗 </span>':''}${esc(s.name||'Unnamed')} ${badge}</div>
+        <div class="si-name">${(s.leadId||s.quoteNo)?`<span title="${s.leadId?'From a CRM lead':'From quote '+esc(s.quoteNo)}" style="color:var(--teal)">🔗 </span>`:''}${esc(s.name||'Unnamed')} ${badge}</div>
         <div class="si-meta">
           <span>${zoneLabel}</span>
           <span>⏰ ${esc(fmt12(s.start))} – ${s.end?esc(fmt12(s.end)):'?'}</span>
@@ -722,8 +722,9 @@ function saveSession(){
   else if(days.length) session.days=days;
   if(editingIndex!=null && scheduleData.sessions[editingIndex]){
     const prev=scheduleData.sessions[editingIndex];
-    if(prev.id) session.id=prev.id;            // preserve link to a CRM lead
+    if(prev.id) session.id=prev.id;            // preserve link to a CRM lead / quote
     if(prev.leadId) session.leadId=prev.leadId;
+    if(prev.quoteNo) session.quoteNo=prev.quoteNo;
     scheduleData.sessions[editingIndex]=session;   // update in place
   } else {
     scheduleData.sessions.push(session);            // add new

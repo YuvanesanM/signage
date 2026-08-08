@@ -272,6 +272,14 @@
           <label class="f"><span>Zone</span><select class="t" id="zone"></select></label>
           <label class="f"><span>Duration</span><select class="t" id="hours"></select></label>
         </div>
+        <div class="row2">
+          <label class="f"><span>Session date <span style="font-weight:400;color:var(--muted2)">(optional)</span></span><input class="t" id="sessDate" type="date"></label>
+          <label class="f"><span>Start time</span><input class="t" id="sessStart" type="time"></label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap">
+          <button class="btn" type="button" id="btnSchedule" style="border:1.5px solid var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
+          <span id="schedStatus" style="font-size:12px;color:var(--muted2)"></span>
+        </div>
       </div>
 
       <div class="group">
@@ -439,6 +447,7 @@ let items = [];            // {desc, sac, price, qty, gst}
 let editingKey = null;
 let curQno = "", curDateISO = "";
 let leadLink = null;       // set when this quote was raised from a CRM lead
+let curScheduleId = null;  // set once this quote has been pushed to the schedule
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
@@ -566,6 +575,69 @@ async function linkQuoteToLead(leadId, qno){
   }catch(e){}
 }
 
+/* ---------- QUOTE → SCHEDULE (avoids re-entering the same details as a
+   separate "+ Add Session" in Schedule Manager) ---------- */
+function updateSchedStatus(){
+  const el=$("#schedStatus"); if(!el) return;
+  el.textContent = curScheduleId ? "✓ On the schedule" : "";
+}
+function addHoursTime(hhmm, h){
+  if(!hhmm) return "";
+  const [H,M]=hhmm.split(":").map(Number);
+  let mins=H*60+M+Math.round((h||1)*60);
+  mins=Math.min(mins,23*60+59);
+  return String(Math.floor(mins/60)).padStart(2,"0")+":"+String(mins%60).padStart(2,"0");
+}
+// If this quote is linked to a CRM lead, stamp the lead with the same
+// scheduleId (two-way link, mirrors what pipeline.html's own "Add to
+// schedule" does) — without touching the lead's stage, which stays a
+// deliberate choice made in the CRM.
+async function linkLeadSchedule(leadId, sid, dateISO, start){
+  try{
+    const res=await fetch(PROXY_URL+'/leads',{headers:{'X-Token':proxyToken}});
+    if(!res.ok) return;
+    const doc=await res.json();
+    const leads=Array.isArray(doc.leads)?doc.leads:[];
+    const l=leads.find(x=>x.id===leadId); if(!l) return;
+    l.scheduleId=sid;
+    if(!l.bookingDate) l.bookingDate=dateISO;
+    if(!l.bookingStart) l.bookingStart=start;
+    await fetch(PROXY_URL+'/leads',{method:'PUT',headers:{'X-Token':proxyToken,'Content-Type':'application/json'},body:JSON.stringify(doc)});
+  }catch(e){}
+}
+async function addToSchedule(){
+  const dateISO=$("#sessDate").value, start=$("#sessStart").value;
+  if(!dateISO || !start){ toast("Set a session date and start time first"); return; }
+  const btn=$("#btnSchedule"); btn.disabled=true; const prevTxt=btn.textContent; btn.textContent="Adding…";
+  try{
+    await saveQuote(true);   // make sure this quote (and its qno) is persisted first
+    const hours=parseInt($("#hours").value,10)||DEFAULT_HOURS;
+    const end=addHoursTime(start, hours);
+    const zone=$("#zone").value||ZONES[0];
+    const sid=curScheduleId || ("S"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
+    const session={ id:sid, quoteNo:curQno, name:$("#cname").value.trim()||curQno, zone:zone.toLowerCase(), start, end, date:dateISO };
+    if(leadLink && leadLink.id) session.leadId=leadLink.id;
+
+    const gr=await fetch(PROXY_URL+'/schedule',{headers:{'X-Token':proxyToken}});
+    if(gr.status===401){ handleExpired(); return; }
+    const sched=gr.ok?await gr.json():{sessions:[]};
+    const sessions=Array.isArray(sched.sessions)?sched.sessions:[];
+    const i=sessions.findIndex(s=>s.id===sid);
+    if(i>=0) sessions[i]=session; else sessions.push(session);
+    const pr=await fetch(PROXY_URL+"/schedule",{method:"PUT",headers:{"X-Token":proxyToken,"Content-Type":"application/json"},body:JSON.stringify({...sched,sessions})});
+    if(pr.status===403){ toast("Completed sessions are locked for your account"); return; }
+    if(!pr.ok){ toast("Schedule save failed ("+pr.status+")"); return; }
+
+    curScheduleId=sid; updateSchedStatus();
+    const all=getQuotes(); const idx=all.findIndex(x=>x.qno===curQno);
+    if(idx>=0){ all[idx].scheduleId=sid; all[idx].sessionDate=dateISO; all[idx].sessionStart=start; setQuotes(all); }
+    await pushQuotes();
+    if(leadLink && leadLink.id){ await linkLeadSchedule(leadLink.id, sid, dateISO, start); }
+    toast("Added to schedule");
+  }catch(e){ toast("Could not reach the schedule"); }
+  finally{ btn.disabled=false; btn.textContent=prevTxt; }
+}
+
 /* ---------- INIT ---------- */
 async function initApp(){
   const res = await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
@@ -673,7 +745,8 @@ function bind(){
   $("#addLi").addEventListener("click", ()=>{ items.push({desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}); renderItems(); render(); });
   $("#hdrLogo").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
-  $("#btnSave").addEventListener("click", saveQuote);
+  $("#btnSave").addEventListener("click", ()=>saveQuote());
+  $("#btnSchedule").addEventListener("click", addToSchedule);
   $("#btnPdf").addEventListener("click", downloadPdf);
   $("#btnHome").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnSaved").addEventListener("click", openSaved);
@@ -687,6 +760,7 @@ function newQuote(){
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
   $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
+  $("#sessDate").value=""; $("#sessStart").value=""; curScheduleId=null; updateSchedStatus();
   items=[zoneItem()];
   renderItems(); render();
 }
@@ -863,15 +937,18 @@ function collect(){
   return { qno:curQno, date:curDateISO, zone:$("#zone").value, hours:$("#hours").value, req:reqText(),
     cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
+    sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
-async function saveQuote(){
+// `silent` suppresses the "Quote saved" toast — used when saveQuote() runs as
+// a first step of a bigger action (e.g. Add to schedule) that shows its own.
+async function saveQuote(silent){
   const q=collect(); if(!q.qno){ toast("No quote number"); return; }
   const all=getQuotes(); const key=editingKey||q.qno; const idx=all.findIndex(x=>x.qno===key);
   if(idx>=0) all[idx]=q; else all.push(q);
   setQuotes(all); editingKey=q.qno; syncPdfBtn();
   await pushQuotes();
-  toast("Quote "+q.qno+" saved");
+  if(!silent) toast("Quote "+q.qno+" saved");
   if(leadLink && leadLink.id){ await linkQuoteToLead(leadLink.id, q.qno); }
 }
 function loadQuote(qno){
@@ -881,6 +958,7 @@ function loadQuote(qno){
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
+  $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
 }
