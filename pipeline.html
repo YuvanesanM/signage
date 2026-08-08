@@ -143,7 +143,10 @@
   </div>
 
   <div class="panel" style="margin-bottom:14px">
-    <h2>Monthly booked vs target</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <h2 style="margin:0">Monthly booked vs target</h2>
+      <button class="btn ghost" id="editTargets" style="display:none;padding:7px 12px;font-size:12.5px">✎ Edit targets</button>
+    </div>
     <div class="cap">Booked revenue by month against target · <span style="border-left:2px solid var(--ink);padding-left:5px">target</span></div>
     <div class="months" id="months"></div>
   </div>
@@ -159,6 +162,7 @@
       <select id="fStage"><option value="All">All stages</option></select>
       <select id="fSource"><option value="All">All sources</option></select>
       <select id="fZone"><option value="All">All zones</option></select>
+      <button class="btn ghost" id="dueChip" style="padding:9px 13px">⏰ Follow-ups due</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th>Lead</th><th>Phone</th><th>Zone</th><th>Stage</th><th>Source</th><th>Follow-up</th><th style="text-align:right">Value</th><th style="width:60px"></th></tr></thead>
@@ -226,6 +230,22 @@
   </div>
 </div>
 
+<!-- Targets editor (admin) -->
+<div class="overlay" id="targetsOverlay">
+  <div class="modal" style="width:min(440px,100%)">
+    <h3>Monthly targets</h3>
+    <div class="mbody">
+      <p style="font-size:12.5px;color:var(--muted2);margin:-2px 0 4px">Revenue goal per month. Booked revenue is measured against these.</p>
+      <div id="targetsBody" style="display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto"></div>
+      <div class="merr" id="targetsErr"></div>
+      <div class="mfoot"><span style="flex:1"></span><div class="right">
+        <button class="btn ghost" id="targetsCancel">Cancel</button>
+        <button class="btn primary" id="targetsSave">Save targets</button>
+      </div></div>
+    </div>
+  </div>
+</div>
+
 <div id="loader"><div class="spin"></div><div id="loaderMsg">Loading leads…</div></div>
 <div id="toast"></div>
 
@@ -249,7 +269,14 @@ const ZONE_COLOR={Podcast:'#3d9b69',Photography:'#c8893d',Culinary:'#c0584b','Mu
 const zColor=z=>ZONE_COLOR[z]||'var(--muted2)';
 
 let DOC={version:1,targets:[],leads:[]};
-let FILTER={q:'',stage:'All',source:'All',zone:'All'};
+let TARGETS=[];
+let FILTER={q:'',stage:'All',source:'All',zone:'All',due:false};
+function myRole(){
+  try{ let p=(TOKEN.split('.')[0]||'').replace(/-/g,'+').replace(/_/g,'/'); p+='='.repeat((4-p.length%4)%4);
+    const d=JSON.parse(atob(p)); if(d&&d.role) return d.role; }catch(e){}
+  return localStorage.getItem('ryst_user_role')||'coordinator';
+}
+const IS_ADMIN = myRole()==='admin';
 
 (function(){ try{const s=JSON.parse(localStorage.getItem('ryst_quote_settings')||'null'); if(s&&s.logo){$('#logo').src=s.logo;return;}}catch(e){}
   const l=localStorage.getItem('ryst_logo'); if(l)$('#logo').src=l; else $('#logo').style.display='none'; })();
@@ -276,6 +303,10 @@ async function load(){
   try{
     const d=await api('GET');
     DOC={version:d.version||1, targets:Array.isArray(d.targets)?d.targets:[], leads:Array.isArray(d.leads)?d.leads:[]};
+    // Targets: prefer the admin-gated /targets store, fall back to migrated leads.targets.
+    try{ const tr=await fetch(PROXY_URL+'/targets',{headers:{'X-Token':TOKEN}});
+      if(tr.ok){ const td=await tr.json(); TARGETS=(Array.isArray(td.targets)&&td.targets.length)?td.targets:(DOC.targets||[]); }
+      else TARGETS=DOC.targets||[]; }catch(e){ TARGETS=DOC.targets||[]; }
     render();
   }catch(e){ showSetup(e.message); }
   finally{ $('#loader').className='hide'; }
@@ -298,6 +329,20 @@ function monthOf(dstr){
   if((m=/^(\d{4})-(\d{2})-\d{2}/.exec(dstr))) return new Date(+m[1],+m[2]-1,1).toLocaleString('en-IN',{month:'short'});
   if((m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(dstr))) return new Date(+m[3],+m[2]-1,1).toLocaleString('en-IN',{month:'short'});
   return '';
+}
+// ── Follow-ups ──
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function followupISO(l){ const d=l.followup||''; let m;
+  if((m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d))) return d.slice(0,10);
+  if((m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(d))) return `${m[3]}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`;
+  return ''; }
+function isOpen(l){ return !['Booked','Lost'].includes(l.stage); }
+function followupDue(l){ const iso=followupISO(l); return isOpen(l) && !!iso && iso<=todayISO(); }
+function updateDueChip(){
+  const n=DOC.leads.filter(followupDue).length, c=$('#dueChip');
+  c.textContent='⏰ Follow-ups due'+(n?` (${n})`:'');
+  const on=FILTER.due;
+  c.style.background=on?'var(--accent)':''; c.style.color=on?'#fff':''; c.style.borderColor=on?'var(--accent)':(n?'var(--s-contacted)':'');
 }
 
 function render(){
@@ -325,6 +370,8 @@ function render(){
   renderMonths();
   buildFilterOptions();
   renderLeads();
+  updateDueChip();
+  $('#editTargets').style.display = IS_ADMIN ? '' : 'none';
 }
 
 function hbars(entries,colorFn,fmt){
@@ -339,9 +386,9 @@ function renderMonths(){
   // booked revenue by month (name) from booking dates
   const actual={};
   DOC.leads.filter(l=>l.stage==='Booked').forEach(l=>{ const m=monthOf(l.bookingDate||l.targetDate); if(m) actual[m]=(actual[m]||0)+(Number(l.total)||0); });
-  const rows=(DOC.targets||[]).map(t=>({month:t.month, target:Number(t.target)||0, value:actual[t.month.slice(0,3)]||actual[t.month]||0}))
+  const rows=(TARGETS||[]).map(t=>({month:t.month, target:Number(t.target)||0, value:actual[t.month.slice(0,3)]||actual[t.month]||0}))
     .filter(r=>r.target>0||r.value>0);
-  if(!rows.length){ $('#months').innerHTML='<div class="empty">No targets set. Add them in Settings (admin).</div>'; return; }
+  if(!rows.length){ $('#months').innerHTML='<div class="empty">No targets set'+(IS_ADMIN?' — use “Edit targets” above.':'.')+'</div>'; return; }
   const max=Math.max(1,...rows.map(r=>Math.max(r.value,r.target)));
   $('#months').innerHTML=rows.map(r=>{
     const ach=r.target?Math.round(r.value/r.target*100):0; const cls=ach>=90?'hi':ach>=50?'mid':'lo';
@@ -360,6 +407,7 @@ function buildFilterOptions(){
 }
 
 function passFilter(l){
+  if(FILTER.due && !followupDue(l)) return false;
   if(FILTER.stage!=='All'&&l.stage!==FILTER.stage) return false;
   if(FILTER.source!=='All'&&l.source!==FILTER.source) return false;
   if(FILTER.zone!=='All'&&l.zone!==FILTER.zone) return false;
@@ -372,15 +420,18 @@ function renderLeads(){
   $('#leadsCap').textContent=`${rows.length} of ${DOC.leads.length} lead${DOC.leads.length===1?'':'s'}`;
   const tb=$('#leads');
   if(!rows.length){ tb.innerHTML='<tr><td colspan="8" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
+  const tISO=todayISO();
   tb.innerHTML=rows.map(l=>{
     const val=leadValue(l);
+    const fiso=followupISO(l);
+    const fStyle = (isOpen(l)&&fiso&&fiso<=tISO) ? (fiso<tISO?'color:var(--s-lost);font-weight:700':'color:var(--s-contacted);font-weight:700') : 'color:var(--muted2)';
     return `<tr data-id="${esc(l.id)}">
       <td><div class="lead-nm">${esc(l.company||l.contact||'—')}</div>${l.contact&&l.company?`<div class="lead-sub">${esc(l.contact)}</div>`:''}</td>
       <td>${l.phone?`<a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'<span class="lead-sub">—</span>'}</td>
       <td>${l.zone?`<span class="zpill" style="background:${zColor(l.zone)}22;color:${zColor(l.zone)}">${esc(l.zone)}</span>`:'—'}</td>
       <td><span class="stpill" style="background:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${esc(l.stage||'New')}</span></td>
       <td class="lead-sub">${esc(l.source||'—')}</td>
-      <td class="lead-sub">${esc(l.followup||'—')}</td>
+      <td style="${fStyle};font-size:11.5px">${esc(l.followup||'—')}</td>
       <td class="r">${val?money(val):'—'}</td>
       <td><button class="rowbtn edit" title="Edit">✎</button></td>
     </tr>`;
@@ -518,6 +569,33 @@ $('#search').addEventListener('input',e=>{FILTER.q=e.target.value;renderLeads();
 $('#fStage').addEventListener('change',e=>{FILTER.stage=e.target.value;renderLeads();});
 $('#fSource').addEventListener('change',e=>{FILTER.source=e.target.value;renderLeads();});
 $('#fZone').addEventListener('change',e=>{FILTER.zone=e.target.value;renderLeads();});
+$('#dueChip').addEventListener('click',()=>{ FILTER.due=!FILTER.due; updateDueChip(); renderLeads(); });
+
+// ── Targets editor (admin) ──
+const TARGET_MONTHS_DEFAULT=['May','June','July','August','September','October','November','December','January','February','March','April'];
+function openTargets(){
+  const months = TARGETS.length? TARGETS.map(t=>t.month) : TARGET_MONTHS_DEFAULT;
+  const cur={}; TARGETS.forEach(t=>cur[t.month]=t.target);
+  $('#targetsBody').innerHTML=months.map(m=>`<div style="display:grid;grid-template-columns:1fr 130px;align-items:center;gap:10px">
+    <span style="font-size:13px;color:var(--muted)">${esc(m)}</span>
+    <input class="tgt-inp" data-m="${esc(m)}" inputmode="decimal" placeholder="0" value="${cur[m]!=null?cur[m]:''}" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:14px;text-align:right;width:100%">
+  </div>`).join('');
+  $('#targetsErr').textContent=''; $('#targetsOverlay').className='overlay show';
+}
+$('#editTargets').addEventListener('click',openTargets);
+$('#targetsCancel').addEventListener('click',()=>$('#targetsOverlay').className='overlay');
+$('#targetsSave').addEventListener('click',async()=>{
+  const rows=[...document.querySelectorAll('.tgt-inp')].map(i=>({month:i.dataset.m, target:parseFloat(i.value)||0}));
+  $('#loaderMsg').textContent='Saving targets…'; $('#loader').className='';
+  try{
+    const res=await fetch(PROXY_URL+'/targets',{method:'PUT',headers:{'X-Token':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({version:1,targets:rows})});
+    if(res.status===401){ localStorage.removeItem('ryst_proxy_token'); location.href='login.html'; return; }
+    else if(res.status===403){ toast('Admins only',true); }
+    else if(!res.ok){ toast('Save failed ('+res.status+')',true); }
+    else { TARGETS=rows; render(); toast('Targets saved'); $('#targetsOverlay').className='overlay'; }
+  }catch(e){ toast('Could not save targets',true); }
+  finally{ $('#loader').className='hide'; }
+});
 $('#logoutBtn').addEventListener('click',()=>{['ryst_proxy_token','ryst_user_email','ryst_user_role'].forEach(k=>localStorage.removeItem(k));window.location.href='login.html';});
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') $$('.overlay').forEach(o=>o.className='overlay'); });
 
