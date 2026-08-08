@@ -183,6 +183,7 @@
       <select id="fZone"><option value="All">All zones</option></select>
       <button class="btn ghost" id="dueChip" style="padding:9px 13px">⏰ Follow-ups due</button>
       <button class="btn ghost" id="owedChip" style="padding:9px 13px">💰 Payment due</button>
+      <button class="btn ghost" id="staleChip" style="padding:9px 13px">🕸 Stale</button>
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr><th>Lead</th><th>Phone</th><th>Zone</th><th>Stage</th><th>Source</th><th>Follow-up</th><th style="text-align:right">Value</th><th style="width:60px"></th></tr></thead>
@@ -225,7 +226,7 @@
         </div>
         <div class="two" style="margin-top:12px">
           <div class="field"><label>Total inc. GST (₹)</label><input id="bTotal" inputmode="decimal" placeholder="0" /></div>
-          <div class="field"><label>Payment status</label><select id="bPay"><option>Pending</option><option>Partial</option><option>Completed</option></select></div>
+          <div class="field"><label>Payment status <span style="font-weight:400;color:var(--muted2);text-transform:none;letter-spacing:0">(auto)</span></label><div id="bPayBadge" style="padding:10px 11px;border-radius:9px;border:1.5px solid var(--line);font-size:13px;font-weight:700;text-align:center">Pending</div></div>
         </div>
         <div class="two" style="margin-top:12px">
           <div class="field"><label>Invoice no.</label><input id="bInvoice" placeholder="—" /></div>
@@ -309,7 +310,7 @@ const zColor=z=>ZONE_COLOR[z]||'var(--muted2)';
 
 let DOC={version:1,targets:[],leads:[]};
 let TARGETS=[];
-let FILTER={q:'',stage:'All',source:'All',zone:'All',due:false,owed:false};
+let FILTER={q:'',stage:'All',source:'All',zone:'All',due:false,owed:false,stale:false};
 function myRole(){
   try{ let p=(TOKEN.split('.')[0]||'').replace(/-/g,'+').replace(/_/g,'/'); p+='='.repeat((4-p.length%4)%4);
     const d=JSON.parse(atob(p)); if(d&&d.role) return d.role; }catch(e){}
@@ -404,6 +405,22 @@ function updateOwedChip(){
   const on=FILTER.owed;
   c.style.background=on?'var(--accent)':''; c.style.color=on?'#fff':''; c.style.borderColor=on?'var(--accent)':(n?'var(--s-contacted)':'');
 }
+// Payment status is fully derived — no manual field to keep in sync.
+function computedPaymentStatus(total, paid){
+  if(total<=0) return 'Pending';
+  if(paid>=total) return 'Completed';
+  if(paid>0) return 'Partial';
+  return 'Pending';
+}
+// ── Stale leads (open, untouched for 14+ days) ──
+const STALE_MS = 14*24*3600*1000;
+function isStale(l){ return isOpen(l) && (Date.now()-(l.updatedAt||l.createdAt||0)) > STALE_MS; }
+function updateStaleChip(){
+  const n=DOC.leads.filter(isStale).length, c=$('#staleChip');
+  c.textContent='🕸 Stale'+(n?` (${n})`:'');
+  const on=FILTER.stale;
+  c.style.background=on?'var(--accent)':''; c.style.color=on?'#fff':''; c.style.borderColor=on?'var(--accent)':(n?'var(--s-contacted)':'');
+}
 
 function render(){
   const leads=DOC.leads;
@@ -434,6 +451,7 @@ function render(){
   renderLeads();
   updateDueChip();
   updateOwedChip();
+  updateStaleChip();
   // Coordinators do day-to-day lead CRUD; targets and bulk import are admin-only.
   $('#editTargets').style.display = IS_ADMIN ? '' : 'none';
   $('#importBtn').style.display = IS_ADMIN ? '' : 'none';
@@ -494,6 +512,7 @@ function buildFilterOptions(){
 function passFilter(l){
   if(FILTER.due && !followupDue(l)) return false;
   if(FILTER.owed && !paymentDue(l)) return false;
+  if(FILTER.stale && !isStale(l)) return false;
   if(FILTER.stage!=='All'&&l.stage!==FILTER.stage) return false;
   if(FILTER.source!=='All'&&l.source!==FILTER.source) return false;
   if(FILTER.zone!=='All'&&l.zone!==FILTER.zone) return false;
@@ -601,7 +620,10 @@ function pcId(){ return 'L'+Date.now().toString(36)+Math.floor(Math.random()*1e4
 function fillSelect(sel,vals,val){ sel.innerHTML=vals.map(v=>`<option${v===val?' selected':''}>${esc(v)}</option>`).join(''); }
 function toISO(d){ if(!d)return''; let m; if((m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(d))) return `${m[3]}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`; if(/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10); return ''; }
 
-function openLead(l){
+function defaultFollowupISO(){ const d=new Date(); d.setDate(d.getDate()+2); return d.toISOString().slice(0,10); }
+const normPhone=p=>String(p||'').replace(/\D/g,'').slice(-10);
+
+async function openLead(l){
   editingId = l ? l.id : null;
   $('#leadTitle').textContent = l ? 'Edit lead' : 'Add lead';
   $('#fCompany').value=l?l.company||'':''; $('#fContact').value=l?l.contact||'':'';
@@ -610,11 +632,12 @@ function openLead(l){
   fillSelect($('#fZoneM'),['',...ZONES],l?l.zone||'':'');
   $('#fDuration').value=l?l.duration||'':'';
   fillSelect($('#fStageM'),STAGES,l?l.stage||'New':'New');
-  $('#fFollow').value=toISO(l?l.followup:''); $('#fEnq').value=toISO(l?l.enqDate:'');
+  // A brand-new lead gets a follow-up default two days out — one less thing to set.
+  $('#fFollow').value = l ? toISO(l.followup) : defaultFollowupISO();
+  $('#fEnq').value=toISO(l?l.enqDate:'');
   $('#fEstimate').value=l?l.quoteEstimate||'':''; $('#fNotes').value=l?l.notes||'':'';
   // booking
   $('#bDate').value=toISO(l?l.bookingDate:''); $('#bStart').value=l?l.bookingStart||'':''; $('#bTotal').value=l&&l.total!=null?l.total:'';
-  fillSelect($('#bPay'),['Pending','Partial','Completed'],l?l.paymentStatus||'Pending':'Pending');
   $('#bInvoice').value=l?l.invoice||'':''; $('#bAddress').value=l?l.address||'':'';
   $('#bSchedStatus').textContent = (l&&l.scheduleId)?'✓ On the schedule':'';
   // Payments log — start from the lead's log, or migrate a legacy single "advance" into one entry.
@@ -627,8 +650,30 @@ function openLead(l){
   $('#leadErr').textContent='';
   $('#leadOverlay').className='overlay show';
   setTimeout(()=>$('#fCompany').focus(),50);
+
+  // Auto-fill the booking total from the linked quote — it's already computed
+  // there, so she shouldn't have to retype it (still editable if she wants to).
+  if(l && l.quoteNo && (l.total==null || l.total==='')){
+    await ensureLinks();
+    if(editingId===l.id && !$('#bTotal').value){
+      const q=QUOTES_CACHE.find(x=>x.qno===l.quoteNo);
+      if(q){ $('#bTotal').value=quoteTotal(q); updateBalance(); }
+    }
+  }
 }
-function toggleBookBox(){ $('#bookBox').style.display = $('#fStageM').value==='Booked' ? 'block':'none'; updateBalance(); }
+function toggleBookBox(){
+  const isBooked=$('#fStageM').value==='Booked';
+  $('#bookBox').style.display = isBooked ? 'block':'none';
+  // Repeat customer (same phone, already has an address on file) — reuse it.
+  if(isBooked && !$('#bAddress').value.trim()){
+    const phone=normPhone($('#fPhone').value);
+    if(phone){
+      const match=DOC.leads.find(x=>x.id!==editingId && x.address && normPhone(x.phone)===phone);
+      if(match) $('#bAddress').value=match.address;
+    }
+  }
+  updateBalance();
+}
 
 // ── Payments log (draft, scoped to the currently open lead) ──
 let paymentsDraft=[];
@@ -662,8 +707,16 @@ $('#pmtAdd').addEventListener('click',()=>{
 function updateBalance(){
   const el=$('#bBalance'); if(!el) return;
   const total=parseFloat($('#bTotal').value)||0;
-  const paid = $('#bPay').value==='Completed' ? total : paymentsDraft.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const paid = paymentsDraft.reduce((s,p)=>s+(Number(p.amount)||0),0);
   const bal=Math.max(0,total-paid);
+  const status=computedPaymentStatus(total,paid);
+  const badge=$('#bPayBadge');
+  if(badge){
+    badge.textContent=status;
+    const colors={Completed:['var(--s-booked)','#cfe6d8','var(--accent-soft)'],Partial:['var(--s-contacted)','#f0dcb8','#fbf3e6'],Pending:['var(--muted2)','var(--line)','var(--panel2)']};
+    const [fg,bd,bg]=colors[status];
+    badge.style.color=fg; badge.style.borderColor=bd; badge.style.background=bg;
+  }
   if(total<=0){ el.textContent=''; return; }
   el.innerHTML = bal>0
     ? `Balance due: <span style="color:var(--s-lost)">${money(bal)}</span> <span style="color:var(--muted2);font-weight:500">— paid ${money(paid)} of ${money(total)}</span>`
@@ -671,7 +724,6 @@ function updateBalance(){
 }
 $('#fStageM').addEventListener('change',toggleBookBox);
 $('#bTotal').addEventListener('input',updateBalance);
-$('#bPay').addEventListener('change',updateBalance);
 $('#addBtn').onclick=()=>openLead(null);
 $('#leadCancel').onclick=()=>$('#leadOverlay').className='overlay';
 
@@ -691,10 +743,12 @@ function collectLeadForm(){
   // preserve existing links / booking on edit
   const prev=DOC.leads.find(x=>x.id===editingId)||{};
   rec.quoteNo=prev.quoteNo??null; rec.scheduleId=prev.scheduleId??null; rec.createdAt=prev.createdAt||Date.now();
+  rec.updatedAt=Date.now();   // drives the "Stale" filter — clears the moment she touches the lead
   if(rec.stage==='Booked'){
     rec.bookingDate=$('#bDate').value; rec.bookingStart=$('#bStart').value; rec.total=parseFloat($('#bTotal').value)||null;
     rec.payments=paymentsDraft.map(p=>({...p}));
-    rec.paymentStatus=$('#bPay').value; rec.invoice=$('#bInvoice').value.trim(); rec.address=$('#bAddress').value.trim();
+    rec.paymentStatus=computedPaymentStatus(rec.total||0, rec.payments.reduce((s,p)=>s+(Number(p.amount)||0),0));
+    rec.invoice=$('#bInvoice').value.trim(); rec.address=$('#bAddress').value.trim();
   } else { rec.bookingStart=prev.bookingStart||''; rec.payments=prev.payments||[]; }
   return rec;
 }
@@ -703,8 +757,20 @@ function upsertLead(rec){
   if(idx>=0) next[idx]=rec; else next.unshift(rec);
   return next;
 }
+// New (not editing) + phone matches an existing lead → confirm before forking
+// a duplicate. Returns true to proceed with the save.
+function confirmNotDuplicate(rec){
+  if(editingId || !rec.phone) return true;
+  const phone=normPhone(rec.phone); if(!phone) return true;
+  const dup=DOC.leads.find(x=>normPhone(x.phone)===phone);
+  if(!dup) return true;
+  const proceed=confirm(`A lead for this phone number already exists:\n\n"${dup.company||dup.contact||'—'}" — stage: ${dup.stage||'New'}\n\nOK to add this as a new lead anyway.\nCancel to open the existing lead instead.`);
+  if(!proceed){ $('#leadOverlay').className='overlay'; openLead(dup); }
+  return proceed;
+}
 $('#leadSave').onclick=async()=>{
   const rec=collectLeadForm(); if(!rec) return;
+  if(!confirmNotDuplicate(rec)) return;
   await saveLeads(upsertLead(rec), editingId?'Lead updated':'Lead added');
   $('#leadOverlay').className='overlay';
 };
@@ -776,6 +842,7 @@ $('#fSource').addEventListener('change',e=>{FILTER.source=e.target.value;renderL
 $('#fZone').addEventListener('change',e=>{FILTER.zone=e.target.value;renderLeads();});
 $('#dueChip').addEventListener('click',()=>{ FILTER.due=!FILTER.due; updateDueChip(); renderLeads(); });
 $('#owedChip').addEventListener('click',()=>{ FILTER.owed=!FILTER.owed; updateOwedChip(); renderLeads(); });
+$('#staleChip').addEventListener('click',()=>{ FILTER.stale=!FILTER.stale; updateStaleChip(); renderLeads(); });
 
 // ── Targets editor (admin) ──
 const TARGET_MONTHS_DEFAULT=['May','June','July','August','September','October','November','December','January','February','March','April'];
