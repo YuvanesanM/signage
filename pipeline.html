@@ -211,6 +211,7 @@
         <span style="flex:1"></span>
         <div class="right">
           <button class="btn ghost" id="leadCancel">Cancel</button>
+          <button class="btn ghost" id="leadQuote" style="border-color:var(--accent);color:var(--accent-d)">Raise quote →</button>
           <button class="btn primary" id="leadSave">Save lead</button>
         </div>
       </div>
@@ -412,9 +413,9 @@ $('#fStageM').addEventListener('change',toggleBookBox);
 $('#addBtn').onclick=()=>openLead(null);
 $('#leadCancel').onclick=()=>$('#leadOverlay').className='overlay';
 
-$('#leadSave').onclick=async()=>{
+function collectLeadForm(){
   const company=$('#fCompany').value.trim(), contact=$('#fContact').value.trim();
-  if(!company && !contact){ $('#leadErr').textContent='Enter a company or contact name.'; return; }
+  if(!company && !contact){ $('#leadErr').textContent='Enter a company or contact name.'; return null; }
   const rec={
     id: editingId||pcId(),
     company, contact, name: company||contact,
@@ -432,11 +433,27 @@ $('#leadSave').onclick=async()=>{
     rec.bookingDate=$('#bDate').value; rec.total=parseFloat($('#bTotal').value)||null;
     rec.paymentStatus=$('#bPay').value; rec.invoice=$('#bInvoice').value.trim(); rec.address=$('#bAddress').value.trim();
   }
-  const next=[...DOC.leads];
-  const idx=next.findIndex(x=>x.id===rec.id);
+  return rec;
+}
+function upsertLead(rec){
+  const next=[...DOC.leads]; const idx=next.findIndex(x=>x.id===rec.id);
   if(idx>=0) next[idx]=rec; else next.unshift(rec);
-  await saveLeads(next, editingId?'Lead updated':'Lead added');
+  return next;
+}
+$('#leadSave').onclick=async()=>{
+  const rec=collectLeadForm(); if(!rec) return;
+  await saveLeads(upsertLead(rec), editingId?'Lead updated':'Lead added');
   $('#leadOverlay').className='overlay';
+};
+// Save the lead, hand its details to the Quote Builder, and go there.
+$('#leadQuote').onclick=async()=>{
+  const rec=collectLeadForm(); if(!rec) return;
+  await saveLeads(upsertLead(rec), null);
+  localStorage.setItem('ryst_quote_prefill', JSON.stringify({
+    leadId:rec.id, company:rec.company, contact:rec.contact, phone:rec.phone,
+    zone:rec.zone, duration:rec.duration, address:rec.address, estimate:rec.quoteEstimate
+  }));
+  window.location.href='quote.html';
 };
 $('#leadDelete').onclick=async()=>{
   if(!editingId) return;

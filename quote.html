@@ -438,6 +438,7 @@ let settings = loadSettings();
 let items = [];            // {desc, sac, price, qty, gst}
 let editingKey = null;
 let curQno = "", curDateISO = "";
+let leadLink = null;       // set when this quote was raised from a CRM lead
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
@@ -520,10 +521,50 @@ setBrandLogos();
   if(!proxyToken){ window.location.href='login.html'; return; }
   // Show the app immediately from localStorage/defaults — don't block on network.
   init();
+  applyLeadPrefill();          // if we arrived from a CRM lead, pre-fill from it
   $("#app").hidden = false;
   // Validate token + refresh data in background.
   initApp();
 })();
+
+/* ---------- LEAD → QUOTE (Phase 2) ---------- */
+function parseHours(str){
+  const m=/(\d+(?:\.\d+)?)/.exec(String(str||"")); if(!m) return DEFAULT_HOURS;
+  return Math.max(MIN_HOURS, Math.min(MAX_HOURS, Math.round(parseFloat(m[1])||DEFAULT_HOURS)));
+}
+function applyLeadPrefill(){
+  let p; try{ p=JSON.parse(localStorage.getItem('ryst_quote_prefill')||'null'); }catch(e){ p=null; }
+  localStorage.removeItem('ryst_quote_prefill');   // consume once
+  if(!p || !p.leadId) return;
+  leadLink = { id:p.leadId };
+  if(p.company||p.contact) $("#cname").value = p.company || p.contact;
+  if(p.address) $("#caddr").value = p.address;
+  if(p.zone && ZONES.includes(p.zone)) $("#zone").value = p.zone;
+  if(p.duration) $("#hours").value = String(parseHours(p.duration));
+  syncZoneItem(); render();
+  const who = p.company || p.contact || 'lead';
+  const b=document.createElement('div');
+  b.id='leadBanner';
+  b.style.cssText='margin:0 0 14px;padding:10px 14px;border-radius:10px;background:var(--accent-soft,#eaf4ee);border:1px solid #cfe6d8;color:var(--accent-d,#2f7d54);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px';
+  b.innerHTML='🔗 Quoting for <b style="margin:0 3px">'+esc(who)+'</b> — saving will mark this lead “Quoted”.';
+  const app=document.getElementById('app'); if(app) app.insertBefore(b, app.firstChild);
+}
+function clearLeadLink(){ leadLink=null; const b=document.getElementById('leadBanner'); if(b) b.remove(); }
+
+// Write the quote number back onto the lead and advance its stage to Quoted.
+async function linkQuoteToLead(leadId, qno){
+  try{
+    const res=await fetch(PROXY_URL+'/leads',{headers:{'X-Token':proxyToken}});
+    if(!res.ok) return;
+    const doc=await res.json();
+    const leads=Array.isArray(doc.leads)?doc.leads:[];
+    const l=leads.find(x=>x.id===leadId); if(!l) return;
+    l.quoteNo=qno;
+    if(l.stage==='New' || l.stage==='Contacted') l.stage='Quoted';
+    const put=await fetch(PROXY_URL+'/leads',{method:'PUT',headers:{'X-Token':proxyToken,'Content-Type':'application/json'},body:JSON.stringify(doc)});
+    if(put.ok) toast('Lead marked “Quoted”');
+  }catch(e){}
+}
 
 /* ---------- INIT ---------- */
 async function initApp(){
@@ -641,7 +682,7 @@ function bind(){
 
 /* ---------- NEW QUOTE ---------- */
 function newQuote(){
-  editingKey=null; syncPdfBtn();
+  editingKey=null; syncPdfBtn(); clearLeadLink();
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
@@ -831,6 +872,7 @@ async function saveQuote(){
   setQuotes(all); editingKey=q.qno; syncPdfBtn();
   await pushQuotes();
   toast("Quote "+q.qno+" saved");
+  if(leadLink && leadLink.id){ await linkQuoteToLead(leadLink.id, q.qno); }
 }
 function loadQuote(qno){
   const q=getQuotes().find(x=>x.qno===qno); if(!q) return;
