@@ -375,8 +375,9 @@ function render(){
   buildFilterOptions();
   renderLeads();
   updateDueChip();
-  $('#editTargets').style.display = IS_ADMIN ? '' : 'none';  // targets: admin only
-  $('#importBtn').style.display = '';                        // leads: managed by coordinators too
+  // Coordinators do day-to-day lead CRUD; targets and bulk import are admin-only.
+  $('#editTargets').style.display = IS_ADMIN ? '' : 'none';
+  $('#importBtn').style.display = IS_ADMIN ? '' : 'none';
 }
 
 // ── Import (admin) — seed / restore the lead store from a JSON file ──
