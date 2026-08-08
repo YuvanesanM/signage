@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pipeline &amp; Bookings · Studio RYST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f4f1; --panel:#ffffff; --panel2:#f7f8f5;
+    --line:#e3e5e0; --accent:#3d9b69; --accent-d:#2f7d54; --accent-soft:#eaf4ee;
+    --ink:#1d211c; --muted:#5f655d; --muted2:#9aa097;
+    --won:#2f7d54; --open:#c8893d; --lost:#c0584b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Outfit",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100%}
+  button,select,input{font-family:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:1120px;margin:0 auto;padding:18px 16px 60px}
+
+  header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 2px 6px}
+  header.top img{height:38px;object-fit:contain}
+  header.top .ttl{font-weight:700;font-size:18px;letter-spacing:.2px}
+  header.top .ttl small{display:block;font-weight:500;font-size:11.5px;color:var(--muted2);letter-spacing:.4px}
+  header.top .spacer{flex:1}
+  .tbtn{background:var(--panel);border:1.5px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:600;transition:.15s}
+  .tbtn:hover{border-color:var(--accent);color:var(--accent-d)}
+  .redact{font-size:11px;color:var(--muted2);padding:2px 2px 16px}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 15px;box-shadow:0 6px 18px rgba(40,50,40,.04)}
+  .kpi .lbl{font-size:11.5px;font-weight:600;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase}
+  .kpi .val{font-size:25px;font-weight:700;margin-top:7px;letter-spacing:-.5px}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .kpi.hero{background:linear-gradient(135deg,var(--accent) 0%,var(--accent-d) 100%);border:none;color:#fff}
+  .kpi.hero .lbl,.kpi.hero .sub{color:#dff0e6}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid .full{grid-column:1 / -1}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;box-shadow:0 6px 18px rgba(40,50,40,.04);margin-bottom:14px}
+  .panel h2{font-size:13px;font-weight:700;letter-spacing:.3px;margin-bottom:3px}
+  .panel .cap{font-size:11.5px;color:var(--muted2);margin-bottom:14px}
+
+  .hbars{display:flex;flex-direction:column;gap:12px}
+  .hbar{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:10px;font-size:12.5px}
+  .hbar .nm{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+  .hbar .track{height:12px;background:var(--panel2);border-radius:6px;overflow:hidden}
+  .hbar .fill{display:block;height:12px;border-radius:6px;min-width:2px}
+  .hbar .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* Monthly vs target */
+  .months{display:flex;flex-direction:column;gap:14px}
+  .mrow{display:grid;grid-template-columns:70px 1fr 116px;align-items:center;gap:12px}
+  .mrow .mn{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .mrow .bar{position:relative;height:22px;background:var(--panel2);border-radius:7px;overflow:hidden}
+  .mrow .bar .val{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent),var(--accent-d));border-radius:7px;min-width:2px}
+  .mrow .bar .tgt{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+  .mrow .meta{font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .mrow .meta b{color:var(--ink)}
+  .ach{font-weight:700;padding:1px 7px;border-radius:20px;font-size:11px}
+  .ach.hi{color:var(--won);background:#e7f4ec} .ach.mid{color:var(--open);background:#fbf3e6} .ach.lo{color:var(--lost);background:#fbecea}
+
+  /* Table */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .toolbar input,.toolbar select{padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;background:var(--panel2);font-size:13px;color:var(--ink);outline:none}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
+  .toolbar input{flex:1;min-width:140px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+  th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:10px 10px;border-bottom:1px solid var(--panel2)}
+  tr:last-child td{border-bottom:none}
+  td.r{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .zpill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .st{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:12px;white-space:nowrap}
+  .st.completed{background:#e7f4ec;color:var(--won)} .st.pending{background:#fbf3e6;color:var(--open)} .st.other{background:var(--panel2);color:var(--muted)}
+  .empty{padding:30px 12px;text-align:center;color:var(--muted2);font-size:13px}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:80}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)} #toast.err{background:var(--lost)}
+  #loader{position:fixed;inset:0;background:rgba(243,244,241,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:90;color:var(--muted)}
+  #loader.hide{display:none}
+  .spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  @media(max-width:820px){ .kpis{grid-template-columns:1fr 1fr} .grid{grid-template-columns:1fr} }
+  @media(max-width:520px){ .kpi .val{font-size:21px} .mrow{grid-template-columns:52px 1fr 92px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <img id="logo" alt="RYST" src="" />
+    <div class="ttl">Pipeline &amp; Bookings<small>Studio RYST · from the inquiry register</small></div>
+    <div class="spacer"></div>
+    <button class="tbtn" onclick="window.location.href='report.html'">📊 Growth</button>
+    <button class="tbtn" onclick="window.location.href='login.html'">⌂ Home</button>
+    <button class="tbtn" id="logoutBtn">⎋ Log out</button>
+  </header>
+  <div class="redact" id="redact"></div>
+
+  <div class="kpis">
+    <div class="kpi hero"><div class="lbl">Total enquiries</div><div class="val" id="kEnq">—</div><div class="sub" id="kEnqSub"></div></div>
+    <div class="kpi"><div class="lbl">Converted</div><div class="val" id="kWon">—</div><div class="sub" id="kWonSub"></div></div>
+    <div class="kpi"><div class="lbl">Completed bookings</div><div class="val" id="kBook">—</div><div class="sub" id="kBookSub"></div></div>
+    <div class="kpi"><div class="lbl">Revenue (completed)</div><div class="val" id="kRev">—</div><div class="sub" id="kRevSub"></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Enquiry pipeline</h2>
+      <div class="cap">Lead stages across all enquiries</div>
+      <div class="hbars" id="stages"></div>
+    </div>
+    <div class="panel">
+      <h2>Lead sources</h2>
+      <div class="cap">Where enquiries come from</div>
+      <div class="hbars" id="sources"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Monthly performance vs target</h2>
+    <div class="cap">Bookings value against monthly target · <span style="border-left:2px solid var(--ink);padding-left:5px">target</span></div>
+    <div class="months" id="months"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Booking register</h2>
+    <div class="cap" id="bookCap">Confirmed bookings</div>
+    <div class="toolbar">
+      <input id="search" placeholder="Search company, zone, invoice…" />
+      <select id="statusF"><option value="All">All statuses</option></select>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Date</th><th>Company</th><th>Zone</th><th>Duration</th><th style="text-align:right">Total (inc GST)</th><th>Status</th><th>Invoice</th></tr></thead>
+      <tbody id="bookings"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div id="loader"><div class="spin"></div><div id="loaderMsg">Loading pipeline…</div></div>
+<div id="toast"></div>
+
+<script>
+const PROXY_URL='https://ryst-signage-proxy.onrender.com';
+const TOKEN=localStorage.getItem('ryst_proxy_token')||'';
+if(!TOKEN){ window.location.href='login.html'; }
+const $=s=>document.querySelector(s);
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const INR0=new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0});
+const money=n=>INR0.format(Math.round(Number(n)||0));
+function compactINR(n){ n=Number(n)||0; const a=Math.abs(n);
+  if(a>=1e7)return '₹'+(n/1e7).toFixed(2)+'Cr'; if(a>=1e5)return '₹'+(n/1e5).toFixed(2)+'L';
+  if(a>=1e3)return '₹'+(n/1e3).toFixed(a>=1e4?0:1)+'k'; return '₹'+Math.round(n); }
+const ZONE_COLORS={Podcast:'#3d9b69',Photography:'#c8893d',Culinary:'#c0584b','Multi-Zone':'#5b7db1'};
+const zColor=z=>ZONE_COLORS[z]||'var(--muted2)';
+const STAGE_COLORS={'New lead':'var(--open)','Won':'var(--won)','Lost':'var(--lost)'};
+
+let DATA=null, FILTER={q:'',status:'All'};
+
+(function(){ try{const s=JSON.parse(localStorage.getItem('ryst_quote_settings')||'null'); if(s&&s.logo){$('#logo').src=s.logo;return;}}catch(e){}
+  const l=localStorage.getItem('ryst_logo'); if(l)$('#logo').src=l; else $('#logo').style.display='none'; })();
+
+let toastT; function toast(m,e){const t=$('#toast');t.textContent=m;t.className='show'+(e?' err':'');clearTimeout(toastT);toastT=setTimeout(()=>t.className='',3200);}
+
+async function api(path){
+  const ctrl=new AbortController();
+  const slow=setTimeout(()=>{$('#loaderMsg').textContent='Waking up the server… up to a minute.';},4000);
+  const abort=setTimeout(()=>ctrl.abort(),75000);
+  try{
+    const res=await fetch(PROXY_URL+path,{headers:{'X-Token':TOKEN},signal:ctrl.signal});
+    if(res.status===401){ localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; throw new Error('Session expired'); }
+    if(!res.ok) throw new Error('Error '+res.status);
+    return await res.json();
+  } finally { clearTimeout(slow); clearTimeout(abort); }
+}
+
+async function load(){
+  $('#loader').className='';
+  try{ DATA=await api('/pipeline'); render(); }
+  catch(e){ toast(e.message||'Could not load pipeline',true); }
+  finally{ $('#loader').className='hide'; }
+}
+
+function hbars(entries, colorFn, fmt){
+  if(!entries.length) return '<div class="empty">No data.</div>';
+  const max=Math.max(1,...entries.map(e=>e[1]));
+  return entries.map(([name,val])=>`<div class="hbar">
+    <span class="nm"><span class="dot" style="background:${colorFn(name)}"></span>${esc(name)}</span>
+    <span class="track"><span class="fill" style="width:${Math.max(2,val/max*100)}%;background:${colorFn(name)}"></span></span>
+    <span class="amt">${fmt(val)}</span></div>`).join('');
+}
+
+function render(){
+  const sum=DATA.summary||{}, pl=DATA.pipeline||{}, monthly=DATA.monthly||[], bookings=DATA.bookings||[];
+  $('#redact').textContent='🔒 Contact phone numbers & addresses are not stored here (privacy-redacted from the source sheet).'
+    + (DATA.updated? '  ·  Updated '+DATA.updated : '');
+
+  const total=sum.totalEnquiries||0, won=sum.won||0;
+  $('#kEnq').textContent=total; $('#kEnqSub').textContent=(sum.open||0)+' open · '+(sum.lost||0)+' lost';
+  const conv=total? Math.round(won/total*100):0;
+  $('#kWon').textContent=won; $('#kWonSub').textContent=conv+'% conversion';
+  $('#kBook').textContent=sum.completedBookings||bookings.length; $('#kBookSub').textContent='confirmed';
+  $('#kRev').textContent=compactINR(sum.revenueCompleted||0); $('#kRevSub').textContent=(sum.revenuePending? compactINR(sum.revenuePending)+' pending':'');
+
+  // Stages (fixed order)
+  const order=['New lead','Won','Lost'];
+  const bs=pl.byStage||{};
+  const stageEntries=order.filter(k=>k in bs).map(k=>[k,bs[k]]).concat(Object.entries(bs).filter(([k])=>!order.includes(k)));
+  $('#stages').innerHTML=hbars(stageEntries, k=>STAGE_COLORS[k]||'var(--muted2)', v=>v);
+
+  // Sources
+  const srcEntries=Object.entries(pl.bySource||{}).sort((a,b)=>b[1]-a[1]);
+  const palette=['#3d9b69','#c8893d','#5b7db1','#c0584b','#8a7bb1','#9aa097'];
+  $('#sources').innerHTML=hbars(srcEntries, (n)=>palette[srcEntries.findIndex(e=>e[0]===n)%palette.length], v=>v);
+
+  renderMonths(monthly);
+  renderBookings(bookings);
+}
+
+function renderMonths(monthly){
+  const rows=monthly.filter(m=>(m.target||0)>0 || (m.value||0)>0);
+  if(!rows.length){ $('#months').innerHTML='<div class="empty">No monthly data.</div>'; return; }
+  const max=Math.max(1,...rows.map(m=>Math.max(m.value||0,m.target||0)));
+  $('#months').innerHTML=rows.map(m=>{
+    const v=m.value||0, t=m.target||0;
+    const ach=t? Math.round(v/t*100):0;
+    const cls=ach>=90?'hi':ach>=50?'mid':'lo';
+    return `<div class="mrow">
+      <span class="mn">${esc(m.month.slice(0,3))}</span>
+      <span class="bar"><span class="val" style="width:${Math.min(100,v/max*100)}%"></span>${t?`<span class="tgt" style="left:${Math.min(100,t/max*100)}%"></span>`:''}</span>
+      <span class="meta"><b>${compactINR(v)}</b> / ${compactINR(t)} <span class="ach ${cls}">${ach}%</span></span>
+    </div>`;
+  }).join('');
+}
+
+function renderBookings(bookings){
+  // status filter options
+  const statuses=[...new Set(bookings.map(b=>b.status||'—'))];
+  const sf=$('#statusF');
+  if(sf.options.length<=1){ statuses.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sf.appendChild(o); }); }
+  $('#bookCap').textContent=`${bookings.length} confirmed booking${bookings.length===1?'':'s'}`;
+  const q=FILTER.q.trim().toLowerCase();
+  const rows=bookings.filter(b=>{
+    if(FILTER.status!=='All' && (b.status||'—')!==FILTER.status) return false;
+    if(q && !((b.company||'').toLowerCase().includes(q)||(b.zone||'').toLowerCase().includes(q)||(b.invoice||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if(!rows.length){ $('#bookings').innerHTML='<tr><td colspan="7" class="empty">No bookings match.</td></tr>'; return; }
+  $('#bookings').innerHTML=rows.map(b=>{
+    const st=(b.status||'').toLowerCase();
+    const stCls=st==='completed'?'completed':st==='pending'?'pending':'other';
+    return `<tr>
+      <td>${esc(b.date||'—')}</td>
+      <td>${esc(b.company||'—')}</td>
+      <td><span class="zpill" style="background:${zColor(b.zone)}22;color:${zColor(b.zone)}">${esc(b.zone||'—')}</span></td>
+      <td>${esc(b.duration||'—')}</td>
+      <td class="r">${b.total!=null?money(b.total):'—'}</td>
+      <td><span class="st ${stCls}">${esc(b.status||'—')}</span></td>
+      <td>${esc(b.invoice||'—')}</td></tr>`;
+  }).join('');
+}
+
+$('#search').addEventListener('input', e=>{ FILTER.q=e.target.value; renderBookings(DATA.bookings||[]); });
+$('#statusF').addEventListener('change', e=>{ FILTER.status=e.target.value; renderBookings(DATA.bookings||[]); });
+$('#logoutBtn').addEventListener('click', ()=>{ ['ryst_proxy_token','ryst_user_email','ryst_user_role'].forEach(k=>localStorage.removeItem(k)); window.location.href='login.html'; });
+
+load();
+</script>
+</body>
+</html>
