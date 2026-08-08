@@ -74,7 +74,22 @@
   th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
   td{padding:9px 10px;border-bottom:1px solid var(--panel2);vertical-align:middle}
   tr:last-child td{border-bottom:none}
+  tbody tr{cursor:pointer}
   tbody tr:hover td{background:var(--panel2)}
+  /* Customer view */
+  .cv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .cv-card{border:1px solid var(--line);border-radius:11px;padding:13px 15px;background:var(--panel2)}
+  .cv-card h4{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent-d);margin-bottom:9px}
+  .cv-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:13px}
+  .cv-facts .k{color:var(--muted2);font-size:11.5px}
+  .cv-facts .v{color:var(--ink);font-weight:600}
+  .cv-line{display:flex;justify-content:space-between;font-size:13.5px;padding:2px 0}
+  .cv-line .amt{font-weight:700;font-variant-numeric:tabular-nums}
+  .cv-time{display:flex;flex-direction:column;gap:0}
+  .cv-step{display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:10px;padding:6px 0;font-size:13px}
+  .cv-step .d{width:11px;height:11px;border-radius:50%;background:var(--accent);justify-self:center}
+  .cv-step.muted .d{background:var(--line)}
+  .cv-step .dt{color:var(--muted2);font-size:12px}
   td.r{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
   .lead-nm{font-weight:600}
   .lead-sub{font-size:11.5px;color:var(--muted2)}
@@ -231,6 +246,14 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Customer view -->
+<div class="overlay" id="custOverlay">
+  <div class="modal" style="width:min(640px,100%)">
+    <h3 id="custTitle">Customer</h3>
+    <div class="mbody" id="custBody"></div>
   </div>
 </div>
 
@@ -463,7 +486,63 @@ function renderLeads(){
     </tr>`;
   }).join('');
 }
-$('#leads').addEventListener('click',e=>{ const tr=e.target.closest('tr[data-id]'); if(!tr) return; const l=DOC.leads.find(x=>x.id===tr.dataset.id); if(l) openLead(l); });
+$('#leads').addEventListener('click',e=>{
+  const tr=e.target.closest('tr[data-id]'); if(!tr) return;
+  const l=DOC.leads.find(x=>x.id===tr.dataset.id); if(!l) return;
+  if(e.target.closest('.edit')) openLead(l); else openCustomer(l);
+});
+
+// ── Unified customer view ──
+let QUOTES_CACHE=null, SCHED_CACHE=null;
+async function ensureLinks(){
+  if(QUOTES_CACHE===null){ try{ const r=await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':TOKEN}}); QUOTES_CACHE=r.ok?((await r.json()).quotes||[]):[]; }catch(e){ QUOTES_CACHE=[]; } }
+  if(SCHED_CACHE===null){ try{ const r=await fetch(PROXY_URL+'/schedule',{headers:{'X-Token':TOKEN}}); SCHED_CACHE=r.ok?((await r.json()).sessions||[]):[]; }catch(e){ SCHED_CACHE=[]; } }
+}
+function quoteTotal(q){ const it=q.items||[]; const sub=it.reduce((s,x)=>s+(parseFloat(x.price)||0)*(parseFloat(x.qty)||0),0);
+  const gst=it.reduce((s,x)=>s+((parseFloat(x.price)||0)*(parseFloat(x.qty)||0))*(parseFloat(x.gst)||0)/100,0);
+  const disc=Math.min(parseFloat(q.discount)||0, Math.floor(sub*0.10)); return Math.round(sub-disc+gst); }
+function raiseQuoteForLead(l){
+  localStorage.setItem('ryst_quote_prefill', JSON.stringify({leadId:l.id,company:l.company,contact:l.contact,phone:l.phone,zone:l.zone,duration:l.duration,address:l.address,estimate:l.quoteEstimate}));
+  window.location.href='quote.html';
+}
+async function openCustomer(l){
+  $('#custTitle').textContent = l.company||l.contact||'Customer';
+  $('#custBody').innerHTML='<div class="empty">Loading…</div>';
+  $('#custOverlay').className='overlay show';
+  await ensureLinks();
+  const nameKey=(l.company||l.contact||'').trim().toLowerCase();
+  const linked = l.quoteNo ? QUOTES_CACHE.find(q=>q.qno===l.quoteNo) : null;
+  const related = QUOTES_CACHE.filter(q=> q.qno!==l.quoteNo && nameKey && (q.cname||'').trim().toLowerCase()===nameKey);
+  const quotes = [linked, ...related].filter(Boolean);
+  const session = l.scheduleId ? SCHED_CACHE.find(s=>s.id===l.scheduleId) : null;
+
+  const fact=(k,v)=> v?`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`:'';
+  const quotesHtml = quotes.length ? quotes.map(q=>`<div class="cv-line"><span>${esc(q.qno)} · ${esc(q.zone||'')}${q.hours?(' · '+esc(q.hours)+'h'):''} <span style="color:var(--muted2);font-size:12px">${esc(q.date||'')}</span></span><span class="amt">${money(quoteTotal(q))}</span></div>`).join('') : '<div class="k" style="color:var(--muted2)">No quotes yet.</div>';
+  const bookingHtml = session
+    ? `<div class="cv-line"><span>🔗 ${esc(session.date||'')} · ${esc(session.start||'')}–${esc(session.end||'')} · ${esc(session.zone||'')}</span><a class="tel" href="set.html">Open schedule →</a></div>`
+    : (l.stage==='Booked' ? `<div class="cv-line"><span>${esc(l.bookingDate||'')}${l.total!=null?(' · '+money(l.total)):''}${l.paymentStatus?(' · '+esc(l.paymentStatus)):''}</span><span style="color:var(--muted2);font-size:12px">not on schedule</span></div>` : '<div class="k" style="color:var(--muted2)">Not booked.</div>');
+  const steps=[];
+  if(l.enqDate) steps.push(['Enquiry received', l.enqDate]);
+  if(linked) steps.push(['Quote '+linked.qno+' sent', linked.date||'']);
+  if(l.stage==='Booked') steps.push(['Booked', l.bookingDate||'']);
+  if(l.stage==='Lost') steps.push(['Marked lost','']);
+  const timeHtml = steps.length ? `<div class="cv-time">${steps.map(s=>`<div class="cv-step"><span class="d"></span><span>${esc(s[0])}</span><span class="dt">${esc(s[1]||'')}</span></div>`).join('')}</div>` : '<div class="k" style="color:var(--muted2)">No history yet.</div>';
+
+  $('#custBody').innerHTML=`
+    <div class="cv-head"><span class="stpill" style="background:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${esc(l.stage||'New')}</span>${l.phone?`<a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:''}<span style="color:var(--muted2);font-size:12.5px">${esc(l.source||'')}</span></div>
+    <div class="cv-card"><h4>Lead</h4><div class="cv-facts">${fact('Contact',l.contact)}${fact('Zone',l.zone)}${fact('Duration',l.duration)}${fact('Follow-up',l.followup)}${fact('Estimate',l.quoteEstimate?money(l.quoteEstimate):'')}${fact('Enquiry date',l.enqDate)}</div>${l.notes?`<div style="margin-top:10px;font-size:13px;color:var(--muted)">${esc(l.notes)}</div>`:''}</div>
+    <div class="cv-card"><h4>Quotes</h4>${quotesHtml}</div>
+    <div class="cv-card"><h4>Booking</h4>${bookingHtml}</div>
+    <div class="cv-card"><h4>Timeline</h4>${timeHtml}</div>
+    <div class="mfoot"><span style="flex:1"></span><div class="right">
+      <button class="btn ghost" id="cvClose">Close</button>
+      <button class="btn ghost" id="cvQuote" style="border-color:var(--accent);color:var(--accent-d)">Raise quote →</button>
+      <button class="btn primary" id="cvEdit">Edit lead</button>
+    </div></div>`;
+  $('#cvClose').onclick=()=>$('#custOverlay').className='overlay';
+  $('#cvEdit').onclick=()=>{ $('#custOverlay').className='overlay'; openLead(l); };
+  $('#cvQuote').onclick=()=>raiseQuoteForLead(l);
+}
 
 // ── Lead modal ──
 let editingId=null;
@@ -566,6 +645,7 @@ $('#bSchedule').onclick=async()=>{
     else if(!pr.ok){ toast('Schedule save failed ('+pr.status+')',true); }
     else {
       rec.scheduleId=sid;
+      SCHED_CACHE=null;   // refresh the customer view's schedule cache
       await saveLeads(upsertLead(rec), 'Booking added to the schedule');
       $('#leadOverlay').className='overlay';
     }
