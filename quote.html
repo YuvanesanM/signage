@@ -278,8 +278,10 @@
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap">
           <button class="btn" type="button" id="btnSchedule" style="border:1.5px solid var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
+          <button class="btn" type="button" id="btnShare" style="border:1.5px solid #3aa06a;color:#2f7d54" title="Save and share a client-facing link via WhatsApp">📤 Share via WhatsApp</button>
           <span id="schedStatus" style="font-size:12px;color:var(--muted2)"></span>
         </div>
+        <div id="clientRespRow" style="display:none;margin-top:8px"></div>
       </div>
 
       <div class="group">
@@ -459,6 +461,8 @@ let settings = loadSettings();
 let items = [];            // {desc, sac, price, qty, gst}
 let editingKey = null;
 let curQno = "", curDateISO = "";
+let curShareToken = "";     // unguessable id used in the client-facing share link
+let curClientStatus = "", curClientRespondedAt = null;   // client's Accept/Decline on quote-view.html
 let leadLink = null;       // set when this quote was raised from a CRM lead
 let curScheduleId = null;  // set once this quote has been pushed to the schedule
 let qPaymentsDraft = [];   // {id,date,amount,note} — this quote's payments log
@@ -566,7 +570,7 @@ function applyLeadPrefill(){
   if(!p) return;
   if(p.sessionDate) $("#sessDate").value = p.sessionDate;
   if(!p.leadId){ if(p.sessionDate) render(); return; }
-  leadLink = { id:p.leadId };
+  leadLink = { id:p.leadId, phone:p.phone||"" };
   if(p.company||p.contact) $("#cname").value = p.company || p.contact;
   if(p.address) $("#caddr").value = p.address;
   if(p.zone && ZONES.includes(p.zone)) $("#zone").value = p.zone;
@@ -812,6 +816,7 @@ function bind(){
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", ()=>saveQuote());
   $("#btnSchedule").addEventListener("click", addToSchedule);
+  $("#btnShare").addEventListener("click", shareQuote);
   $("#qPmtAdd").addEventListener("click", ()=>{
     const amt=parseFloat($("#qPmtAmount").value)||0;
     if(amt<=0){ toast("Enter a payment amount"); return; }
@@ -829,6 +834,7 @@ function bind(){
 function newQuote(){
   editingKey=null; syncPdfBtn(); clearLeadLink();
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
+  curShareToken=genToken(); renderClientResp(null);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
   $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
@@ -1015,7 +1021,8 @@ function collect(){
     cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
     sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
-    payments, status: paid>0 ? "Confirmed" : "Pending",
+    payments, status: paid>0 ? "Confirmed" : "Pending", shareToken:curShareToken,
+    clientStatus:curClientStatus, clientRespondedAt:curClientRespondedAt,
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
 // `silent` suppresses the "Quote saved" toast — used when saveQuote() runs as
@@ -1044,11 +1051,57 @@ function loadQuote(qno){
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
+  curShareToken=q.shareToken||genToken(); curClientStatus=q.clientStatus||""; curClientRespondedAt=q.clientRespondedAt||null; renderClientResp(q);
   qPaymentsDraft=Array.isArray(q.payments)?q.payments.map(p=>({...p})):[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
 }
+
+/* ---------- SHARE VIA WHATSAPP ---------- */
+function genToken(){
+  const b=new Uint8Array(16); crypto.getRandomValues(b);
+  return Array.from(b, x=>x.toString(16).padStart(2,"0")).join("");
+}
+function normPhone(raw){
+  let d=(raw||"").replace(/\D/g,"");
+  if(d.length>10) d=d.slice(-10);   // strip country code / leading 0s
+  return d.length===10 ? d : "";
+}
+function renderClientResp(q){
+  const row=$("#clientRespRow"); if(!row) return;
+  const status = q ? (q.clientStatus||curClientStatus) : "";
+  if(status==="Accepted" || status==="Declined"){
+    const when = (q&&q.clientRespondedAt)||curClientRespondedAt;
+    const whenTxt = when ? new Date(when).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : "";
+    const accepted = status==="Accepted";
+    row.style.display="block";
+    row.innerHTML = `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;background:${accepted?'#e6f5ec':'#fbeceb'};color:${accepted?'#2f7d54':'#b5473c'}">
+      ${accepted?'✅ Client accepted':'✋ Client declined'}${whenTxt?' · '+esc(whenTxt):''}</span>`;
+  } else {
+    row.style.display="none"; row.innerHTML="";
+  }
+}
+async function shareQuote(){
+  if(!curQno){ toast("No quote number"); return; }
+  const btn=$("#btnShare"); const prevTxt=btn.textContent;
+  btn.disabled=true; btn.textContent="Saving…";
+  try{
+    await saveQuote(true);
+    const q=collect();
+    if(!q.sessionDate || !q.sessionStart) return;   // saveQuote already toasted the reason
+    const link = "https://signage.ryst.in/quote-view.html?t="+encodeURIComponent(curShareToken);
+    const msg = `Hi${q.cname?" "+q.cname:""}! Here's your quote from Studio RYST (${q.qno}). `
+      + `Please review and accept or decline here: ${link}`;
+    const phone = normPhone(leadLink && leadLink.phone);
+    const waUrl = (phone ? `https://wa.me/91${phone}` : `https://wa.me/`) + "?text=" + encodeURIComponent(msg);
+    window.open(waUrl, "_blank");
+    toast(phone ? "Opening WhatsApp for client…" : "Opening WhatsApp — pick the client's chat");
+  } finally {
+    btn.disabled=false; btn.textContent=prevTxt;
+  }
+}
+
 async function openSaved(){
   const list=$("#savedList");
   // Show modal immediately with a loading state

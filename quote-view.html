@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quotation · Studio RYST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f4f1; --panel:#ffffff; --panel2:#f7f8f5;
+    --line:#e3e5e0; --accent:#3d9b69; --accent-d:#2f7d54; --accent-soft:#eaf4ee;
+    --ink:#1d211c; --muted:#5f655d; --muted2:#9aa097; --danger:#c0584b; --danger-soft:#fbecea;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Outfit",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100%}
+  button{font-family:inherit;cursor:pointer}
+  .wrap{max-width:640px;margin:0 auto;padding:28px 18px 60px}
+
+  .brand{text-align:center;margin-bottom:22px}
+  .brand h1{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;font-size:32px;color:var(--ink)}
+  .brand small{display:block;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted2);margin-top:4px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 22px;box-shadow:0 10px 30px rgba(40,50,40,.06);margin-bottom:16px}
+  .meta-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .meta{font-size:12px}
+  .meta .k{color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;font-size:10.5px;font-weight:700}
+  .meta .v{color:var(--ink);font-weight:600;font-size:13.5px;margin-top:2px}
+
+  .client h2{font-size:16px;font-weight:700;margin-bottom:3px}
+  .client .addr{font-size:12.5px;color:var(--muted);line-height:1.5;white-space:pre-line}
+  .req{margin-top:12px;padding:10px 13px;background:var(--accent-soft);border-radius:9px;font-size:12.5px;color:var(--accent-d);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}
+  th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);padding:8px 6px;border-bottom:2px solid var(--line)}
+  th.r,td.r{text-align:right}
+  td{padding:10px 6px;border-bottom:1px solid var(--panel2);vertical-align:top}
+  .desc{font-weight:600}
+  .sac{display:block;font-size:10.5px;color:var(--muted2);font-weight:400;margin-top:1px}
+
+  .totals{margin-top:6px;padding-top:10px}
+  .trow{display:flex;justify-content:space-between;padding:5px 6px;font-size:13px;color:var(--muted)}
+  .trow.grand{margin-top:6px;padding-top:12px;border-top:1.5px solid var(--ink);font-size:17px;font-weight:700;color:var(--ink)}
+
+  .terms{font-size:12px;color:var(--muted);line-height:1.7;padding-left:18px}
+
+  .pay-card h3{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent-d);margin-bottom:10px}
+  .pay-line{font-size:12.5px;color:var(--muted);line-height:1.7;white-space:pre-line}
+
+  .decide{text-align:center}
+  .decide p{font-size:13px;color:var(--muted);margin-bottom:16px}
+  .dbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .dbtn{border:none;border-radius:12px;padding:14px 26px;font-size:14.5px;font-weight:700;letter-spacing:.2px;min-width:160px}
+  .dbtn.accept{background:var(--accent);color:#fff}
+  .dbtn.accept:hover{background:var(--accent-d)}
+  .dbtn.decline{background:var(--panel2);border:1.5px solid var(--line);color:var(--muted)}
+  .dbtn.decline:hover{border-color:var(--danger);color:var(--danger)}
+  .dbtn:disabled{opacity:.55;cursor:not-allowed}
+
+  .status-banner{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:13px;font-size:14px;font-weight:600}
+  .status-banner.accepted{background:var(--accent-soft);color:var(--accent-d)}
+  .status-banner.declined{background:var(--danger-soft);color:var(--danger)}
+  .status-banner .ic{font-size:24px}
+  .status-banner .sub{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
+
+  .err-state, .loading-state{text-align:center;padding:60px 20px;color:var(--muted)}
+  .err-state .ic{font-size:44px;margin-bottom:14px}
+  .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 14px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .foot{text-align:center;font-size:11px;color:var(--muted2);margin-top:22px}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:80}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{background:var(--danger)}
+
+  #content{display:none}
+  @media(max-width:480px){ .dbtn{min-width:0;flex:1} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><h1>Studio RYST</h1><small>Quotation</small></div>
+
+  <div id="loadingState" class="loading-state"><div class="spin"></div>Loading your quote…</div>
+  <div id="errState" class="err-state" style="display:none">
+    <div class="ic">🔍</div>
+    <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px">Quote not found</div>
+    <div style="font-size:13px">This link may have expired or been mistyped. Please contact Studio RYST for a new one.</div>
+  </div>
+
+  <div id="content">
+    <div class="card">
+      <div class="meta-row">
+        <div class="meta"><div class="k">Quote No.</div><div class="v" id="mQno"></div></div>
+        <div class="meta"><div class="k">Date</div><div class="v" id="mDate"></div></div>
+        <div class="meta" id="mSessionWrap"><div class="k">Session</div><div class="v" id="mSession"></div></div>
+      </div>
+      <div class="client">
+        <h2 id="cName"></h2>
+        <div class="addr" id="cAddr"></div>
+      </div>
+      <div class="req" id="reqText" style="display:none"></div>
+
+      <table>
+        <thead><tr><th>Description</th><th class="r">Price</th><th class="r">Qty</th><th class="r">Total</th></tr></thead>
+        <tbody id="itemRows"></tbody>
+      </table>
+
+      <div class="totals">
+        <div class="trow"><span>Subtotal</span><span id="tSub"></span></div>
+        <div class="trow" id="tGstRow"><span id="tGstLbl">GST</span><span id="tGst"></span></div>
+        <div class="trow" id="tDiscRow" style="display:none"><span>Discount</span><span id="tDisc"></span></div>
+        <div class="trow grand"><span>Total</span><span id="tGrand"></span></div>
+      </div>
+    </div>
+
+    <div class="card" id="termsCard">
+      <h3 style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent-d);margin-bottom:10px">Terms</h3>
+      <ul class="terms" id="termsList"></ul>
+    </div>
+
+    <div class="card pay-card">
+      <h3>Payment details</h3>
+      <div class="pay-line">Name: DREAMOUR MULTIVENTURES
+Account Number: 99997530075757
+IFSC: HDFC0000124
+Branch: KILPAUK
+Account Type: CURRENT</div>
+    </div>
+
+    <div class="card decide" id="decideCard">
+      <p>Please confirm whether you'd like to proceed with this quotation.</p>
+      <div class="dbtns">
+        <button class="dbtn accept" id="btnAccept">✅ Accept quote</button>
+        <button class="dbtn decline" id="btnDecline">Decline</button>
+      </div>
+      <div id="decideErr" style="color:var(--danger);font-size:12px;margin-top:12px;min-height:14px"></div>
+    </div>
+
+    <div class="card" id="statusCard" style="display:none"></div>
+
+    <div class="foot">STUDIO RYST · 113(52), Ankur Plaza, G.N. Chetty Road, T. Nagar, Chennai · GST 33AAVFD1588M1ZR</div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
+const $ = s => document.querySelector(s);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = n => '₹' + (Math.round(Number(n)||0)).toLocaleString('en-IN');
+const token = new URLSearchParams(location.search).get('t') || '';
+
+let toastT;
+function toast(msg, err){ const t=$('#toast'); t.textContent=msg; t.className='show'+(err?' err':''); clearTimeout(toastT); toastT=setTimeout(()=>t.className='',3200); }
+
+function lineTotal(it){ return (parseFloat(it.price)||0)*(parseFloat(it.qty)||0); }
+function lineGst(it){ return lineTotal(it)*(parseFloat(it.gst)||0)/100; }
+function fmtDate(iso){
+  if(!iso) return '—';
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if(m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return esc(iso);
+}
+function fmt12(hhmm){
+  if(!hhmm) return '';
+  const [h,m]=hhmm.split(':').map(Number);
+  const ap=h>=12?'PM':'AM';
+  return (h%12||12)+':'+String(m).padStart(2,'0')+' '+ap;
+}
+
+function renderQuote(q){
+  $('#mQno').textContent = q.qno || '—';
+  $('#mDate').textContent = fmtDate(q.date);
+  if(q.sessionDate){
+    $('#mSession').textContent = fmtDate(q.sessionDate) + (q.sessionStart ? ' · ' + fmt12(q.sessionStart) : '');
+  } else { $('#mSessionWrap').style.display='none'; }
+  $('#cName').textContent = q.cname || 'Client';
+  $('#cAddr').textContent = (q.caddr||'') + (q.cgst ? '\nGSTIN: '+q.cgst : '');
+  if(q.req){ $('#reqText').textContent = q.req; $('#reqText').style.display='block'; }
+
+  const items = Array.isArray(q.items) ? q.items.filter(it=>it.desc||it.price) : [];
+  $('#itemRows').innerHTML = items.length ? items.map(it=>`<tr>
+      <td><span class="desc">${esc(it.desc)}</span>${it.sac?`<span class="sac">SAC: ${esc(it.sac)}</span>`:''}</td>
+      <td class="r">${money(it.price)}</td>
+      <td class="r">${esc(it.qty)}</td>
+      <td class="r">${money(lineTotal(it))}</td>
+    </tr>`).join('') : '<tr><td colspan="4" style="color:var(--muted2);text-align:center;padding:16px">No items</td></tr>';
+
+  const sub = items.reduce((s,it)=>s+lineTotal(it),0);
+  const gst = items.reduce((s,it)=>s+lineGst(it),0);
+  const maxDisc = Math.floor(sub*0.10);
+  const discount = Math.min(parseFloat(q.discount)||0, maxDisc);
+  const grand = sub + gst - discount;
+  const rates = [...new Set(items.filter(it=>lineTotal(it)>0).map(it=>parseFloat(it.gst)||0))];
+  $('#tGstLbl').textContent = rates.length===1 ? `GST (${rates[0]}%)` : 'GST';
+  $('#tSub').textContent = money(sub);
+  $('#tGst').textContent = money(gst);
+  if(discount>0){ $('#tDiscRow').style.display='flex'; $('#tDisc').textContent = '− '+money(discount); }
+  $('#tGrand').textContent = money(grand);
+
+  const terms = (q.terms||'').split('\n').map(t=>t.trim()).filter(Boolean);
+  if(terms.length){ $('#termsList').innerHTML = terms.map(t=>`<li>${esc(t)}</li>`).join(''); }
+  else { $('#termsCard').style.display='none'; }
+
+  renderDecision(q);
+}
+
+function renderDecision(q){
+  if(q.clientStatus==='Accepted' || q.clientStatus==='Declined'){
+    $('#decideCard').style.display='none';
+    const sc=$('#statusCard'); sc.style.display='block';
+    const accepted = q.clientStatus==='Accepted';
+    const when = q.clientRespondedAt ? new Date(q.clientRespondedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
+    sc.innerHTML = `<div class="status-banner ${accepted?'accepted':'declined'}">
+        <span class="ic">${accepted?'✅':'✋'}</span>
+        <span>You ${accepted?'accepted':'declined'} this quote${when?' on '+esc(when):''}.
+          <span class="sub">Changed your mind? You can update your response below.</span>
+        </span>
+      </div>
+      <div class="dbtns" style="margin-top:14px">
+        ${accepted ? '' : `<button class="dbtn accept" id="btnAccept2">✅ Accept instead</button>`}
+        ${accepted ? `<button class="dbtn decline" id="btnDecline2">Decline instead</button>` : ''}
+      </div>`;
+    const a2=$('#btnAccept2'), d2=$('#btnDecline2');
+    if(a2) a2.addEventListener('click', ()=>submitDecision('Accepted'));
+    if(d2) d2.addEventListener('click', ()=>submitDecision('Declined'));
+  } else {
+    $('#decideCard').style.display='block';
+    $('#statusCard').style.display='none';
+  }
+}
+
+let CURRENT_QUOTE = null;
+async function submitDecision(decision){
+  $('#decideErr').textContent='';
+  [$('#btnAccept'),$('#btnDecline')].forEach(b=>{ if(b) b.disabled=true; });
+  try{
+    const res = await fetch(PROXY_URL+'/quote-view', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token, decision })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){ throw new Error(data.error || 'Could not save your response'); }
+    CURRENT_QUOTE = { ...CURRENT_QUOTE, ...data };
+    renderDecision(CURRENT_QUOTE);
+    toast(decision==='Accepted' ? 'Thanks — quote accepted!' : 'Your response has been recorded');
+  }catch(e){
+    $('#decideErr').textContent = e.message || 'Something went wrong — please try again.';
+    toast('Could not save your response', true);
+  }finally{
+    [$('#btnAccept'),$('#btnDecline')].forEach(b=>{ if(b) b.disabled=false; });
+  }
+}
+$('#btnAccept').addEventListener('click', ()=>submitDecision('Accepted'));
+$('#btnDecline').addEventListener('click', ()=>submitDecision('Declined'));
+
+async function load(){
+  if(!token){ $('#loadingState').style.display='none'; $('#errState').style.display='block'; return; }
+  try{
+    const res = await fetch(PROXY_URL+'/quote-view?token='+encodeURIComponent(token));
+    if(!res.ok){ throw new Error('not found'); }
+    const q = await res.json();
+    CURRENT_QUOTE = q;
+    $('#loadingState').style.display='none';
+    $('#content').style.display='block';
+    renderQuote(q);
+  }catch(e){
+    $('#loadingState').style.display='none';
+    $('#errState').style.display='block';
+  }
+}
+load();
+</script>
+</body>
+</html>
