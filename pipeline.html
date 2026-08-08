@@ -225,14 +225,23 @@
         </div>
         <div class="two" style="margin-top:12px">
           <div class="field"><label>Total inc. GST (₹)</label><input id="bTotal" inputmode="decimal" placeholder="0" /></div>
-          <div class="field"><label>Advance paid (₹)</label><input id="bAdvance" inputmode="decimal" placeholder="0" /></div>
+          <div class="field"><label>Payment status</label><select id="bPay"><option>Pending</option><option>Partial</option><option>Completed</option></select></div>
         </div>
         <div class="two" style="margin-top:12px">
-          <div class="field"><label>Payment status</label><select id="bPay"><option>Pending</option><option>Partial</option><option>Completed</option></select></div>
           <div class="field"><label>Invoice no.</label><input id="bInvoice" placeholder="—" /></div>
+          <div class="field"><label>Billing address</label><input id="bAddress" placeholder="Address" /></div>
         </div>
-        <div class="field" style="margin-top:12px"><label>Billing address</label><input id="bAddress" placeholder="Address" /></div>
-        <div id="bBalance" style="margin-top:10px;font-size:12.5px;font-weight:600"></div>
+        <div style="margin-top:14px">
+          <label style="font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:7px">Payments received</label>
+          <div id="paymentsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:9px"></div>
+          <div style="display:grid;grid-template-columns:1fr 108px 1fr auto;gap:7px;align-items:center">
+            <input id="pmtDate" type="date" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink)">
+            <input id="pmtAmount" inputmode="decimal" placeholder="Amount" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink);width:100%">
+            <input id="pmtNote" placeholder="Note (optional)" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink);width:100%">
+            <button class="btn ghost" id="pmtAdd" type="button" style="padding:8px 13px;font-size:12.5px;white-space:nowrap">+ Add</button>
+          </div>
+        </div>
+        <div id="bBalance" style="margin-top:12px;font-size:12.5px;font-weight:600"></div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
           <button class="btn ghost" id="bSchedule" type="button" style="border-color:var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
           <span id="bSchedStatus" style="font-size:12px;color:var(--muted2)"></span>
@@ -375,11 +384,17 @@ function updateDueChip(){
   c.style.background=on?'var(--accent)':''; c.style.color=on?'#fff':''; c.style.borderColor=on?'var(--accent)':(n?'var(--s-contacted)':'');
 }
 // ── Payments ──
+// Sum of the payments log; falls back to the old single "advance" number for
+// leads saved before the log existed (so nothing needs re-entering).
+function paidTotal(l){
+  if(Array.isArray(l.payments) && l.payments.length) return l.payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  return Number(l.advance)||0;
+}
 function outstanding(l){
   if(l.stage!=='Booked') return 0;
   const total=Number(l.total)||0;
   if(l.paymentStatus==='Completed') return 0;
-  return Math.max(0, total-(Number(l.advance)||0));
+  return Math.max(0, total-paidTotal(l));
 }
 function totalOutstanding(){ return DOC.leads.reduce((s,l)=>s+outstanding(l),0); }
 function paymentDue(l){ return outstanding(l)>0; }
@@ -547,10 +562,15 @@ async function openCustomer(l){
       ? `<div class="cv-line"><span>🔗 ${esc(session.date||'')} · ${esc(session.start||'')}–${esc(session.end||'')} · ${esc(session.zone||'')}</span><a class="tel" href="set.html">Open schedule →</a></div>`
       : `<div class="cv-line"><span>${esc(l.bookingDate||'')} · ${esc(l.zone||'')}</span><span style="color:var(--muted2);font-size:12px">not on schedule</span></div>`;
     const money2=v=>money(v);
+    const pays=Array.isArray(l.payments)?[...l.payments].sort((a,b)=>(a.date||'').localeCompare(b.date||'')):[];
+    const paysHtml = pays.length
+      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">`+pays.map(p=>`<div class="cv-line" style="font-size:12px;color:var(--muted)"><span>${esc(p.date||'—')}${p.note?' · '+esc(p.note):''}</span><span>${money2(p.amount)}</span></div>`).join('')+`</div>`
+      : '';
     bookingHtml = schedLine
       + (total>0?`<div class="cv-line"><span class="k">Total</span><span class="amt">${money2(total)}</span></div>`:'')
       + (total>0?`<div class="cv-line"><span class="k">Payment</span><span>${money2(paid)} paid${out>0?` · <b style="color:var(--s-lost)">${money2(out)} due</b>`:` · <b style="color:var(--s-booked)">settled</b>`}</span></div>`:'')
-      + (l.invoice?`<div class="cv-line"><span class="k">Invoice</span><span>${esc(l.invoice)}</span></div>`:'');
+      + (l.invoice?`<div class="cv-line"><span class="k">Invoice</span><span>${esc(l.invoice)}</span></div>`:'')
+      + paysHtml;
   } else { bookingHtml = '<div class="k" style="color:var(--muted2)">Not booked.</div>'; }
   const steps=[];
   if(l.enqDate) steps.push(['Enquiry received', l.enqDate]);
@@ -594,11 +614,14 @@ function openLead(l){
   $('#fEstimate').value=l?l.quoteEstimate||'':''; $('#fNotes').value=l?l.notes||'':'';
   // booking
   $('#bDate').value=toISO(l?l.bookingDate:''); $('#bStart').value=l?l.bookingStart||'':''; $('#bTotal').value=l&&l.total!=null?l.total:'';
-  $('#bAdvance').value=l&&l.advance?l.advance:'';
   fillSelect($('#bPay'),['Pending','Partial','Completed'],l?l.paymentStatus||'Pending':'Pending');
   $('#bInvoice').value=l?l.invoice||'':''; $('#bAddress').value=l?l.address||'':'';
   $('#bSchedStatus').textContent = (l&&l.scheduleId)?'✓ On the schedule':'';
-  updateBalance();
+  // Payments log — start from the lead's log, or migrate a legacy single "advance" into one entry.
+  paymentsDraft = (l && Array.isArray(l.payments) && l.payments.length) ? l.payments.map(p=>({...p}))
+    : (l && l.advance ? [{id:'legacy',date:l.bookingDate?toISO(l.bookingDate):todayISO(),amount:l.advance,note:'Advance'}] : []);
+  $('#pmtDate').value=todayISO(); $('#pmtAmount').value=''; $('#pmtNote').value='';
+  renderPayments();
   toggleBookBox();
   $('#leadDelete').style.display = l ? '' : 'none';
   $('#leadErr').textContent='';
@@ -606,18 +629,48 @@ function openLead(l){
   setTimeout(()=>$('#fCompany').focus(),50);
 }
 function toggleBookBox(){ $('#bookBox').style.display = $('#fStageM').value==='Booked' ? 'block':'none'; updateBalance(); }
+
+// ── Payments log (draft, scoped to the currently open lead) ──
+let paymentsDraft=[];
+function renderPayments(){
+  const box=$('#paymentsList');
+  if(!paymentsDraft.length){
+    box.innerHTML='<div style="font-size:12px;color:var(--muted2)">No payments recorded yet.</div>';
+  } else {
+    const sorted=[...paymentsDraft].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    box.innerHTML=sorted.map(p=>{
+      const i=paymentsDraft.indexOf(p);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;background:var(--panel2);border-radius:8px">
+        <span>${esc(p.date||'—')}${p.note?' · '+esc(p.note):''}</span>
+        <span style="display:flex;align-items:center;gap:9px"><b>${money(p.amount)}</b><button type="button" data-i="${i}" class="pmt-del" title="Remove" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:15px;line-height:1;padding:2px">×</button></span>
+      </div>`;
+    }).join('');
+    box.querySelectorAll('.pmt-del').forEach(btn=>btn.addEventListener('click',e=>{
+      paymentsDraft.splice(+e.currentTarget.dataset.i,1); renderPayments();
+    }));
+  }
+  updateBalance();
+}
+$('#pmtAdd').addEventListener('click',()=>{
+  const amt=parseFloat($('#pmtAmount').value)||0;
+  if(amt<=0){ $('#leadErr').textContent='Enter a payment amount.'; return; }
+  paymentsDraft.push({id:'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36), date:$('#pmtDate').value||todayISO(), amount:amt, note:$('#pmtNote').value.trim()});
+  $('#pmtAmount').value=''; $('#pmtNote').value=''; $('#leadErr').textContent='';
+  renderPayments();
+});
+
 function updateBalance(){
   const el=$('#bBalance'); if(!el) return;
   const total=parseFloat($('#bTotal').value)||0;
-  const adv=$('#bPay').value==='Completed' ? total : (parseFloat($('#bAdvance').value)||0);
-  const bal=Math.max(0,total-adv);
+  const paid = $('#bPay').value==='Completed' ? total : paymentsDraft.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const bal=Math.max(0,total-paid);
   if(total<=0){ el.textContent=''; return; }
   el.innerHTML = bal>0
-    ? `Balance due: <span style="color:var(--s-lost)">${money(bal)}</span> <span style="color:var(--muted2);font-weight:500">— paid ${money(adv)} of ${money(total)}</span>`
+    ? `Balance due: <span style="color:var(--s-lost)">${money(bal)}</span> <span style="color:var(--muted2);font-weight:500">— paid ${money(paid)} of ${money(total)}</span>`
     : `<span style="color:var(--s-booked)">Fully paid ✓</span>`;
 }
 $('#fStageM').addEventListener('change',toggleBookBox);
-['#bTotal','#bAdvance'].forEach(s=>$(s).addEventListener('input',updateBalance));
+$('#bTotal').addEventListener('input',updateBalance);
 $('#bPay').addEventListener('change',updateBalance);
 $('#addBtn').onclick=()=>openLead(null);
 $('#leadCancel').onclick=()=>$('#leadOverlay').className='overlay';
@@ -640,9 +693,9 @@ function collectLeadForm(){
   rec.quoteNo=prev.quoteNo??null; rec.scheduleId=prev.scheduleId??null; rec.createdAt=prev.createdAt||Date.now();
   if(rec.stage==='Booked'){
     rec.bookingDate=$('#bDate').value; rec.bookingStart=$('#bStart').value; rec.total=parseFloat($('#bTotal').value)||null;
-    rec.advance=parseFloat($('#bAdvance').value)||0;
+    rec.payments=paymentsDraft.map(p=>({...p}));
     rec.paymentStatus=$('#bPay').value; rec.invoice=$('#bInvoice').value.trim(); rec.address=$('#bAddress').value.trim();
-  } else { const prev=DOC.leads.find(x=>x.id===editingId)||{}; rec.bookingStart=prev.bookingStart||''; rec.advance=prev.advance||0; }
+  } else { rec.bookingStart=prev.bookingStart||''; rec.payments=prev.payments||[]; }
   return rec;
 }
 function upsertLead(rec){
