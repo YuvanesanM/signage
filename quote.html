@@ -273,13 +273,26 @@
           <label class="f"><span>Duration</span><select class="t" id="hours"></select></label>
         </div>
         <div class="row2">
-          <label class="f"><span>Session date <span style="font-weight:400;color:var(--muted2)">(optional)</span></span><input class="t" id="sessDate" type="date"></label>
-          <label class="f"><span>Start time</span><input class="t" id="sessStart" type="time"></label>
+          <label class="f"><span>Session date <span style="color:#c0584b">*</span></span><input class="t" id="sessDate" type="date" required></label>
+          <label class="f"><span>Start time <span style="color:#c0584b">*</span></span><input class="t" id="sessStart" type="time" required></label>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap">
           <button class="btn" type="button" id="btnSchedule" style="border:1.5px solid var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
           <span id="schedStatus" style="font-size:12px;color:var(--muted2)"></span>
         </div>
+      </div>
+
+      <div class="group">
+        <p class="gh">Payment <span id="qStatusBadge" style="font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:12px;background:var(--panel2);color:var(--muted2);text-transform:none;letter-spacing:0">Pending</span></p>
+        <div id="qPaymentsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:9px"></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+          <input class="t" id="qPmtDate" type="date" style="max-width:150px">
+          <input class="t" id="qPmtAmount" inputmode="decimal" placeholder="Amount" style="max-width:120px">
+          <input class="t" id="qPmtNote" placeholder="Note (optional)" style="flex:1;min-width:120px">
+          <button class="btn" type="button" id="qPmtAdd">+ Add</button>
+        </div>
+        <div id="qBalance" style="margin-top:10px;font-size:12.5px;font-weight:600"></div>
+        <p style="font-size:11px;color:var(--muted2);margin-top:8px;line-height:1.5">An advance or full payment marks this quote <b>Confirmed</b> automatically.</p>
       </div>
 
       <div class="group">
@@ -448,6 +461,7 @@ let editingKey = null;
 let curQno = "", curDateISO = "";
 let leadLink = null;       // set when this quote was raised from a CRM lead
 let curScheduleId = null;  // set once this quote has been pushed to the schedule
+let qPaymentsDraft = [];   // {id,date,amount,note} — this quote's payments log
 
 const $ = s => document.querySelector(s);
 const esc = s => (s||"").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
@@ -541,10 +555,17 @@ function parseHours(str){
   const m=/(\d+(?:\.\d+)?)/.exec(String(str||"")); if(!m) return DEFAULT_HOURS;
   return Math.max(MIN_HOURS, Math.min(MAX_HOURS, Math.round(parseFloat(m[1])||DEFAULT_HOURS)));
 }
+// Two sources hand off into a new quote via the same localStorage key:
+//  - a CRM lead's "Raise quote →" (carries leadId + company/zone/duration/address)
+//  - Schedule Manager's "+ Add Session" / calendar day-click (carries only a
+//    sessionDate, since all bookings now originate here, not from a blank
+//    session form)
 function applyLeadPrefill(){
   let p; try{ p=JSON.parse(localStorage.getItem('ryst_quote_prefill')||'null'); }catch(e){ p=null; }
   localStorage.removeItem('ryst_quote_prefill');   // consume once
-  if(!p || !p.leadId) return;
+  if(!p) return;
+  if(p.sessionDate) $("#sessDate").value = p.sessionDate;
+  if(!p.leadId){ if(p.sessionDate) render(); return; }
   leadLink = { id:p.leadId };
   if(p.company||p.contact) $("#cname").value = p.company || p.contact;
   if(p.address) $("#caddr").value = p.address;
@@ -581,6 +602,42 @@ function updateSchedStatus(){
   const el=$("#schedStatus"); if(!el) return;
   el.textContent = curScheduleId ? "✓ On the schedule" : "";
 }
+
+/* ---------- PAYMENTS → Confirmed status ----------
+   An advance or full payment automatically marks the quote Confirmed —
+   there's no manual status toggle, so it can never drift from reality. */
+function todayISOq(){ return new Date().toISOString().slice(0,10); }
+function renderQPayments(){
+  const box=$("#qPaymentsList"); if(!box) return;
+  if(!qPaymentsDraft.length){
+    box.innerHTML='<div style="font-size:12px;color:var(--muted2)">No payments recorded yet.</div>';
+  } else {
+    const sorted=[...qPaymentsDraft].sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+    box.innerHTML=sorted.map(p=>{
+      const i=qPaymentsDraft.indexOf(p);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;background:var(--panel2);border-radius:8px">
+        <span>${esc(p.date||"—")}${p.note?" · "+esc(p.note):""}</span>
+        <span style="display:flex;align-items:center;gap:9px"><b>${money(p.amount)}</b><button type="button" data-i="${i}" class="qpmt-del" title="Remove" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:15px;line-height:1;padding:2px">×</button></span>
+      </div>`;
+    }).join("");
+    box.querySelectorAll(".qpmt-del").forEach(btn=>btn.addEventListener("click", e=>{
+      qPaymentsDraft.splice(+e.currentTarget.dataset.i, 1); renderQPayments(); render();
+    }));
+  }
+}
+function updateQBalance(total){
+  const el=$("#qBalance"); const badge=$("#qStatusBadge"); if(!el||!badge) return;
+  const paid = qPaymentsDraft.reduce((s,p)=>s+(Number(p.amount)||0), 0);
+  const status = paid>0 ? "Confirmed" : "Pending";
+  badge.textContent = status;
+  if(status==="Confirmed"){ badge.style.background="var(--accent-soft,#eaf4ee)"; badge.style.color="var(--accent-d,#2f7d54)"; }
+  else { badge.style.background="var(--panel2)"; badge.style.color="var(--muted2)"; }
+  if(!(total>0)){ el.textContent=""; return; }
+  const bal=Math.max(0,total-paid);
+  el.innerHTML = bal>0
+    ? `Balance due: <span style="color:#c0584b">${money(bal)}</span> <span style="color:var(--muted2);font-weight:500">— paid ${money(paid)} of ${money(total)}</span>`
+    : `<span style="color:var(--accent-d,#2f7d54)">Fully paid ✓</span>`;
+}
 function addHoursTime(hhmm, h){
   if(!hhmm) return "";
   const [H,M]=hhmm.split(":").map(Number);
@@ -615,7 +672,8 @@ async function addToSchedule(){
     const end=addHoursTime(start, hours);
     const zone=$("#zone").value||ZONES[0];
     const sid=curScheduleId || ("S"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
-    const session={ id:sid, quoteNo:curQno, name:$("#cname").value.trim()||curQno, zone:zone.toLowerCase(), start, end, date:dateISO };
+    const paidNow = qPaymentsDraft.reduce((s,p)=>s+(Number(p.amount)||0),0) > 0;
+    const session={ id:sid, quoteNo:curQno, name:$("#cname").value.trim()||curQno, zone:zone.toLowerCase(), start, end, date:dateISO, confirmed:paidNow };
     if(leadLink && leadLink.id) session.leadId=leadLink.id;
 
     const gr=await fetch(PROXY_URL+'/schedule',{headers:{'X-Token':proxyToken}});
@@ -645,10 +703,17 @@ async function initApp(){
   if(res && res.ok){
     await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
     setConnected(true);
-    // Now that the full quote history is loaded from the cloud, refresh the
-    // auto quote number so a new (unsaved) quote always shows the next free
-    // number — the first paint computed it from stale/empty localStorage.
-    if(!editingKey){ curQno=nextQuoteNo(); $("#qno").value=curQno; }
+    // Deep link: quote.html?qno=RYST%2F2026%2F009 opens that saved quote
+    // directly (used by the CRM's "open this quote" link).
+    const qnoParam = new URLSearchParams(location.search).get('qno');
+    if(qnoParam && !editingKey && getQuotes().some(x=>x.qno===qnoParam)){
+      loadQuote(qnoParam);
+    } else if(!editingKey){
+      // Now that the full quote history is loaded from the cloud, refresh the
+      // auto quote number so a new (unsaved) quote always shows the next free
+      // number — the first paint computed it from stale/empty localStorage.
+      curQno=nextQuoteNo(); $("#qno").value=curQno;
+    }
     // Rebuild the studio line from the freshly-loaded rate card so its
     // description and price reflect the real (possibly renamed) entry,
     // not the default used during the instant first paint.
@@ -747,6 +812,13 @@ function bind(){
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", ()=>saveQuote());
   $("#btnSchedule").addEventListener("click", addToSchedule);
+  $("#qPmtAdd").addEventListener("click", ()=>{
+    const amt=parseFloat($("#qPmtAmount").value)||0;
+    if(amt<=0){ toast("Enter a payment amount"); return; }
+    qPaymentsDraft.push({id:"p"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36), date:$("#qPmtDate").value||todayISOq(), amount:amt, note:$("#qPmtNote").value.trim()});
+    $("#qPmtAmount").value=""; $("#qPmtNote").value="";
+    renderQPayments(); render();
+  });
   $("#btnPdf").addEventListener("click", downloadPdf);
   $("#btnHome").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnSaved").addEventListener("click", openSaved);
@@ -761,6 +833,8 @@ function newQuote(){
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
   $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
   $("#sessDate").value=""; $("#sessStart").value=""; curScheduleId=null; updateSchedStatus();
+  qPaymentsDraft=[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
+  renderQPayments();
   items=[zoneItem()];
   renderItems(); render();
 }
@@ -930,20 +1004,31 @@ function render(){
 
   const terms=($("#terms").value||"").split("\n").map(t=>t.trim()).filter(Boolean);
   $("#pTerms").innerHTML=terms.map(t=>`<li>${esc(t)}</li>`).join("");
+  updateQBalance(Math.round(tot));
 }
 
 /* ---------- SAVE / LOAD QUOTES ---------- */
 function collect(){
+  const payments = qPaymentsDraft.map(p=>({...p}));
+  const paid = payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
   return { qno:curQno, date:curDateISO, zone:$("#zone").value, hours:$("#hours").value, req:reqText(),
     cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
     sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
+    payments, status: paid>0 ? "Confirmed" : "Pending",
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
 // `silent` suppresses the "Quote saved" toast — used when saveQuote() runs as
 // a first step of a bigger action (e.g. Add to schedule) that shows its own.
 async function saveQuote(silent){
   const q=collect(); if(!q.qno){ toast("No quote number"); return; }
+  // All bookings originate from a quote, so the session date/time that makes
+  // this a real booking (not just a draft) is required before it's saved.
+  if(!q.sessionDate || !q.sessionStart){
+    toast("Set a session date and start time before saving");
+    (q.sessionDate ? $("#sessStart") : $("#sessDate")).focus();
+    return;
+  }
   const all=getQuotes(); const key=editingKey||q.qno; const idx=all.findIndex(x=>x.qno===key);
   if(idx>=0) all[idx]=q; else all.push(q);
   setQuotes(all); editingKey=q.qno; syncPdfBtn();
@@ -959,6 +1044,8 @@ function loadQuote(qno){
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
+  qPaymentsDraft=Array.isArray(q.payments)?q.payments.map(p=>({...p})):[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
+  renderQPayments();
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
   renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
 }

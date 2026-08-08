@@ -256,7 +256,7 @@ a{color:var(--teal);text-decoration:none}.a:hover{text-decoration:underline}
   <div class="card">
     <div class="sessions-header">
       <div class="card-title" style="margin:0">Today's Sessions</div>
-      <button class="btn btn-primary" onclick="toggleAddForm()">+ Add Session</button>
+      <button class="btn btn-primary" onclick="goToQuoteForNewSession()" title="Bookings are created from a quote">+ Add Session</button>
     </div>
 
     <!-- Add Form -->
@@ -527,20 +527,16 @@ function calShift(delta){ calCursor.setMonth(calCursor.getMonth()+delta); render
 function calToday(){ calCursor=new Date(); calCursor.setDate(1); calCursor.setHours(0,0,0,0); renderCalendar(); }
 
 // Open the Add form pre-filled for the clicked day.
+// All bookings originate from a quote (Quote Builder → Add to schedule) —
+// clicking a day or "+ Add Session" hands off there instead of opening a
+// blank session form. Editing an EXISTING session (editSession/saveSession
+// below) is unaffected — that's managing a booking, not originating one.
 function calAdd(iso){
-  editingIndex=null;
-  document.getElementById('form-save-btn').textContent='Save Session';
-  document.getElementById('f-name').value='';
-  document.getElementById('f-zone').value='podcast';
-  document.getElementById('f-start').value='10:00';
-  document.getElementById('f-end').value='11:00';
-  document.getElementById('f-date').value=iso;
-  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('sel'));
-  const f=document.getElementById('add-form');
-  f.classList.add('open');
-  f.scrollIntoView({behavior:'smooth',block:'center'});
-  document.getElementById('f-name').focus();
-  setStatus('New booking on '+iso+' — fill in the details and save','');
+  localStorage.setItem('ryst_quote_prefill', JSON.stringify({ sessionDate: iso }));
+  window.location.href='quote.html';
+}
+function goToQuoteForNewSession(){
+  window.location.href='quote.html';
 }
 
 function renderSessions(){

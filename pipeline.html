@@ -249,32 +249,50 @@
       <div class="field"><label>Add-ons / notes</label><textarea id="fNotes" placeholder="Requirements, add-ons, notes…"></textarea></div>
       <div class="bookbox" id="bookBox" style="display:none">
         <div class="bh">Booking details</div>
-        <div class="two">
-          <div class="field"><label>Booking date</label><input id="bDate" type="date" /></div>
-          <div class="field"><label>Start time</label><input id="bStart" type="time" /></div>
+
+        <!-- QUOTED: this lead has a linked quote — payment + scheduling now
+             live there; show a read-only summary instead of duplicate fields. -->
+        <div id="bookBoxQuoted" style="display:none">
+          <div style="padding:13px 15px;border:1px solid var(--line);border-radius:11px;background:var(--panel2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px">
+              <span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2)">Quote <span id="bQuoteNo"></span></span>
+              <span id="bQuoteStatusBadge" style="font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:12px"></span>
+            </div>
+            <div id="bQuoteSummary" style="font-size:13px;color:var(--ink);line-height:1.7"></div>
+          </div>
+          <a id="bOpenQuote" href="#" target="_blank" style="display:inline-block;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--accent-d);text-decoration:none">Open quote to manage payment &amp; schedule →</a>
         </div>
-        <div class="two" style="margin-top:12px">
-          <div class="field"><label>Total inc. GST (₹)</label><input id="bTotal" inputmode="decimal" placeholder="0" /></div>
-          <div class="field"><label>Payment status <span style="font-weight:400;color:var(--muted2);text-transform:none;letter-spacing:0">(auto)</span></label><div id="bPayBadge" style="padding:10px 11px;border-radius:9px;border:1.5px solid var(--line);font-size:13px;font-weight:700;text-align:center">Pending</div></div>
+
+        <!-- MANUAL: legacy leads booked before quotes drove scheduling. Kept
+             so existing data stays viewable/editable; not offered for new ones. -->
+        <div id="bookBoxManual">
+          <p style="font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 12px;padding:10px 12px;background:var(--panel2);border:1px dashed var(--line);border-radius:10px">
+            💡 New bookings should be scheduled from a quote — use <b>Raise quote →</b> below. This manual record is kept for bookings made before that.
+          </p>
+          <div class="two">
+            <div class="field"><label>Booking date</label><input id="bDate" type="date" /></div>
+            <div class="field"><label>Start time</label><input id="bStart" type="time" /></div>
+          </div>
+          <div class="two" style="margin-top:12px">
+            <div class="field"><label>Total inc. GST (₹)</label><input id="bTotal" inputmode="decimal" placeholder="0" /></div>
+            <div class="field"><label>Payment status <span style="font-weight:400;color:var(--muted2);text-transform:none;letter-spacing:0">(auto)</span></label><div id="bPayBadge" style="padding:10px 11px;border-radius:9px;border:1.5px solid var(--line);font-size:13px;font-weight:700;text-align:center">Pending</div></div>
+          </div>
+          <div style="margin-top:14px">
+            <label style="font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:7px">Payments received</label>
+            <div id="paymentsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:9px"></div>
+            <div style="display:grid;grid-template-columns:1fr 108px 1fr auto;gap:7px;align-items:center">
+              <input id="pmtDate" type="date" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink)">
+              <input id="pmtAmount" inputmode="decimal" placeholder="Amount" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink);width:100%">
+              <input id="pmtNote" placeholder="Note (optional)" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink);width:100%">
+              <button class="btn ghost" id="pmtAdd" type="button" style="padding:8px 13px;font-size:12.5px;white-space:nowrap">+ Add</button>
+            </div>
+          </div>
+          <div id="bBalance" style="margin-top:12px;font-size:12.5px;font-weight:600"></div>
         </div>
+
         <div class="two" style="margin-top:12px">
           <div class="field"><label>Invoice no.</label><input id="bInvoice" placeholder="—" /></div>
           <div class="field"><label>Billing address</label><input id="bAddress" placeholder="Address" /></div>
-        </div>
-        <div style="margin-top:14px">
-          <label style="font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:7px">Payments received</label>
-          <div id="paymentsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:9px"></div>
-          <div style="display:grid;grid-template-columns:1fr 108px 1fr auto;gap:7px;align-items:center">
-            <input id="pmtDate" type="date" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink)">
-            <input id="pmtAmount" inputmode="decimal" placeholder="Amount" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink);width:100%">
-            <input id="pmtNote" placeholder="Note (optional)" style="padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;color:var(--ink);width:100%">
-            <button class="btn ghost" id="pmtAdd" type="button" style="padding:8px 13px;font-size:12.5px;white-space:nowrap">+ Add</button>
-          </div>
-        </div>
-        <div id="bBalance" style="margin-top:12px;font-size:12.5px;font-weight:600"></div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn ghost" id="bSchedule" type="button" style="border-color:var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
-          <span id="bSchedStatus" style="font-size:12px;color:var(--muted2)"></span>
         </div>
       </div>
       <div class="merr" id="leadErr"></div>
@@ -376,6 +394,11 @@ async function load(){
     try{ const tr=await fetch(PROXY_URL+'/targets',{headers:{'X-Token':TOKEN}});
       if(tr.ok){ const td=await tr.json(); TARGETS=(Array.isArray(td.targets)&&td.targets.length)?td.targets:(DOC.targets||[]); }
       else TARGETS=DOC.targets||[]; }catch(e){ TARGETS=DOC.targets||[]; }
+    // Quotes: fetched up front (not just on-demand via ensureLinks) so leads
+    // linked to a quote show correct totals/payments in the KPIs and the
+    // "Payment due" chip immediately, not only once that lead is opened.
+    try{ const qr=await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':TOKEN}});
+      QUOTES_CACHE = qr.ok ? ((await qr.json()).quotes||[]) : []; }catch(e){ QUOTES_CACHE=[]; }
     render();
   }catch(e){ showSetup(e.message); }
   finally{ $('#loader').className='hide'; }
@@ -391,7 +414,13 @@ function showSetup(msg){
 }
 
 // ── Derived ──
-function leadValue(l){ return l.stage==='Booked' ? (Number(l.total)||0) : (parseFloat(l.quoteEstimate)||0); }
+// A quote-linked lead's real value/payments live on the QUOTE, not the lead's
+// own (now vestigial) fields — that's the single source of truth going forward.
+function quoteFor(l){ return l.quoteNo ? (QUOTES_CACHE||[]).find(x=>x.qno===l.quoteNo) : null; }
+function leadValue(l){
+  if(l.quoteNo){ const q=quoteFor(l); if(q) return quoteTotal(q); }
+  return l.stage==='Booked' ? (Number(l.total)||0) : (parseFloat(l.quoteEstimate)||0);
+}
 function monthOf(dstr){
   if(!dstr) return '';
   let m;
@@ -417,11 +446,13 @@ function updateDueChip(){
 // Sum of the payments log; falls back to the old single "advance" number for
 // leads saved before the log existed (so nothing needs re-entering).
 function paidTotal(l){
+  if(l.quoteNo){ const q=quoteFor(l); if(q && Array.isArray(q.payments)) return q.payments.reduce((s,p)=>s+(Number(p.amount)||0),0); }
   if(Array.isArray(l.payments) && l.payments.length) return l.payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
   return Number(l.advance)||0;
 }
 function outstanding(l){
   if(l.stage!=='Booked') return 0;
+  if(l.quoteNo){ const q=quoteFor(l); if(q) return Math.max(0, quoteTotal(q)-paidTotal(l)); }
   const total=Number(l.total)||0;
   if(l.paymentStatus==='Completed') return 0;
   return Math.max(0, total-paidTotal(l));
@@ -457,7 +488,7 @@ function render(){
   const won=leads.filter(l=>l.stage==='Booked').length;
   const lost=leads.filter(l=>l.stage==='Lost').length;
   const open=leads.filter(l=>['New','Contacted','Quoted'].includes(l.stage)).length;
-  const revenue=leads.filter(l=>l.stage==='Booked').reduce((s,l)=>s+(Number(l.total)||0),0);
+  const revenue=leads.filter(l=>l.stage==='Booked').reduce((s,l)=>s+leadValue(l),0);
   const conv=total? Math.round(won/total*100):0;
   $('#kTotal').textContent=total; $('#kTotalSub').textContent=`${won} won · ${lost} lost`;
   $('#kWon').textContent=won; $('#kWonSub').textContent=conv+'% conversion';
@@ -515,9 +546,15 @@ function hbars(entries,colorFn,fmt){
 }
 
 function renderMonths(){
-  // booked revenue by month (name) from booking dates
+  // booked revenue by month (name) from booking dates — quote-aware, same as
+  // leadValue()/outstanding(), so this matches the KPIs above.
   const actual={};
-  DOC.leads.filter(l=>l.stage==='Booked').forEach(l=>{ const m=monthOf(l.bookingDate||l.targetDate); if(m) actual[m]=(actual[m]||0)+(Number(l.total)||0); });
+  DOC.leads.filter(l=>l.stage==='Booked').forEach(l=>{
+    const q=quoteFor(l);
+    const dateBasis=(q&&q.sessionDate)?q.sessionDate:(l.bookingDate||l.targetDate);
+    const m=monthOf(dateBasis);
+    if(m) actual[m]=(actual[m]||0)+leadValue(l);
+  });
   const rows=(TARGETS||[]).map(t=>({month:t.month, target:Number(t.target)||0, value:actual[t.month.slice(0,3)]||actual[t.month]||0}))
     .filter(r=>r.target>0||r.value>0);
   if(!rows.length){ $('#months').innerHTML='<div class="empty">No targets set'+(IS_ADMIN?' — use “Edit targets” above.':'.')+'</div>'; return; }
@@ -604,12 +641,15 @@ async function openCustomer(l){
   const quotesHtml = quotes.length ? quotes.map(q=>`<div class="cv-line"><span>${esc(q.qno)} · ${esc(q.zone||'')}${q.hours?(' · '+esc(q.hours)+'h'):''} <span style="color:var(--muted2);font-size:12px">${esc(q.date||'')}</span></span><span class="amt">${money(quoteTotal(q))}</span></div>`).join('') : '<div class="k" style="color:var(--muted2)">No quotes yet.</div>';
   let bookingHtml;
   if(l.stage==='Booked'){
-    const total=Number(l.total)||0, out=outstanding(l), paid=total-out;
+    // Total/payments come from the linked quote when there is one — that's
+    // the single source of truth now, not the lead's own (vestigial) fields.
+    const total=leadValue(l), out=outstanding(l), paid=total-out;
     const schedLine = session
       ? `<div class="cv-line"><span>🔗 ${esc(session.date||'')} · ${esc(session.start||'')}–${esc(session.end||'')} · ${esc(session.zone||'')}</span><a class="tel" href="set.html">Open schedule →</a></div>`
       : `<div class="cv-line"><span>${esc(l.bookingDate||'')} · ${esc(l.zone||'')}</span><span style="color:var(--muted2);font-size:12px">not on schedule</span></div>`;
     const money2=v=>money(v);
-    const pays=Array.isArray(l.payments)?[...l.payments].sort((a,b)=>(a.date||'').localeCompare(b.date||'')):[];
+    const paySource = (l.quoteNo && linked && Array.isArray(linked.payments)) ? linked.payments : (Array.isArray(l.payments)?l.payments:[]);
+    const pays=[...paySource].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     const paysHtml = pays.length
       ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">`+pays.map(p=>`<div class="cv-line" style="font-size:12px;color:var(--muted)"><span>${esc(p.date||'—')}${p.note?' · '+esc(p.note):''}</span><span>${money2(p.amount)}</span></div>`).join('')+`</div>`
       : '';
@@ -664,10 +704,9 @@ async function openLead(l){
   $('#fFollow').value = l ? toISO(l.followup) : defaultFollowupISO();
   $('#fEnq').value=toISO(l?l.enqDate:'');
   $('#fEstimate').value=l?l.quoteEstimate||'':''; $('#fNotes').value=l?l.notes||'':'';
-  // booking
+  // booking — manual/legacy fields (only shown when this lead has no linked quote)
   $('#bDate').value=toISO(l?l.bookingDate:''); $('#bStart').value=l?l.bookingStart||'':''; $('#bTotal').value=l&&l.total!=null?l.total:'';
   $('#bInvoice').value=l?l.invoice||'':''; $('#bAddress').value=l?l.address||'':'';
-  $('#bSchedStatus').textContent = (l&&l.scheduleId)?'✓ On the schedule':'';
   // Payments log — start from the lead's log, or migrate a legacy single "advance" into one entry.
   paymentsDraft = (l && Array.isArray(l.payments) && l.payments.length) ? l.payments.map(p=>({...p}))
     : (l && l.advance ? [{id:'legacy',date:l.bookingDate?toISO(l.bookingDate):todayISO(),amount:l.advance,note:'Advance'}] : []);
@@ -679,28 +718,58 @@ async function openLead(l){
   $('#leadOverlay').className='overlay show';
   setTimeout(()=>$('#fCompany').focus(),50);
 
-  // Auto-fill the booking total from the linked quote — it's already computed
-  // there, so she shouldn't have to retype it (still editable if she wants to).
-  if(l && l.quoteNo && (l.total==null || l.total==='')){
+  // If this lead is linked to a quote, pull its live payment/schedule status —
+  // the quote is the single source of truth going forward.
+  if(l && l.quoteNo){
     await ensureLinks();
-    if(editingId===l.id && !$('#bTotal').value){
-      const q=QUOTES_CACHE.find(x=>x.qno===l.quoteNo);
-      if(q){ $('#bTotal').value=quoteTotal(q); updateBalance(); }
-    }
+    if(editingId===l.id) renderQuoteSummary(l);
   }
 }
 function toggleBookBox(){
   const isBooked=$('#fStageM').value==='Booked';
   $('#bookBox').style.display = isBooked ? 'block':'none';
+  if(!isBooked) return;
   // Repeat customer (same phone, already has an address on file) — reuse it.
-  if(isBooked && !$('#bAddress').value.trim()){
+  if(!$('#bAddress').value.trim()){
     const phone=normPhone($('#fPhone').value);
     if(phone){
       const match=DOC.leads.find(x=>x.id!==editingId && x.address && normPhone(x.phone)===phone);
       if(match) $('#bAddress').value=match.address;
     }
   }
-  updateBalance();
+  const lead = editingId ? DOC.leads.find(x=>x.id===editingId) : null;
+  const quoted = !!(lead && lead.quoteNo);
+  $('#bookBoxQuoted').style.display = quoted ? 'block' : 'none';
+  $('#bookBoxManual').style.display = quoted ? 'none' : 'block';
+  if(quoted) renderQuoteSummary(lead);
+  else updateBalance();
+}
+// Read-only booking summary pulled from the linked quote (Total/Paid/Balance,
+// Confirmed-on-payment status, and schedule state) — avoids a second,
+// divergeable copy of the same numbers living on the lead.
+function renderQuoteSummary(lead){
+  const badge=$('#bQuoteStatusBadge'); if(!badge) return;
+  $('#bQuoteNo').textContent = lead.quoteNo;
+  $('#bOpenQuote').href = 'quote.html?qno=' + encodeURIComponent(lead.quoteNo);
+  const q = (QUOTES_CACHE||[]).find(x=>x.qno===lead.quoteNo);
+  if(!q){
+    badge.textContent='—'; badge.style.background='var(--panel2)'; badge.style.color='var(--muted2)';
+    $('#bQuoteSummary').innerHTML='<span style="color:var(--muted2)">Quote details unavailable.</span>';
+    return;
+  }
+  const total=quoteTotal(q);
+  const paid=Array.isArray(q.payments) ? q.payments.reduce((s,p)=>s+(Number(p.amount)||0),0) : 0;
+  const status=q.status || (paid>0?'Confirmed':'Pending');
+  badge.textContent=status;
+  if(status==='Confirmed'){ badge.style.background='var(--accent-soft)'; badge.style.color='var(--accent-d)'; }
+  else { badge.style.background='#fbf3e6'; badge.style.color='var(--s-contacted)'; }
+  const bal=Math.max(0,total-paid);
+  const schedLine = q.scheduleId
+    ? `<div>🔗 Scheduled: ${esc(q.sessionDate||'')}${q.sessionStart?', '+esc(q.sessionStart):''}</div>`
+    : `<div style="color:var(--muted2)">Not yet on the schedule.</div>`;
+  $('#bQuoteSummary').innerHTML = `<div>Total: <b>${money(total)}</b></div>
+    <div>Paid: <b>${money(paid)}</b>${bal>0?` · <span style="color:var(--s-lost)">${money(bal)} due</span>`:''}</div>
+    ${schedLine}`;
 }
 
 // ── Payments log (draft, scoped to the currently open lead) ──
@@ -813,38 +882,8 @@ $('#leadQuote').onclick=async()=>{
   window.location.href='quote.html';
 };
 
-// ── Phase 3: Booked lead → Schedule ──
-function hoursFromDuration(str){ const m=/(\d+(?:\.\d+)?)/.exec(String(str||'')); return m?parseFloat(m[1]):0; }
-function addHours(hhmm,h){ if(!hhmm) return ''; const [H,M]=hhmm.split(':').map(Number); let mins=H*60+M+Math.round((h||1)*60); mins=Math.min(mins,23*60+59); return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0'); }
-$('#bSchedule').onclick=async()=>{
-  const rec=collectLeadForm(); if(!rec) return;
-  if(rec.stage!=='Booked'){ $('#leadErr').textContent='Set the stage to Booked first.'; return; }
-  const dateISO=toISO(rec.bookingDate), start=rec.bookingStart;
-  if(!dateISO){ $('#leadErr').textContent='Set a booking date.'; return; }
-  if(!start){ $('#leadErr').textContent='Set a start time.'; return; }
-  const end=addHours(start, hoursFromDuration(rec.duration)||1);
-  const sid=rec.scheduleId || ('S'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
-  const session={ id:sid, leadId:rec.id, name:rec.company||rec.contact||'Booking', zone:(rec.zone||'Podcast').toLowerCase(), start, end, date:dateISO };
-  $('#loaderMsg').textContent='Adding to schedule…'; $('#loader').className='';
-  try{
-    const gr=await fetch(PROXY_URL+'/schedule',{headers:{'X-Token':TOKEN}});
-    if(gr.status===401){ localStorage.removeItem('ryst_proxy_token'); location.href='login.html'; return; }
-    const sched=gr.ok?await gr.json():{sessions:[]};
-    const sessions=Array.isArray(sched.sessions)?sched.sessions:[];
-    const i=sessions.findIndex(s=>s.id===sid);
-    if(i>=0) sessions[i]=session; else sessions.push(session);
-    const pr=await fetch(PROXY_URL+'/schedule',{method:'PUT',headers:{'X-Token':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({...sched,sessions})});
-    if(pr.status===403){ toast('Completed sessions are locked for your account',true); }
-    else if(!pr.ok){ toast('Schedule save failed ('+pr.status+')',true); }
-    else {
-      rec.scheduleId=sid;
-      SCHED_CACHE=null;   // refresh the customer view's schedule cache
-      await saveLeads(upsertLead(rec), 'Booking added to the schedule');
-      $('#leadOverlay').className='overlay';
-    }
-  }catch(e){ toast('Could not reach the schedule',true); }
-  finally{ $('#loader').className='hide'; }
-};
+// Scheduling now happens exclusively from a quote (Quote Builder → Add to
+// schedule) — see renderQuoteSummary() / the "Raise quote →" action above.
 $('#leadDelete').onclick=async()=>{
   if(!editingId) return;
   if(!confirm('Delete this lead? This cannot be undone.')) return;
