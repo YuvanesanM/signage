@@ -300,6 +300,7 @@
       <div class="group">
         <p class="gh">Client</p>
         <label class="f"><span>Name / Company name</span><input class="t" id="cname" placeholder="Studio RYST / Ms. Kaviya"></label>
+        <label class="f"><span>WhatsApp / phone number</span><input class="t" id="cphone" type="tel" placeholder="98765 43210"></label>
         <label class="f"><span>GST No. <span style="font-weight:400;color:var(--muted2)">(optional)</span></span><input class="t" id="cgst" placeholder="22AAAAA0000A1Z5" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></label>
         <label class="f"><span>Billing address</span><textarea class="t" id="caddr" placeholder="Chennai, India"></textarea></label>
       </div>
@@ -573,6 +574,7 @@ function applyLeadPrefill(){
   if(!p.leadId){ if(p.sessionDate) render(); return; }
   leadLink = { id:p.leadId, phone:p.phone||"" };
   if(p.company||p.contact) $("#cname").value = p.company || p.contact;
+  if(p.phone) $("#cphone").value = p.phone;
   if(p.address) $("#caddr").value = p.address;
   if(p.zone && ZONES.includes(p.zone)) $("#zone").value = p.zone;
   if(p.duration) $("#hours").value = String(parseHours(p.duration));
@@ -838,7 +840,7 @@ function newQuote(){
   curShareToken=genToken(); curSharedAt=null; renderClientResp(null);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
-  $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
+  $("#cname").value=""; $("#cphone").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
   $("#sessDate").value=""; $("#sessStart").value=""; curScheduleId=null; updateSchedStatus();
   qPaymentsDraft=[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
@@ -1019,7 +1021,7 @@ function collect(){
   const payments = qPaymentsDraft.map(p=>({...p}));
   const paid = payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
   return { qno:curQno, date:curDateISO, zone:$("#zone").value, hours:$("#hours").value, req:reqText(),
-    cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
+    cname:$("#cname").value, cphone:$("#cphone").value.trim(), cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
     sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
     payments, status: paid>0 ? "Confirmed" : "Pending", shareToken:curShareToken, sharedAt:curSharedAt,
@@ -1056,7 +1058,7 @@ function loadQuote(qno){
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
-  $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
+  $("#cname").value=q.cname; $("#cphone").value=q.cphone||""; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
   curShareToken=q.shareToken||genToken(); curSharedAt=q.sharedAt||null; curClientStatus=q.clientStatus||""; curClientRespondedAt=q.clientRespondedAt||null; renderClientResp(q);
   qPaymentsDraft=Array.isArray(q.payments)?q.payments.map(p=>({...p})):[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
@@ -1109,6 +1111,14 @@ async function shareQuote(){
       await saveQuote(true);   // triggers the same "set a session date/time" toast, nothing marked shared
       return;
     }
+    // The quote is now the single source of truth for the client's number —
+    // sharing always goes straight to their chat, never a generic picker.
+    const phone = normPhone($("#cphone").value);
+    if(!phone){
+      toast("Enter the client's WhatsApp/phone number to share the quote");
+      $("#cphone").focus();
+      return;
+    }
     curSharedAt = curSharedAt || Date.now();   // mark as actually shared, persisted by the save below
     await saveQuote(true);
     const q=collect();
@@ -1116,10 +1126,9 @@ async function shareQuote(){
     const link = await shortenLink(fullLink);   // keeps the internal domain out of the client-facing message
     const msg = `Hi${q.cname?" "+q.cname:""}! Here's your quote from Studio RYST (${q.qno}). `
       + `Please review and accept or decline here: ${link}`;
-    const phone = normPhone(leadLink && leadLink.phone);
-    const waUrl = (phone ? `https://wa.me/91${phone}` : `https://wa.me/`) + "?text=" + encodeURIComponent(msg);
+    const waUrl = `https://wa.me/91${phone}?text=` + encodeURIComponent(msg);
     window.open(waUrl, "_blank");
-    toast(phone ? "Opening WhatsApp for client…" : "Opening WhatsApp — pick the client's chat");
+    toast("Opening WhatsApp for client…");
   } finally {
     btn.disabled=false; btn.textContent=prevTxt;
   }
