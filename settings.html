@@ -102,6 +102,8 @@
     .cfg-body{padding:20px 14px 60px}
     .rc-table-wrap{border-radius:8px}
   }
+  .admin-block{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+  .admin-block.show{display:flex}
 </style>
 </head>
 <body>
@@ -115,6 +117,7 @@
 <div class="cfg-tabs">
   <button class="cfg-tab active" data-tab="rate">Rate Card</button>
   <button class="cfg-tab" data-tab="studio">Studio Settings</button>
+  <button class="cfg-tab" data-tab="users">User Access</button>
 </div>
 
 <div class="cfg-body">
@@ -156,6 +159,33 @@
       <button class="btn primary" id="setSave">Save settings</button>
     </div>
   </div>
+
+  <!-- User Access pane -->
+  <div id="paneUsers" hidden>
+    <p class="sd">Map each Google login to a role. <b>Admins</b> can change settings, the rate card and targets. <b>Coordinators</b> use the tools but can’t change those. mailyuvanesh@gmail.com is always an admin and can’t be locked out.</p>
+    <div class="rc-table-wrap">
+      <table class="rc-table" style="min-width:520px">
+        <thead><tr>
+          <th>Google email</th>
+          <th style="width:170px">Name</th>
+          <th class="c" style="width:150px">Role</th>
+          <th style="width:36px"></th>
+        </tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+    <button class="rc-add" id="userAdd">+ Add user</button>
+    <div class="rc-foot">
+      <button class="btn primary" id="usersSave">Save user access</button>
+    </div>
+  </div>
+</div>
+
+<div id="adminBlock" class="admin-block">
+  <div style="font-size:44px">🔒</div>
+  <div style="font-size:19px;font-weight:700;color:var(--ink)">Admins only</div>
+  <div style="font-size:14px;color:var(--muted2);max-width:380px;line-height:1.5">Settings, the rate card and targets can only be changed by an admin. Your account is signed in as a coordinator.</div>
+  <a class="btn primary" href="login.html" style="margin-top:6px">← Back to home</a>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -258,9 +288,25 @@ function applyLogo(){
 }
 applyLogo();
 
-/* ---------- AUTH ---------- */
+/* ---------- AUTH + ROLE GATE ---------- */
+// Read the role from the signed token payload (falls back to localStorage).
+// This gates the UI; the proxy independently rejects non-admin writes (403).
+function myRole(){
+  try{
+    let p=(proxyToken.split('.')[0]||'').replace(/-/g,'+').replace(/_/g,'/');
+    p+='='.repeat((4-p.length%4)%4);
+    const d=JSON.parse(atob(p));
+    if(d && d.role) return d.role;
+  }catch(e){}
+  return localStorage.getItem('ryst_user_role')||'coordinator';
+}
 (async function boot(){
   if(!proxyToken){ window.location.href='login.html'; return; }
+  if(myRole()!=='admin'){
+    document.getElementById('pinOverlay').hidden=true;
+    document.getElementById('adminBlock').classList.add('show');
+    return;
+  }
   // Validate token in background — if it expired redirect quietly
   fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}})
     .then(r=>{ if(r && r.status===401){ localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; } })
@@ -307,6 +353,7 @@ async function checkPin(){
 function switchTab(tab){
   document.getElementById("paneRate").hidden    = tab!=="rate";
   document.getElementById("paneStudio").hidden  = tab!=="studio";
+  document.getElementById("paneUsers").hidden   = tab!=="users";
   document.querySelectorAll(".cfg-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
 }
 document.querySelectorAll(".cfg-tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
@@ -336,6 +383,7 @@ async function loadPanel(){
   renderImgPrev("logo","#logoPrev");
   renderImgPrev("qr","#qrPrev");
   bindSettings();
+  loadUsers();
 }
 
 /* ---------- RATE CARD RENDER ---------- */
@@ -451,6 +499,77 @@ function bindSettings(){
   document.getElementById("setSave").addEventListener("click",saveSettings);
   document.getElementById("logoFile").addEventListener("change",e=>pickImage(e,"logo","#logoPrev"));
   document.getElementById("qrFile").addEventListener("change",e=>pickImage(e,"qr","#qrPrev"));
+  document.getElementById("userAdd").addEventListener("click",addUser);
+  document.getElementById("usersSave").addEventListener("click",saveUsers);
+}
+
+/* ---------- USER ACCESS ---------- */
+const SUPER_ADMIN_EMAIL = 'mailyuvanesh@gmail.com';
+let usersDraft = [];
+async function loadUsers(){
+  usersDraft = [
+    {email:'mailyuvanesh@gmail.com', name:'Yuvanesh', role:'admin'},
+    {email:'studioryst01@gmail.com', name:'Pooja', role:'coordinator'},
+  ];
+  if(proxyToken){
+    try{
+      const res=await fetch(PROXY_URL+'/user-roles',{headers:{'X-Token':proxyToken}});
+      if(res.ok){
+        const d=await res.json();
+        if(Array.isArray(d.users)&&d.users.length)
+          usersDraft=d.users.map(u=>({email:(u.email||'').toLowerCase(),name:u.name||'',role:u.role==='admin'?'admin':'coordinator'}));
+      }
+    }catch(e){}
+  }
+  renderUsers();
+}
+function renderUsers(){
+  const body=document.getElementById("usersBody"); body.innerHTML="";
+  usersDraft.forEach((u,i)=>{
+    const isSuper = u.email===SUPER_ADMIN_EMAIL;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td><input data-i="${i}" data-k="email" type="email" placeholder="name@gmail.com" value="${esc(u.email)}" ${isSuper?'readonly':''} style="min-width:210px"></td>
+      <td><input data-i="${i}" data-k="name" placeholder="Name" value="${esc(u.name)}"></td>
+      <td><select class="t" data-i="${i}" data-k="role" ${isSuper?'disabled':''} style="text-align:center">
+            <option value="admin"${u.role==='admin'?' selected':''}>Admin</option>
+            <option value="coordinator"${u.role!=='admin'?' selected':''}>Coordinator</option>
+          </select></td>
+      <td>${isSuper?'<span title="Always an admin" style="color:var(--muted2)">🔒</span>':`<button class="rc-del" data-del="${i}" title="Remove">×</button>`}</td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("input[data-i],select[data-i]").forEach(el=>{
+    el.addEventListener("input",e=>{
+      const i=+e.target.dataset.i, k=e.target.dataset.k;
+      usersDraft[i][k] = k==='email' ? e.target.value.trim().toLowerCase() : e.target.value;
+    });
+  });
+  body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",e=>{
+    usersDraft.splice(+e.target.dataset.del,1); renderUsers();
+  }));
+}
+function addUser(){ usersDraft.push({email:"",name:"",role:"coordinator"}); renderUsers(); }
+async function saveUsers(){
+  const btn=document.getElementById("usersSave"); btn.disabled=true; btn.textContent="Saving…";
+  let users=usersDraft
+    .map(u=>({email:(u.email||"").trim().toLowerCase(), name:(u.name||"").trim(), role:u.role==='admin'?'admin':'coordinator'}))
+    .filter(u=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u.email));
+  const seen={}; users.forEach(u=>seen[u.email]=u); users=Object.values(seen);   // dedupe, last wins
+  const sa=users.find(u=>u.email===SUPER_ADMIN_EMAIL);
+  if(sa) sa.role='admin'; else users.unshift({email:SUPER_ADMIN_EMAIL,name:'Yuvanesh',role:'admin'});
+  if(proxyToken){
+    try{
+      const res=await fetch(PROXY_URL+'/user-roles',{method:'PUT',
+        headers:{'X-Token':proxyToken,'Content-Type':'application/json'},
+        body:JSON.stringify({version:1,users})});
+      if(res.status===401){ localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; return; }
+      else if(res.status===403) toast("Admins only — cannot save");
+      else if(!res.ok) toast("Save failed ("+res.status+")");
+      else toast("User access saved · applies on next sign-in");
+    }catch(e){ toast("Cloud unreachable"); }
+  }
+  usersDraft=users.map(u=>({...u})); renderUsers();
+  btn.disabled=false; btn.textContent="Save user access";
 }
 
 /* ---------- TOAST ---------- */
