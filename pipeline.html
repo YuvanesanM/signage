@@ -154,8 +154,12 @@
   <div class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
       <h2 style="margin:0">Leads</h2>
-      <button class="btn primary" id="addBtn">＋ Add lead</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" id="importBtn" style="display:none">⤓ Import</button>
+        <button class="btn primary" id="addBtn">＋ Add lead</button>
+      </div>
     </div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
     <div class="cap" id="leadsCap">Capture, track and convert enquiries</div>
     <div class="toolbar">
       <input class="search" id="search" placeholder="Search name, phone, invoice…" />
@@ -371,8 +375,29 @@ function render(){
   buildFilterOptions();
   renderLeads();
   updateDueChip();
-  $('#editTargets').style.display = IS_ADMIN ? '' : 'none';
+  $('#editTargets').style.display = IS_ADMIN ? '' : 'none';  // targets: admin only
+  $('#importBtn').style.display = '';                        // leads: managed by coordinators too
 }
+
+// ── Import (admin) — seed / restore the lead store from a JSON file ──
+$('#importBtn').addEventListener('click',()=>$('#importFile').click());
+$('#importFile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  let doc; try{ doc=JSON.parse(await f.text()); }catch(err){ toast('That file isn’t valid JSON',true); return; }
+  const leads=Array.isArray(doc.leads)?doc.leads:(Array.isArray(doc)?doc:null);
+  if(!leads){ toast('No “leads” found in the file',true); return; }
+  if(!confirm(`Import ${leads.length} lead(s)?\n\nThis REPLACES all ${DOC.leads.length} current lead(s).`)) return;
+  const next={ version:doc.version||1, targets:Array.isArray(doc.targets)?doc.targets:(DOC.targets||[]), leads };
+  $('#loaderMsg').textContent='Importing…'; $('#loader').className='';
+  try{
+    await api('PUT', next);
+    DOC=next;
+    if(Array.isArray(doc.targets) && doc.targets.length && !TARGETS.length) TARGETS=doc.targets;
+    render();
+    toast(`Imported ${leads.length} lead(s)`);
+  }catch(err){ toast(err.message||'Import failed',true); }
+  finally{ $('#loader').className='hide'; }
+});
 
 function hbars(entries,colorFn,fmt){
   if(!entries.length) return '<div class="empty">No data yet.</div>';
