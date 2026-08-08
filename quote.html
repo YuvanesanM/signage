@@ -462,6 +462,7 @@ let items = [];            // {desc, sac, price, qty, gst}
 let editingKey = null;
 let curQno = "", curDateISO = "";
 let curShareToken = "";     // unguessable id used in the client-facing share link
+let curSharedAt = null;     // set only when the "Share via WhatsApp" button is actually used
 let curClientStatus = "", curClientRespondedAt = null;   // client's Accept/Decline on quote-view.html
 let leadLink = null;       // set when this quote was raised from a CRM lead
 let curScheduleId = null;  // set once this quote has been pushed to the schedule
@@ -834,7 +835,7 @@ function bind(){
 function newQuote(){
   editingKey=null; syncPdfBtn(); clearLeadLink();
   curQno=nextQuoteNo(); curDateISO=new Date().toISOString().slice(0,10);
-  curShareToken=genToken(); renderClientResp(null);
+  curShareToken=genToken(); curSharedAt=null; renderClientResp(null);
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
   $("#cname").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
@@ -1021,7 +1022,7 @@ function collect(){
     cname:$("#cname").value, cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
     sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
-    payments, status: paid>0 ? "Confirmed" : "Pending", shareToken:curShareToken,
+    payments, status: paid>0 ? "Confirmed" : "Pending", shareToken:curShareToken, sharedAt:curSharedAt,
     clientStatus:curClientStatus, clientRespondedAt:curClientRespondedAt,
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
@@ -1057,7 +1058,7 @@ function loadQuote(qno){
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
-  curShareToken=q.shareToken||genToken(); curClientStatus=q.clientStatus||""; curClientRespondedAt=q.clientRespondedAt||null; renderClientResp(q);
+  curShareToken=q.shareToken||genToken(); curSharedAt=q.sharedAt||null; curClientStatus=q.clientStatus||""; curClientRespondedAt=q.clientRespondedAt||null; renderClientResp(q);
   qPaymentsDraft=Array.isArray(q.payments)?q.payments.map(p=>({...p})):[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
@@ -1093,9 +1094,13 @@ async function shareQuote(){
   const btn=$("#btnShare"); const prevTxt=btn.textContent;
   btn.disabled=true; btn.textContent="Saving…";
   try{
+    if(!$("#sessDate").value || !$("#sessStart").value){
+      await saveQuote(true);   // triggers the same "set a session date/time" toast, nothing marked shared
+      return;
+    }
+    curSharedAt = curSharedAt || Date.now();   // mark as actually shared, persisted by the save below
     await saveQuote(true);
     const q=collect();
-    if(!q.sessionDate || !q.sessionStart) return;   // saveQuote already toasted the reason
     const link = "https://signage.ryst.in/quote-view.html?t="+encodeURIComponent(curShareToken);
     const msg = `Hi${q.cname?" "+q.cname:""}! Here's your quote from Studio RYST (${q.qno}). `
       + `Please review and accept or decline here: ${link}`;
