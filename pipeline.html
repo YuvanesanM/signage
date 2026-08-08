@@ -197,13 +197,20 @@
         <div class="bh">Booking details</div>
         <div class="two">
           <div class="field"><label>Booking date</label><input id="bDate" type="date" /></div>
-          <div class="field"><label>Total inc. GST (₹)</label><input id="bTotal" inputmode="decimal" placeholder="0" /></div>
+          <div class="field"><label>Start time</label><input id="bStart" type="time" /></div>
         </div>
         <div class="two" style="margin-top:12px">
+          <div class="field"><label>Total inc. GST (₹)</label><input id="bTotal" inputmode="decimal" placeholder="0" /></div>
           <div class="field"><label>Payment status</label><select id="bPay"><option>Pending</option><option>Completed</option><option>Partial</option></select></div>
-          <div class="field"><label>Invoice no.</label><input id="bInvoice" placeholder="—" /></div>
         </div>
-        <div class="field" style="margin-top:12px"><label>Billing address</label><textarea id="bAddress" placeholder="Address"></textarea></div>
+        <div class="two" style="margin-top:12px">
+          <div class="field"><label>Invoice no.</label><input id="bInvoice" placeholder="—" /></div>
+          <div class="field"><label>Billing address</label><input id="bAddress" placeholder="Address" /></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn ghost" id="bSchedule" type="button" style="border-color:var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
+          <span id="bSchedStatus" style="font-size:12px;color:var(--muted2)"></span>
+        </div>
       </div>
       <div class="merr" id="leadErr"></div>
       <div class="mfoot">
@@ -399,9 +406,10 @@ function openLead(l){
   $('#fFollow').value=toISO(l?l.followup:''); $('#fEnq').value=toISO(l?l.enqDate:'');
   $('#fEstimate').value=l?l.quoteEstimate||'':''; $('#fNotes').value=l?l.notes||'':'';
   // booking
-  $('#bDate').value=toISO(l?l.bookingDate:''); $('#bTotal').value=l&&l.total!=null?l.total:'';
+  $('#bDate').value=toISO(l?l.bookingDate:''); $('#bStart').value=l?l.bookingStart||'':''; $('#bTotal').value=l&&l.total!=null?l.total:'';
   fillSelect($('#bPay'),['Pending','Completed','Partial'],l?l.paymentStatus||'Pending':'Pending');
   $('#bInvoice').value=l?l.invoice||'':''; $('#bAddress').value=l?l.address||'':'';
+  $('#bSchedStatus').textContent = (l&&l.scheduleId)?'✓ On the schedule':'';
   toggleBookBox();
   $('#leadDelete').style.display = l ? '' : 'none';
   $('#leadErr').textContent='';
@@ -430,9 +438,9 @@ function collectLeadForm(){
   const prev=DOC.leads.find(x=>x.id===editingId)||{};
   rec.quoteNo=prev.quoteNo??null; rec.scheduleId=prev.scheduleId??null; rec.createdAt=prev.createdAt||Date.now();
   if(rec.stage==='Booked'){
-    rec.bookingDate=$('#bDate').value; rec.total=parseFloat($('#bTotal').value)||null;
+    rec.bookingDate=$('#bDate').value; rec.bookingStart=$('#bStart').value; rec.total=parseFloat($('#bTotal').value)||null;
     rec.paymentStatus=$('#bPay').value; rec.invoice=$('#bInvoice').value.trim(); rec.address=$('#bAddress').value.trim();
-  }
+  } else { rec.bookingStart=(DOC.leads.find(x=>x.id===editingId)||{}).bookingStart||''; }
   return rec;
 }
 function upsertLead(rec){
@@ -454,6 +462,38 @@ $('#leadQuote').onclick=async()=>{
     zone:rec.zone, duration:rec.duration, address:rec.address, estimate:rec.quoteEstimate
   }));
   window.location.href='quote.html';
+};
+
+// ── Phase 3: Booked lead → Schedule ──
+function hoursFromDuration(str){ const m=/(\d+(?:\.\d+)?)/.exec(String(str||'')); return m?parseFloat(m[1]):0; }
+function addHours(hhmm,h){ if(!hhmm) return ''; const [H,M]=hhmm.split(':').map(Number); let mins=H*60+M+Math.round((h||1)*60); mins=Math.min(mins,23*60+59); return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0'); }
+$('#bSchedule').onclick=async()=>{
+  const rec=collectLeadForm(); if(!rec) return;
+  if(rec.stage!=='Booked'){ $('#leadErr').textContent='Set the stage to Booked first.'; return; }
+  const dateISO=toISO(rec.bookingDate), start=rec.bookingStart;
+  if(!dateISO){ $('#leadErr').textContent='Set a booking date.'; return; }
+  if(!start){ $('#leadErr').textContent='Set a start time.'; return; }
+  const end=addHours(start, hoursFromDuration(rec.duration)||1);
+  const sid=rec.scheduleId || ('S'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
+  const session={ id:sid, leadId:rec.id, name:rec.company||rec.contact||'Booking', zone:(rec.zone||'Podcast').toLowerCase(), start, end, date:dateISO };
+  $('#loaderMsg').textContent='Adding to schedule…'; $('#loader').className='';
+  try{
+    const gr=await fetch(PROXY_URL+'/schedule',{headers:{'X-Token':TOKEN}});
+    if(gr.status===401){ localStorage.removeItem('ryst_proxy_token'); location.href='login.html'; return; }
+    const sched=gr.ok?await gr.json():{sessions:[]};
+    const sessions=Array.isArray(sched.sessions)?sched.sessions:[];
+    const i=sessions.findIndex(s=>s.id===sid);
+    if(i>=0) sessions[i]=session; else sessions.push(session);
+    const pr=await fetch(PROXY_URL+'/schedule',{method:'PUT',headers:{'X-Token':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({...sched,sessions})});
+    if(pr.status===403){ toast('Completed sessions are locked for your account',true); }
+    else if(!pr.ok){ toast('Schedule save failed ('+pr.status+')',true); }
+    else {
+      rec.scheduleId=sid;
+      await saveLeads(upsertLead(rec), 'Booking added to the schedule');
+      $('#leadOverlay').className='overlay';
+    }
+  }catch(e){ toast('Could not reach the schedule',true); }
+  finally{ $('#loader').className='hide'; }
 };
 $('#leadDelete').onclick=async()=>{
   if(!editingId) return;
