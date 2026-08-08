@@ -767,9 +767,17 @@ function renderQuoteSummary(lead){
   const schedLine = q.scheduleId
     ? `<div>🔗 Scheduled: ${esc(q.sessionDate||'')}${q.sessionStart?', '+esc(q.sessionStart):''}</div>`
     : `<div style="color:var(--muted2)">Not yet on the schedule.</div>`;
+  const clientLine = q.clientStatus==='Accepted'
+    ? `<div style="color:var(--accent-d)">✅ Client accepted</div>`
+    : q.clientStatus==='Declined'
+    ? `<div style="color:var(--s-lost)">✋ Client declined</div>`
+    : q.shareToken
+    ? `<div style="color:var(--muted2)">Awaiting client response.</div>`
+    : `<div style="color:var(--muted2)">Not yet shared with client.</div>`;
   $('#bQuoteSummary').innerHTML = `<div>Total: <b>${money(total)}</b></div>
     <div>Paid: <b>${money(paid)}</b>${bal>0?` · <span style="color:var(--s-lost)">${money(bal)} due</span>`:''}</div>
-    ${schedLine}`;
+    ${schedLine}
+    ${clientLine}`;
 }
 
 // ── Payments log (draft, scoped to the currently open lead) ──

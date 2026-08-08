@@ -1036,6 +1036,12 @@ async function saveQuote(silent){
     (q.sessionDate ? $("#sessStart") : $("#sessDate")).focus();
     return;
   }
+  // Refresh from the cloud right before writing so a client's Accept/Decline
+  // (recorded via quote-view.html, possibly while this tab sat open) is
+  // never clobbered by the stale clientStatus this tab loaded with.
+  await fetchQuotesFromProxy();
+  const fresh = getQuotes().find(x=>x.qno===q.qno);
+  if(fresh){ q.clientStatus = fresh.clientStatus||""; q.clientRespondedAt = fresh.clientRespondedAt||null; curClientStatus=q.clientStatus; curClientRespondedAt=q.clientRespondedAt; renderClientResp(q); }
   const all=getQuotes(); const key=editingKey||q.qno; const idx=all.findIndex(x=>x.qno===key);
   if(idx>=0) all[idx]=q; else all.push(q);
   setQuotes(all); editingKey=q.qno; syncPdfBtn();
