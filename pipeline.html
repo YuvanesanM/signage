@@ -67,15 +67,30 @@
   .toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
   .toolbar .search{flex:1;min-width:150px}
 
-  /* Collapsed-by-default filter drawer, tucked under the main toolbar */
-  .filters-more{margin:-2px 0 14px}
-  .filters-more>summary{cursor:pointer;list-style:none;font-size:12px;color:var(--muted2);font-weight:600;padding:3px 0;display:flex;align-items:center;gap:5px;width:fit-content}
-  .filters-more>summary::-webkit-details-marker{display:none}
-  .filters-more>summary::before{content:'▸';display:inline-block;transition:transform .15s;font-size:11px}
-  .filters-more[open]>summary::before{transform:rotate(90deg)}
-  .filters-more>summary:hover{color:var(--accent-d)}
-  .filters-more-body{display:flex;gap:9px;flex-wrap:wrap;margin-top:9px}
-  .filters-more-body select{padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;background:var(--panel2);font-size:13px;color:var(--ink);outline:none}
+  /* Filter bar — always visible (used to be a collapsed drawer) */
+  .filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:2px 0 14px}
+  .filterbar select{padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;background:var(--panel2);font-size:12.5px;color:var(--ink);outline:none}
+  .filterbar select:focus{border-color:var(--accent)}
+  .stage-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .stage-pill{border:1.5px solid var(--line);background:var(--panel);color:var(--muted);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;transition:.15s}
+  .stage-pill:hover{border-color:var(--accent)}
+  .stage-pill.on{color:#fff;border-color:transparent}
+  .clearf{font-size:12px;color:var(--muted2);font-weight:600;background:none;border:none;text-decoration:underline;padding:4px 2px}
+  .clearf:hover{color:var(--danger)}
+  /* Sortable column headers */
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--accent-d)}
+  th.sortable .arrow{opacity:.4;margin-left:3px}
+  th.sortable.active .arrow{opacity:1;color:var(--accent-d)}
+  /* Inline row actions */
+  .stage-sel{font-size:10.5px;font-weight:700;padding:3px 20px 3px 9px;border-radius:12px;white-space:nowrap;color:#fff;border:none;-webkit-appearance:none;appearance:none;background-repeat:no-repeat;background-position:right 7px center;background-size:9px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");cursor:pointer}
+  .phone-actions{display:flex;align-items:center;gap:6px}
+  .wa-link{color:#3d9b69;text-decoration:none;font-size:14px;line-height:1;opacity:.75}
+  .wa-link:hover{opacity:1}
+  .fu-cell{display:flex;align-items:center;gap:5px}
+  .snooze-btn{background:none;border:1px solid var(--line);color:var(--muted2);font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;line-height:1.4;white-space:nowrap}
+  .snooze-btn:hover{border-color:var(--accent);color:var(--accent-d)}
+  .pay-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
 
   /* Analytics tucked behind a single collapsed toggle — collapsed by default */
   .insights{margin-top:14px}
@@ -184,20 +199,33 @@
     <div class="cap" id="leadsCap">Capture, track and convert enquiries</div>
     <div class="toolbar">
       <input class="search" id="search" placeholder="Search name, phone, invoice…" />
+      <select id="fSort" title="Sort by">
+        <option value="priority">Sort: Needs attention</option>
+        <option value="newest">Sort: Newest first</option>
+        <option value="value">Sort: Highest value</option>
+        <option value="followup">Sort: Follow-up date</option>
+        <option value="stage">Sort: Stage</option>
+        <option value="name">Sort: Name A–Z</option>
+      </select>
       <button class="btn ghost" id="dueChip" style="padding:9px 13px">⏰ Follow-ups due</button>
       <button class="btn ghost" id="owedChip" style="padding:9px 13px">💰 Payment due</button>
       <button class="btn ghost" id="staleChip" style="padding:9px 13px">🕸 Stale</button>
     </div>
-    <details class="filters-more">
-      <summary>Filter by stage, source or zone</summary>
-      <div class="filters-more-body">
-        <select id="fStage"><option value="All">All stages</option></select>
-        <select id="fSource"><option value="All">All sources</option></select>
-        <select id="fZone"><option value="All">All zones</option></select>
-      </div>
-    </details>
+    <div class="filterbar">
+      <div class="stage-pills" id="stagePills"></div>
+      <select id="fSource"><option value="All">All sources</option></select>
+      <select id="fZone"><option value="All">All zones</option></select>
+      <button class="clearf" id="clearFilters" style="display:none">Clear filters</button>
+    </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Lead</th><th>Phone</th><th>Zone</th><th>Stage</th><th>Follow-up</th><th style="text-align:right">Value</th><th style="width:60px"></th></tr></thead>
+      <thead><tr>
+        <th class="sortable" data-sort="name">Lead <span class="arrow">↕</span></th>
+        <th>Phone</th>
+        <th class="sortable" data-sort="stage">Stage <span class="arrow">↕</span></th>
+        <th class="sortable" data-sort="followup">Follow-up <span class="arrow">↕</span></th>
+        <th class="sortable" style="text-align:right" data-sort="value">Value <span class="arrow">↕</span></th>
+        <th style="width:60px"></th>
+      </tr></thead>
       <tbody id="leads"></tbody>
     </table></div>
   </div>
@@ -357,7 +385,7 @@ const zColor=z=>ZONE_COLOR[z]||'var(--muted2)';
 
 let DOC={version:1,targets:[],leads:[]};
 let TARGETS=[];
-let FILTER={q:'',stage:'All',source:'All',zone:'All',due:false,owed:false,stale:false};
+let FILTER={q:'',stage:'All',source:'All',zone:'All',due:false,owed:false,stale:false,sort:'priority'};
 function myRole(){
   try{ let p=(TOKEN.split('.')[0]||'').replace(/-/g,'+').replace(/_/g,'/'); p+='='.repeat((4-p.length%4)%4);
     const d=JSON.parse(atob(p)); if(d&&d.role) return d.role; }catch(e){}
@@ -572,10 +600,19 @@ function renderMonths(){
 
 function buildFilterOptions(){
   const set=(sel,vals,cur)=>{ const e=$(sel); const keep=e.value; e.innerHTML=`<option value="All">${cur}</option>`+vals.map(v=>`<option${v===keep?' selected':''}>${esc(v)}</option>`).join(''); };
-  set('#fStage',STAGES,'All stages');
   const srcs=[...new Set(DOC.leads.map(l=>l.source).filter(Boolean))];
   set('#fSource',srcs,'All sources');
   set('#fZone',ZONES,'All zones');
+  $('#stagePills').innerHTML = STAGES.map(s=>{
+    const n=DOC.leads.filter(l=>l.stage===s).length;
+    const on=FILTER.stage===s;
+    return `<button type="button" class="stage-pill${on?' on':''}" data-stage="${s}" style="${on?`background:${STAGE_COLOR[s]};border-color:${STAGE_COLOR[s]}`:''}">${s}${n?` (${n})`:''}</button>`;
+  }).join('');
+  updateClearFiltersVisibility();
+}
+function updateClearFiltersVisibility(){
+  const active = FILTER.q || FILTER.stage!=='All' || FILTER.source!=='All' || FILTER.zone!=='All' || FILTER.due || FILTER.owed || FILTER.stale;
+  $('#clearFilters').style.display = active ? '' : 'none';
 }
 
 function passFilter(l){
@@ -589,31 +626,93 @@ function passFilter(l){
   if(q){ const hay=[l.company,l.contact,l.phone,l.invoice,l.notes].map(x=>(x||'').toLowerCase()).join(' '); if(!hay.includes(q)) return false; }
   return true;
 }
+// ── Sorting ──
+const STAGE_ORDER={New:0,Contacted:1,Quoted:2,Booked:3,Lost:4};
+function sortRows(rows){
+  const key=FILTER.sort||'priority';
+  const byName=(a,b)=>(a.company||a.contact||'').localeCompare(b.company||b.contact||'');
+  if(key==='name') return [...rows].sort(byName);
+  if(key==='value') return [...rows].sort((a,b)=>leadValue(b)-leadValue(a));
+  if(key==='newest') return [...rows].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(key==='stage') return [...rows].sort((a,b)=>(STAGE_ORDER[a.stage]??0)-(STAGE_ORDER[b.stage]??0) || byName(a,b));
+  if(key==='followup') return [...rows].sort((a,b)=>{
+    const fa=followupISO(a), fb=followupISO(b);
+    if(fa&&fb) return fa.localeCompare(fb);
+    return fa?-1:fb?1:0;
+  });
+  // 'priority' (default) — surfaces what actually needs attention today:
+  // overdue/due follow-ups first (most overdue at top), then open leads
+  // without a follow-up, then Booked, then Lost last.
+  const tISO=todayISO();
+  const bucket=l=>{
+    if(!isOpen(l)) return l.stage==='Booked'?2:3;
+    const fiso=followupISO(l);
+    return (fiso && fiso<=tISO) ? 0 : 1;
+  };
+  return [...rows].sort((a,b)=>{
+    const ba=bucket(a), bb=bucket(b);
+    if(ba!==bb) return ba-bb;
+    if(ba===0){ const fa=followupISO(a), fb=followupISO(b); if(fa!==fb) return fa.localeCompare(fb); }
+    return (b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);
+  });
+}
+const HEADER_SORT_KEY={name:'name',stage:'stage',followup:'followup',value:'value'};
+function updateSortHeaders(){
+  $('#fSort').value = FILTER.sort||'priority';
+  $$('th.sortable').forEach(th=>th.classList.toggle('active', HEADER_SORT_KEY[th.dataset.sort]===FILTER.sort));
+}
 function renderLeads(){
-  const rows=DOC.leads.filter(passFilter);
+  updateSortHeaders();
+  const rows=sortRows(DOC.leads.filter(passFilter));
   $('#leadsCap').textContent=`${rows.length} of ${DOC.leads.length} lead${DOC.leads.length===1?'':'s'}`;
   const tb=$('#leads');
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
   const tISO=todayISO();
+  const payDotColor={Completed:'var(--s-booked)',Partial:'var(--s-contacted)',Pending:'var(--s-lost)'};
   tb.innerHTML=rows.map(l=>{
     const val=leadValue(l);
     const fiso=followupISO(l);
     const fStyle = (isOpen(l)&&fiso&&fiso<=tISO) ? (fiso<tISO?'color:var(--s-lost);font-weight:700':'color:var(--s-contacted);font-weight:700') : 'color:var(--muted2)';
+    const waHref = l.phone ? `https://wa.me/${(normPhone(l.phone).length===10?'91':'')}${normPhone(l.phone)}` : '';
+    const payDot = (l.stage==='Booked' && val>0) ? `<span class="pay-dot" title="Payment: ${esc(l.paymentStatus||'Pending')}" style="background:${payDotColor[l.paymentStatus]||'var(--muted2)'}"></span>` : '';
     return `<tr data-id="${esc(l.id)}">
-      <td><div class="lead-nm">${esc(l.company||l.contact||'—')}</div>${l.contact&&l.company?`<div class="lead-sub">${esc(l.contact)}</div>`:''}</td>
-      <td>${l.phone?`<a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'<span class="lead-sub">—</span>'}</td>
-      <td>${l.zone?`<span class="zpill" style="background:${zColor(l.zone)}22;color:${zColor(l.zone)}">${esc(l.zone)}</span>`:'—'}</td>
-      <td><span class="stpill" style="background:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${esc(l.stage||'New')}</span></td>
-      <td style="${fStyle};font-size:11.5px">${esc(l.followup||'—')}</td>
-      <td class="r">${val?money(val):'—'}</td>
+      <td><div class="lead-nm">${esc(l.company||l.contact||'—')}${isStale(l)?' <span title="Stale — 14+ days untouched">🕸</span>':''}</div><div class="lead-sub">${[l.contact&&l.company?esc(l.contact):'', l.zone?esc(l.zone):''].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
+      <td>${l.phone?`<div class="phone-actions"><a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a><a class="wa-link" href="${waHref}" target="_blank" title="WhatsApp" onclick="event.stopPropagation()">💬</a></div>`:'<span class="lead-sub">—</span>'}</td>
+      <td><select class="stage-sel qstage" data-id="${esc(l.id)}" style="background-color:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${STAGES.map(s=>`<option value="${s}"${s===(l.stage||'New')?' selected':''}>${s}</option>`).join('')}</select></td>
+      <td><div class="fu-cell"><span style="${fStyle};font-size:11.5px">${esc(l.followup||'—')}</span>${isOpen(l)?`<button type="button" class="snooze-btn qsnooze" data-id="${esc(l.id)}" title="Push follow-up out 2 days">+2d</button>`:''}</div></td>
+      <td class="r">${val?money(val):'—'}${payDot}</td>
       <td><button class="rowbtn edit" title="Edit">✎</button></td>
     </tr>`;
   }).join('');
 }
 $('#leads').addEventListener('click',e=>{
+  if(e.target.closest('.qstage')||e.target.closest('.qsnooze')||e.target.closest('.wa-link')) return;
   const tr=e.target.closest('tr[data-id]'); if(!tr) return;
   const l=DOC.leads.find(x=>x.id===tr.dataset.id); if(!l) return;
   if(e.target.closest('.edit')) openLead(l); else openCustomer(l);
+});
+// Quick stage change, no modal — EXCEPT moving to Booked, which still needs
+// booking details (date/total/payment), so that one opens the edit modal
+// pre-set to the Booked stage instead of silently saving half-formed data.
+$('#leads').addEventListener('change',async e=>{
+  const sel=e.target.closest('.qstage'); if(!sel) return;
+  const l=DOC.leads.find(x=>x.id===sel.dataset.id); if(!l) return;
+  const next=sel.value;
+  if(next==='Booked' && l.stage!=='Booked'){ sel.value=l.stage||'New'; openLead(l); setTimeout(()=>{ $('#fStageM').value='Booked'; toggleBookBox(); },60); return; }
+  if(next===l.stage) return;
+  const rec={...l, stage:next, updatedAt:Date.now()};
+  await saveLeads(upsertLead(rec), `${rec.company||rec.contact||'Lead'} → ${next}`);
+});
+// Quick follow-up snooze (+2 days from today, or +2 from the existing date
+// if it's already in the future) — saves immediately, no modal.
+$('#leads').addEventListener('click',async e=>{
+  const btn=e.target.closest('.qsnooze'); if(!btn) return;
+  const l=DOC.leads.find(x=>x.id===btn.dataset.id); if(!l) return;
+  const base=followupISO(l); const tISO=todayISO();
+  const from=(base && base>tISO) ? base : tISO;
+  const d=new Date(from+'T00:00:00'); d.setDate(d.getDate()+2);
+  const rec={...l, followup:d.toISOString().slice(0,10), updatedAt:Date.now()};
+  await saveLeads(upsertLead(rec), 'Follow-up pushed +2 days');
 });
 
 // ── Unified customer view ──
@@ -916,13 +1015,28 @@ async function saveLeads(nextLeads, okMsg){
   finally{ $('#loader').className='hide'; }
 }
 
-$('#search').addEventListener('input',e=>{FILTER.q=e.target.value;renderLeads();});
-$('#fStage').addEventListener('change',e=>{FILTER.stage=e.target.value;renderLeads();});
-$('#fSource').addEventListener('change',e=>{FILTER.source=e.target.value;renderLeads();});
-$('#fZone').addEventListener('change',e=>{FILTER.zone=e.target.value;renderLeads();});
-$('#dueChip').addEventListener('click',()=>{ FILTER.due=!FILTER.due; updateDueChip(); renderLeads(); });
-$('#owedChip').addEventListener('click',()=>{ FILTER.owed=!FILTER.owed; updateOwedChip(); renderLeads(); });
-$('#staleChip').addEventListener('click',()=>{ FILTER.stale=!FILTER.stale; updateStaleChip(); renderLeads(); });
+$('#search').addEventListener('input',e=>{FILTER.q=e.target.value;renderLeads();updateClearFiltersVisibility();});
+$('#fSort').addEventListener('change',e=>{FILTER.sort=e.target.value;renderLeads();});
+$$('th.sortable').forEach(th=>th.addEventListener('click',()=>{
+  FILTER.sort = HEADER_SORT_KEY[th.dataset.sort] || 'priority';
+  renderLeads();
+}));
+$('#fSource').addEventListener('change',e=>{FILTER.source=e.target.value;renderLeads();updateClearFiltersVisibility();});
+$('#fZone').addEventListener('change',e=>{FILTER.zone=e.target.value;renderLeads();updateClearFiltersVisibility();});
+$('#dueChip').addEventListener('click',()=>{ FILTER.due=!FILTER.due; updateDueChip(); renderLeads(); updateClearFiltersVisibility(); });
+$('#owedChip').addEventListener('click',()=>{ FILTER.owed=!FILTER.owed; updateOwedChip(); renderLeads(); updateClearFiltersVisibility(); });
+$('#staleChip').addEventListener('click',()=>{ FILTER.stale=!FILTER.stale; updateStaleChip(); renderLeads(); updateClearFiltersVisibility(); });
+$('#stagePills').addEventListener('click',e=>{
+  const btn=e.target.closest('.stage-pill'); if(!btn) return;
+  const s=btn.dataset.stage;
+  FILTER.stage = FILTER.stage===s ? 'All' : s;
+  buildFilterOptions(); renderLeads();
+});
+$('#clearFilters').addEventListener('click',()=>{
+  FILTER={q:'',stage:'All',source:'All',zone:'All',due:false,owed:false,stale:false,sort:FILTER.sort};
+  $('#search').value=''; $('#fSource').value='All'; $('#fZone').value='All';
+  updateDueChip(); updateOwedChip(); updateStaleChip(); buildFilterOptions(); renderLeads();
+});
 
 // ── Targets editor (admin) ──
 const TARGET_MONTHS_DEFAULT=['May','June','July','August','September','October','November','December','January','February','March','April'];
