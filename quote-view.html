@@ -61,6 +61,8 @@
   .dbtn.pay:hover{background:var(--accent-d)}
   .dbtn.payoutline{background:#fff;border:1.5px solid var(--accent);color:var(--accent-d)}
   .dbtn.payoutline:hover{background:var(--accent-soft)}
+  .dbtn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--muted);min-width:0;flex:none;padding:9px 16px;font-size:12.5px}
+  .dbtn.ghost:hover{border-color:var(--muted2);color:var(--ink)}
   .dbtn:disabled{opacity:.55;cursor:not-allowed}
 
   .status-banner{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:13px;font-size:14px;font-weight:600}
@@ -81,6 +83,13 @@
 
   #content{display:none}
   @media(max-width:480px){ .dbtn{min-width:0;flex:1} }
+
+  @media print{
+    html,body{background:#fff !important}
+    .wrap{max-width:none !important;padding:0 !important}
+    .card{box-shadow:none !important;border:1px solid #ccc !important}
+    #pdfBtnRow, #payOnlineCard, #decideCard, #statusCard, #toast{display:none !important}
+  }
 </style>
 </head>
 <body>
@@ -95,6 +104,9 @@
   </div>
 
   <div id="content">
+    <div id="pdfBtnRow" style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="dbtn ghost" id="btnDownloadPdf" type="button">⬇ Download PDF</button>
+    </div>
     <div class="card">
       <div class="meta-row">
         <div class="meta"><div class="k">Quote No.</div><div class="v" id="mQno"></div></div>
@@ -359,6 +371,18 @@ async function submitDecision(decision){
 }
 $('#btnAccept').addEventListener('click', ()=>submitDecision('Accepted'));
 $('#btnDecline').addEventListener('click', ()=>submitDecision('Declined'));
+
+async function downloadPdf(){
+  try{ await document.fonts.ready; }catch(e){}
+  // Suggest the quote number as the saved filename (browsers use document.title)
+  const prevTitle=document.title;
+  document.title=((CURRENT_QUOTE&&CURRENT_QUOTE.qno)||"quote").replace(/[\/\\]/g,"-");
+  const restore=()=>{ document.title=prevTitle; window.removeEventListener("afterprint",restore); };
+  window.addEventListener("afterprint",restore);
+  window.print();
+  setTimeout(restore,1500);   // fallback in case afterprint never fires (some mobile browsers)
+}
+$('#btnDownloadPdf').addEventListener('click', downloadPdf);
 
 async function load(){
   if(!token){ $('#loadingState').style.display='none'; $('#errState').style.display='block'; return; }
