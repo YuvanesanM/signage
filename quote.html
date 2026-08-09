@@ -466,6 +466,7 @@ let curSharedAt = null;     // set only when the "Share via WhatsApp" button is 
 let curClientStatus = "", curClientRespondedAt = null;   // client's Accept/Decline on quote-view.html
 let leadLink = null;       // set when this quote was raised from a CRM lead
 let curScheduleId = null;  // set once this quote has been pushed to the schedule
+let curScheduleConflict = false;  // true when syncToSchedule found a zone/time clash and skipped the write
 let qPaymentsDraft = [];   // {id,date,amount,note} — this quote's payments log
 
 const $ = s => document.querySelector(s);
@@ -600,7 +601,12 @@ async function linkQuoteToLead(leadId, qno, confirmed){
     const l=leads.find(x=>x.id===leadId); if(!l) return;
     l.quoteNo=qno;
     let msg=null;
-    if(confirmed){ if(l.stage!=='Booked'){ l.stage='Booked'; msg='Lead marked “Booked”'; } }
+    // Booked and Lost are both terminal — once a lead reaches either, only a
+    // human changes it from there. Without this, saving a payment on an
+    // already-paid quote (e.g. logging the balance) re-runs this on every
+    // save and would silently resurrect a lead staff had deliberately
+    // marked Lost back to Booked.
+    if(confirmed){ if(l.stage!=='Booked' && l.stage!=='Lost'){ l.stage='Booked'; msg='Lead marked “Booked”'; } }
     else if(l.stage==='New' || l.stage==='Contacted'){ l.stage='Quoted'; msg='Lead marked “Quoted”'; }
     const put=await fetch(PROXY_URL+'/leads',{method:'PUT',headers:{'X-Token':proxyToken,'Content-Type':'application/json'},body:JSON.stringify(doc)});
     if(put.ok && msg) toast(msg);
@@ -700,8 +706,14 @@ async function syncToSchedule(q){
     // rather than the payment itself failing.
     const conflict=sessions.find(s=>s.id!==sid && s.zone===session.zone && s.date===session.date && s.start<session.end && session.start<s.end);
     if(conflict){
+      curScheduleConflict=true;
       updateSchedStatus(`Conflicts with ${conflict.name||conflict.quoteNo||'another booking'} (${conflict.start}–${conflict.end})`);
       toast("⚠ Schedule conflict — not added, please resolve manually");
+      // Persist the flag (a plain field re-save, not routed through
+      // collect()) so it's visible next time this quote is reopened
+      // (loadQuote reads it) or viewed from the CRM — not just this toast.
+      const all0=getQuotes(); const idx0=all0.findIndex(x=>x.qno===q.qno);
+      if(idx0>=0){ all0[idx0].scheduleConflict=true; setQuotes(all0); await pushQuotes(); }
       return;
     }
 
@@ -712,9 +724,9 @@ async function syncToSchedule(q){
     if(!pr.ok){ toast("Could not update the schedule ("+pr.status+")"); updateSchedStatus(); return; }
 
     const wasNew=!curScheduleId;
-    curScheduleId=sid; updateSchedStatus();
+    curScheduleId=sid; curScheduleConflict=false; updateSchedStatus();
     const all=getQuotes(); const idx=all.findIndex(x=>x.qno===q.qno);
-    if(idx>=0){ all[idx].scheduleId=sid; setQuotes(all); }
+    if(idx>=0){ all[idx].scheduleId=sid; all[idx].scheduleConflict=false; setQuotes(all); }
     await pushQuotes();
     if(leadLink && leadLink.id){ await linkLeadSchedule(leadLink.id, sid, q.sessionDate, q.sessionStart); }
     if(wasNew) toast("Confirmed — added to schedule");
@@ -858,7 +870,7 @@ function newQuote(){
   $("#qno").value=curQno; $("#qdate").value=fmtDate(curDateISO);
   $("#zone").value=ZONES[0]; $("#hours").value=String(DEFAULT_HOURS);
   $("#cname").value=""; $("#cphone").value=""; $("#cgst").value=""; $("#caddr").value=""; $("#terms").value=settings.terms; $("#discountInp").value="";
-  $("#sessDate").value=""; $("#sessStart").value=""; curScheduleId=null; updateSchedStatus();
+  $("#sessDate").value=""; $("#sessStart").value=""; curScheduleId=null; curScheduleConflict=false; updateSchedStatus();
   qPaymentsDraft=[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
   items=[zoneItem()];
@@ -1040,7 +1052,7 @@ function collect(){
   return { qno:curQno, date:curDateISO, zone:$("#zone").value, hours:$("#hours").value, req:reqText(),
     cname:$("#cname").value, cphone:$("#cphone").value.trim(), cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
-    sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
+    sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId, scheduleConflict:curScheduleConflict,
     leadId: (leadLink && leadLink.id) || null,
     payments, status: paid>0 ? "Confirmed" : "Pending", shareToken:curShareToken, sharedAt:curSharedAt,
     clientStatus:curClientStatus, clientRespondedAt:curClientRespondedAt,
@@ -1057,12 +1069,26 @@ async function saveQuote(silent){
     (q.sessionDate ? $("#sessStart") : $("#sessDate")).focus();
     return;
   }
-  // Refresh from the cloud right before writing so a client's Accept/Decline
-  // (recorded via quote-view.html, possibly while this tab sat open) is
-  // never clobbered by the stale clientStatus this tab loaded with.
+  // Refresh from the cloud right before writing so anything recorded
+  // out-of-band while this tab sat open — a client's Accept/Decline, or a
+  // Razorpay payment that arrived with no staff browser involved at all —
+  // is merged in rather than silently overwritten by this tab's stale copy.
   await fetchQuotesFromProxy();
   const fresh = getQuotes().find(x=>x.qno===q.qno);
-  if(fresh){ q.clientStatus = fresh.clientStatus||""; q.clientRespondedAt = fresh.clientRespondedAt||null; curClientStatus=q.clientStatus; curClientRespondedAt=q.clientRespondedAt; renderClientResp(q); }
+  if(fresh){
+    q.clientStatus = fresh.clientStatus||""; q.clientRespondedAt = fresh.clientRespondedAt||null;
+    curClientStatus=q.clientStatus; curClientRespondedAt=q.clientRespondedAt; renderClientResp(q);
+    if(fresh.scheduleId && !q.scheduleId){ q.scheduleId=fresh.scheduleId; curScheduleId=q.scheduleId; }
+    else if(fresh.scheduleConflict && !q.scheduleId){ q.scheduleConflict=true; curScheduleConflict=true; }
+    const localIds=new Set(q.payments.map(p=>p.id));
+    const extra=(fresh.payments||[]).filter(p=>!localIds.has(p.id));
+    if(extra.length){
+      q.payments=[...q.payments, ...extra];
+      qPaymentsDraft=q.payments.map(p=>({...p}));
+      q.status = q.payments.reduce((s,p)=>s+(Number(p.amount)||0),0)>0 ? "Confirmed" : "Pending";
+      renderQPayments();
+    }
+  }
   const all=getQuotes(); const key=editingKey||q.qno; const idx=all.findIndex(x=>x.qno===key);
   if(idx>=0) all[idx]=q; else all.push(q);
   setQuotes(all); editingKey=q.qno; syncPdfBtn();
@@ -1078,7 +1104,7 @@ function loadQuote(qno){
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cphone").value=q.cphone||""; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
-  $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null;
+  $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; curScheduleConflict=!!q.scheduleConflict;
   updateSchedStatus(q.scheduleConflict ? "Schedule conflict — resolve and re-save to add this to the calendar" : null);
   // Restore the lead link (if any) so a re-save doesn't erase it, and so a
   // reopened quote still keeps its schedule entry tagged with the right lead.

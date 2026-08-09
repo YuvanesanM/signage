@@ -766,6 +766,8 @@ function renderQuoteSummary(lead){
   const bal=Math.max(0,total-paid);
   const schedLine = q.scheduleId
     ? `<div>🔗 Scheduled: ${esc(q.sessionDate||'')}${q.sessionStart?', '+esc(q.sessionStart):''}</div>`
+    : q.scheduleConflict
+    ? `<div style="color:var(--s-lost);font-weight:600">⚠ Schedule conflict — paid but not on the calendar, resolve in Quote Builder</div>`
     : `<div style="color:var(--muted2)">Not yet on the schedule.</div>`;
   const clientLine = q.clientStatus==='Accepted'
     ? `<div style="color:var(--accent-d)">✅ Client accepted</div>`
