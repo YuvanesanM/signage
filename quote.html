@@ -255,6 +255,7 @@
       <!-- primary action buttons -->
       <button class="btn quote-only" id="btnNew">+ New</button>
       <button class="btn quote-only" id="btnSave">Save</button>
+      <button class="btn icon-btn quote-only" id="btnShareHdr" title="Share via WhatsApp">📤</button>
       <button class="btn primary quote-only" id="btnPdf">PDF</button>
     </div>
   </header>
@@ -277,8 +278,6 @@
           <label class="f"><span>Start time <span style="color:#c0584b">*</span></span><input class="t" id="sessStart" type="time" required></label>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap">
-          <button class="btn" type="button" id="btnSchedule" style="border:1.5px solid var(--accent);color:var(--accent-d)">📅 Add to schedule</button>
-          <button class="btn" type="button" id="btnShare" style="border:1.5px solid #3aa06a;color:#2f7d54" title="Save and share a client-facing link via WhatsApp">📤 Share via WhatsApp</button>
           <span id="schedStatus" style="font-size:12px;color:var(--muted2)"></span>
         </div>
         <div id="clientRespRow" style="display:none;margin-top:8px"></div>
@@ -607,7 +606,7 @@ async function linkQuoteToLead(leadId, qno){
    separate "+ Add Session" in Schedule Manager) ---------- */
 function updateSchedStatus(){
   const el=$("#schedStatus"); if(!el) return;
-  el.textContent = curScheduleId ? "✓ On the schedule" : "";
+  el.textContent = curScheduleId ? "✓ On the schedule" : "Added to the schedule automatically once confirmed";
 }
 
 /* ---------- PAYMENTS → Confirmed status ----------
@@ -669,18 +668,18 @@ async function linkLeadSchedule(leadId, sid, dateISO, start){
     await fetch(PROXY_URL+'/leads',{method:'PUT',headers:{'X-Token':proxyToken,'Content-Type':'application/json'},body:JSON.stringify(doc)});
   }catch(e){}
 }
-async function addToSchedule(){
-  const dateISO=$("#sessDate").value, start=$("#sessStart").value;
-  if(!dateISO || !start){ toast("Set a session date and start time first"); return; }
-  const btn=$("#btnSchedule"); btn.disabled=true; const prevTxt=btn.textContent; btn.textContent="Adding…";
+// Confirmed quotes (an advance or full payment on file) go on the schedule
+// automatically — there's no manual "Add to schedule" step anymore. A quote
+// already on the schedule stays in sync (date/time/confirmed flag) on every
+// save; an unconfirmed quote never touches schedule.json at all.
+async function syncToSchedule(q){
+  if(!curScheduleId && q.status!=='Confirmed'){ updateSchedStatus(); return; }
   try{
-    await saveQuote(true);   // make sure this quote (and its qno) is persisted first
     const hours=parseInt($("#hours").value,10)||DEFAULT_HOURS;
-    const end=addHoursTime(start, hours);
-    const zone=$("#zone").value||ZONES[0];
+    const end=addHoursTime(q.sessionStart, hours);
+    const zone=(q.zone||ZONES[0]).toLowerCase();
     const sid=curScheduleId || ("S"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
-    const paidNow = qPaymentsDraft.reduce((s,p)=>s+(Number(p.amount)||0),0) > 0;
-    const session={ id:sid, quoteNo:curQno, name:$("#cname").value.trim()||curQno, zone:zone.toLowerCase(), start, end, date:dateISO, confirmed:paidNow };
+    const session={ id:sid, quoteNo:q.qno, name:(q.cname||"").trim()||q.qno, zone, start:q.sessionStart, end, date:q.sessionDate, confirmed:q.status==='Confirmed' };
     if(leadLink && leadLink.id) session.leadId=leadLink.id;
 
     const gr=await fetch(PROXY_URL+'/schedule',{headers:{'X-Token':proxyToken}});
@@ -690,17 +689,17 @@ async function addToSchedule(){
     const i=sessions.findIndex(s=>s.id===sid);
     if(i>=0) sessions[i]=session; else sessions.push(session);
     const pr=await fetch(PROXY_URL+"/schedule",{method:"PUT",headers:{"X-Token":proxyToken,"Content-Type":"application/json"},body:JSON.stringify({...sched,sessions})});
-    if(pr.status===403){ toast("Completed sessions are locked for your account"); return; }
-    if(!pr.ok){ toast("Schedule save failed ("+pr.status+")"); return; }
+    if(pr.status===403){ toast("Completed sessions are locked for your account"); updateSchedStatus(); return; }
+    if(!pr.ok){ toast("Could not update the schedule ("+pr.status+")"); updateSchedStatus(); return; }
 
+    const wasNew=!curScheduleId;
     curScheduleId=sid; updateSchedStatus();
-    const all=getQuotes(); const idx=all.findIndex(x=>x.qno===curQno);
-    if(idx>=0){ all[idx].scheduleId=sid; all[idx].sessionDate=dateISO; all[idx].sessionStart=start; setQuotes(all); }
+    const all=getQuotes(); const idx=all.findIndex(x=>x.qno===q.qno);
+    if(idx>=0){ all[idx].scheduleId=sid; setQuotes(all); }
     await pushQuotes();
-    if(leadLink && leadLink.id){ await linkLeadSchedule(leadLink.id, sid, dateISO, start); }
-    toast("Added to schedule");
-  }catch(e){ toast("Could not reach the schedule"); }
-  finally{ btn.disabled=false; btn.textContent=prevTxt; }
+    if(leadLink && leadLink.id){ await linkLeadSchedule(leadLink.id, sid, q.sessionDate, q.sessionStart); }
+    if(wasNew) toast("Confirmed — added to schedule");
+  }catch(e){ toast("Could not reach the schedule"); updateSchedStatus(); }
 }
 
 /* ---------- INIT ---------- */
@@ -818,8 +817,7 @@ function bind(){
   $("#hdrLogo").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", ()=>saveQuote());
-  $("#btnSchedule").addEventListener("click", addToSchedule);
-  $("#btnShare").addEventListener("click", shareQuote);
+  $("#btnShareHdr").addEventListener("click", shareQuote);
   $("#qPmtAdd").addEventListener("click", ()=>{
     const amt=parseFloat($("#qPmtAmount").value)||0;
     if(amt<=0){ toast("Enter a payment amount"); return; }
@@ -1024,12 +1022,13 @@ function collect(){
     cname:$("#cname").value, cphone:$("#cphone").value.trim(), cgst:$("#cgst").value.trim(), caddr:$("#caddr").value, terms:$("#terms").value,
     discount: parseFloat($("#discountInp").value)||0,
     sessionDate:$("#sessDate").value, sessionStart:$("#sessStart").value, scheduleId:curScheduleId,
+    leadId: (leadLink && leadLink.id) || null,
     payments, status: paid>0 ? "Confirmed" : "Pending", shareToken:curShareToken, sharedAt:curSharedAt,
     clientStatus:curClientStatus, clientRespondedAt:curClientRespondedAt,
     items: items.map(({desc,sac,price,qty,gst})=>({desc,sac,price,qty,gst})), savedAt:Date.now() };
 }
 // `silent` suppresses the "Quote saved" toast — used when saveQuote() runs as
-// a first step of a bigger action (e.g. Add to schedule) that shows its own.
+// a first step of a bigger action (e.g. sharing) that shows its own.
 async function saveQuote(silent){
   const q=collect(); if(!q.qno){ toast("No quote number"); return; }
   // All bookings originate from a quote, so the session date/time that makes
@@ -1051,6 +1050,7 @@ async function saveQuote(silent){
   await pushQuotes();
   if(!silent) toast("Quote "+q.qno+" saved");
   if(leadLink && leadLink.id){ await linkQuoteToLead(leadLink.id, q.qno); }
+  await syncToSchedule(q);
 }
 function loadQuote(qno){
   const q=getQuotes().find(x=>x.qno===qno); if(!q) return;
@@ -1060,6 +1060,9 @@ function loadQuote(qno){
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cphone").value=q.cphone||""; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
   $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
+  // Restore the lead link (if any) so a re-save doesn't erase it, and so a
+  // reopened quote still keeps its schedule entry tagged with the right lead.
+  leadLink = q.leadId ? { id:q.leadId, phone:q.cphone||"" } : null;
   curShareToken=q.shareToken||genToken(); curSharedAt=q.sharedAt||null; curClientStatus=q.clientStatus||""; curClientRespondedAt=q.clientRespondedAt||null; renderClientResp(q);
   qPaymentsDraft=Array.isArray(q.payments)?q.payments.map(p=>({...p})):[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
@@ -1093,8 +1096,8 @@ function renderClientResp(q){
 }
 async function shareQuote(){
   if(!curQno){ toast("No quote number"); return; }
-  const btn=$("#btnShare"); const prevTxt=btn.textContent;
-  btn.disabled=true; btn.textContent="Saving…";
+  const btn=$("#btnShareHdr"); const prevTxt=btn.textContent, prevTitle=btn.title;
+  btn.disabled=true; btn.textContent="⏳"; btn.title="Saving…";
   try{
     if(!$("#sessDate").value || !$("#sessStart").value){
       await saveQuote(true);   // triggers the same "set a session date/time" toast, nothing marked shared
@@ -1120,7 +1123,7 @@ async function shareQuote(){
     window.open(waUrl, "_blank");
     toast("Opening WhatsApp for client…");
   } finally {
-    btn.disabled=false; btn.textContent=prevTxt;
+    btn.disabled=false; btn.textContent=prevTxt; btn.title=prevTitle;
   }
 }
 
