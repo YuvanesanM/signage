@@ -587,8 +587,11 @@ function applyLeadPrefill(){
 }
 function clearLeadLink(){ leadLink=null; const b=document.getElementById('leadBanner'); if(b) b.remove(); }
 
-// Write the quote number back onto the lead and advance its stage to Quoted.
-async function linkQuoteToLead(leadId, qno){
+// Write the quote number back onto the lead, and advance its stage to reflect
+// the quote's actual outcome — Confirmed (payment received) jumps straight to
+// "Booked" regardless of current stage; otherwise a fresh quote just moves
+// New/Contacted to "Quoted". Never downgrades a lead already "Booked".
+async function linkQuoteToLead(leadId, qno, confirmed){
   try{
     const res=await fetch(PROXY_URL+'/leads',{headers:{'X-Token':proxyToken}});
     if(!res.ok) return;
@@ -596,16 +599,20 @@ async function linkQuoteToLead(leadId, qno){
     const leads=Array.isArray(doc.leads)?doc.leads:[];
     const l=leads.find(x=>x.id===leadId); if(!l) return;
     l.quoteNo=qno;
-    if(l.stage==='New' || l.stage==='Contacted') l.stage='Quoted';
+    let msg=null;
+    if(confirmed){ if(l.stage!=='Booked'){ l.stage='Booked'; msg='Lead marked “Booked”'; } }
+    else if(l.stage==='New' || l.stage==='Contacted'){ l.stage='Quoted'; msg='Lead marked “Quoted”'; }
     const put=await fetch(PROXY_URL+'/leads',{method:'PUT',headers:{'X-Token':proxyToken,'Content-Type':'application/json'},body:JSON.stringify(doc)});
-    if(put.ok) toast('Lead marked “Quoted”');
+    if(put.ok && msg) toast(msg);
   }catch(e){}
 }
 
 /* ---------- QUOTE → SCHEDULE (avoids re-entering the same details as a
    separate "+ Add Session" in Schedule Manager) ---------- */
-function updateSchedStatus(){
+function updateSchedStatus(conflictText){
   const el=$("#schedStatus"); if(!el) return;
+  if(conflictText){ el.textContent="⚠ "+conflictText; el.style.color="#c0584b"; return; }
+  el.style.color="";
   el.textContent = curScheduleId ? "✓ On the schedule" : "Added to the schedule automatically once confirmed";
 }
 
@@ -686,6 +693,18 @@ async function syncToSchedule(q){
     if(gr.status===401){ handleExpired(); return; }
     const sched=gr.ok?await gr.json():{sessions:[]};
     const sessions=Array.isArray(sched.sessions)?sched.sessions:[];
+
+    // Never silently double-book: another session in the same zone on the
+    // same date whose time range overlaps blocks the write — money already
+    // changed hands (if any), so this is flagged for a human to resolve
+    // rather than the payment itself failing.
+    const conflict=sessions.find(s=>s.id!==sid && s.zone===session.zone && s.date===session.date && s.start<session.end && session.start<s.end);
+    if(conflict){
+      updateSchedStatus(`Conflicts with ${conflict.name||conflict.quoteNo||'another booking'} (${conflict.start}–${conflict.end})`);
+      toast("⚠ Schedule conflict — not added, please resolve manually");
+      return;
+    }
+
     const i=sessions.findIndex(s=>s.id===sid);
     if(i>=0) sessions[i]=session; else sessions.push(session);
     const pr=await fetch(PROXY_URL+"/schedule",{method:"PUT",headers:{"X-Token":proxyToken,"Content-Type":"application/json"},body:JSON.stringify({...sched,sessions})});
@@ -1049,7 +1068,7 @@ async function saveQuote(silent){
   setQuotes(all); editingKey=q.qno; syncPdfBtn();
   await pushQuotes();
   if(!silent) toast("Quote "+q.qno+" saved");
-  if(leadLink && leadLink.id){ await linkQuoteToLead(leadLink.id, q.qno); }
+  if(leadLink && leadLink.id){ await linkQuoteToLead(leadLink.id, q.qno, q.status==='Confirmed'); }
   await syncToSchedule(q);
 }
 function loadQuote(qno){
@@ -1059,7 +1078,8 @@ function loadQuote(qno){
   $("#zone").value=ZONES.includes(q.zone)?q.zone:ZONES[0];
   $("#hours").value=(q.hours&&+q.hours>=MIN_HOURS&&+q.hours<=MAX_HOURS)?q.hours:String(DEFAULT_HOURS);
   $("#cname").value=q.cname; $("#cphone").value=q.cphone||""; $("#cgst").value=q.cgst||""; $("#caddr").value=q.caddr; $("#terms").value=q.terms; $("#discountInp").value=q.discount?String(q.discount):"";
-  $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null; updateSchedStatus();
+  $("#sessDate").value=q.sessionDate||""; $("#sessStart").value=q.sessionStart||""; curScheduleId=q.scheduleId||null;
+  updateSchedStatus(q.scheduleConflict ? "Schedule conflict — resolve and re-save to add this to the calendar" : null);
   // Restore the lead link (if any) so a re-save doesn't erase it, and so a
   // reopened quote still keeps its schedule entry tagged with the right lead.
   leadLink = q.leadId ? { id:q.leadId, phone:q.cphone||"" } : null;
