@@ -57,6 +57,10 @@
   .dbtn.accept:hover{background:var(--accent-d)}
   .dbtn.decline{background:var(--panel2);border:1.5px solid var(--line);color:var(--muted)}
   .dbtn.decline:hover{border-color:var(--danger);color:var(--danger)}
+  .dbtn.pay{background:var(--accent);color:#fff}
+  .dbtn.pay:hover{background:var(--accent-d)}
+  .dbtn.payoutline{background:#fff;border:1.5px solid var(--accent);color:var(--accent-d)}
+  .dbtn.payoutline:hover{background:var(--accent-soft)}
   .dbtn:disabled{opacity:.55;cursor:not-allowed}
 
   .status-banner{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:13px;font-size:14px;font-weight:600}
@@ -121,6 +125,13 @@
       <ul class="terms" id="termsList"></ul>
     </div>
 
+    <div class="card" id="payOnlineCard" style="display:none">
+      <h3 style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent-d);margin-bottom:10px">Pay online</h3>
+      <div class="pay-line" id="payStatusLine"></div>
+      <div class="dbtns" id="payBtns" style="margin-top:14px"></div>
+      <div id="payErr" style="color:var(--danger);font-size:12px;margin-top:12px;min-height:14px"></div>
+    </div>
+
     <div class="card pay-card">
       <h3>Payment details</h3>
       <div class="pay-line">Name: DREAMOUR MULTIVENTURES
@@ -146,6 +157,7 @@ Account Type: CURRENT</div>
 </div>
 <div id="toast"></div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 const $ = s => document.querySelector(s);
@@ -158,6 +170,16 @@ function toast(msg, err){ const t=$('#toast'); t.textContent=msg; t.className='s
 
 function lineTotal(it){ return (parseFloat(it.price)||0)*(parseFloat(it.qty)||0); }
 function lineGst(it){ return lineTotal(it)*(parseFloat(it.gst)||0)/100; }
+// Same math as renderQuote()'s totals — pulled out so the pay card can size
+// the 50%/full-balance buttons off the identical grand total.
+function grandTotalOf(q){
+  const items = Array.isArray(q.items) ? q.items.filter(it=>it.desc||it.price) : [];
+  const sub = items.reduce((s,it)=>s+lineTotal(it),0);
+  const gst = items.reduce((s,it)=>s+lineGst(it),0);
+  const maxDisc = Math.floor(sub*0.10);
+  const discount = Math.min(parseFloat(q.discount)||0, maxDisc);
+  return sub + gst - discount;
+}
 function fmtDate(iso){
   if(!iso) return '—';
   const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
@@ -205,7 +227,88 @@ function renderQuote(q){
   if(terms.length){ $('#termsList').innerHTML = terms.map(t=>`<li>${esc(t)}</li>`).join(''); }
   else { $('#termsCard').style.display='none'; }
 
+  renderPayCard(q);
   renderDecision(q);
+}
+
+function renderPayCard(q){
+  const card=$('#payOnlineCard'); if(!card) return;
+  const grand = grandTotalOf(q);
+  const paid = Number(q.paidTotal)||0;
+  const balance = Math.max(0, Math.round(grand) - paid);
+  card.style.display = 'block';
+  if(balance<=0){
+    $('#payStatusLine').textContent = 'Fully paid — thank you!';
+    $('#payBtns').innerHTML = '';
+    return;
+  }
+  $('#payStatusLine').textContent = paid>0
+    ? `Paid so far: ${money(paid)} · Balance due: ${money(balance)}`
+    : `Total due: ${money(balance)}`;
+  const half = Math.round(grand*0.5);
+  let html = '';
+  if(paid===0 && half<balance){
+    html += `<button class="dbtn payoutline" data-amt="${half}" type="button">Pay 50% Advance — ${money(half)}</button>`;
+  }
+  html += `<button class="dbtn pay" data-amt="${balance}" type="button">Pay ${paid>0?'Balance':'Full Amount'} — ${money(balance)}</button>`;
+  $('#payBtns').innerHTML = html;
+  $('#payBtns').querySelectorAll('[data-amt]').forEach(b=>b.addEventListener('click', ()=>startPayment(Number(b.dataset.amt))));
+}
+
+async function startPayment(amountRupees){
+  $('#payErr').textContent = '';
+  const buttons = [...$('#payBtns').querySelectorAll('button')];
+  buttons.forEach(b=>b.disabled=true);
+  try{
+    if(typeof Razorpay === 'undefined'){ throw new Error('Payment gateway failed to load — check your connection and retry'); }
+    const res = await fetch(PROXY_URL+'/quote-pay/order', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token, amount: amountRupees })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || 'Could not start payment');
+    const rzp = new Razorpay({
+      key: data.keyId, amount: data.amount, currency: 'INR', order_id: data.orderId,
+      name: 'Studio RYST', description: 'Quote '+(CURRENT_QUOTE&&CURRENT_QUOTE.qno||''),
+      prefill: { name: (CURRENT_QUOTE&&CURRENT_QUOTE.cname)||'' },
+      theme: { color: '#3d9b69' },
+      handler: function(response){ verifyPayment(response); },
+      modal: { ondismiss: function(){ buttons.forEach(b=>b.disabled=false); } },
+    });
+    rzp.on('payment.failed', function(){
+      $('#payErr').textContent = 'Payment failed — please try again.';
+      buttons.forEach(b=>b.disabled=false);
+    });
+    rzp.open();
+  }catch(e){
+    $('#payErr').textContent = e.message || 'Could not start payment';
+    buttons.forEach(b=>b.disabled=false);
+  }
+}
+
+async function verifyPayment(response){
+  try{
+    const res = await fetch(PROXY_URL+'/quote-pay/verify', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        token,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || 'Could not confirm your payment — please contact Studio RYST');
+    CURRENT_QUOTE = { ...CURRENT_QUOTE, ...data };
+    renderPayCard(CURRENT_QUOTE);
+    renderDecision(CURRENT_QUOTE);
+    toast('Payment received — thank you!');
+  }catch(e){
+    $('#payErr').textContent = e.message;
+    toast('Payment made but confirmation failed — please contact Studio RYST', true);
+  }finally{
+    $('#payBtns').querySelectorAll('button').forEach(b=>b.disabled=false);
+  }
 }
 
 function renderDecision(q){
