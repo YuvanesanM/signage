@@ -1077,17 +1077,6 @@ function normPhone(raw){
   if(d.length>10) d=d.slice(-10);   // strip country code / leading 0s
   return d.length===10 ? d : "";
 }
-// Hides the signage.ryst.in domain from the WhatsApp message text — the proxy
-// shortens it via is.gd server-side. Falls back to the real link on any error
-// so a share never silently fails just because shortening didn't work.
-async function shortenLink(fullUrl){
-  try{
-    const res = await fetch(PROXY_URL+'/shorten?url='+encodeURIComponent(fullUrl), {headers:{'X-Token':proxyToken}});
-    if(!res.ok) return fullUrl;
-    const d = await res.json();
-    return d.short || fullUrl;
-  }catch(e){ return fullUrl; }
-}
 function renderClientResp(q){
   const row=$("#clientRespRow"); if(!row) return;
   const status = q ? (q.clientStatus||curClientStatus) : "";
@@ -1122,8 +1111,9 @@ async function shareQuote(){
     curSharedAt = curSharedAt || Date.now();   // mark as actually shared, persisted by the save below
     await saveQuote(true);
     const q=collect();
-    const fullLink = "https://signage.ryst.in/quote-view.html?t="+encodeURIComponent(curShareToken);
-    const link = await shortenLink(fullLink);   // keeps the internal domain out of the client-facing message
+    // book.ryst.in is a dedicated client-facing domain (separate from the
+    // internal signage.ryst.in tool), so the link needs no further hiding.
+    const link = "https://book.ryst.in/?t="+encodeURIComponent(curShareToken);
     const msg = `Hi${q.cname?" "+q.cname:""}! Here's your quote from Studio RYST (${q.qno}). `
       + `Please review and accept or decline here: ${link}`;
     const waUrl = `https://wa.me/91${phone}?text=` + encodeURIComponent(msg);
