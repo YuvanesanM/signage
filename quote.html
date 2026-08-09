@@ -152,6 +152,15 @@
   .modal{position:fixed;inset:0;background:rgba(30,40,30,.42);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
   .modal[hidden]{display:none}
   .modal-card{width:min(560px,100%);max-height:86vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;box-shadow:0 24px 60px rgba(40,50,40,.18)}
+  .modal-card.wide{width:min(900px,96vw)}
+  #pdfFrame{width:100%;height:min(72vh,900px);border:1px solid var(--line);border-radius:8px;background:#dfe1dc}
+  /* Forces the printable quote back to true A4 dimensions right before PDF
+     capture, regardless of the current viewport — mirrors what @media print
+     already does for window.print(), so the generated file always matches
+     the full desktop layout even when triggered from a narrow screen. */
+  #quoteDoc.pdf-force-a4{width:210mm !important;min-height:297mm !important;padding:10mm 13mm 9mm !important}
+  #quoteDoc.pdf-force-a4 .q-logo{max-height:200px !important;max-width:560px !important;margin-top:-9mm !important}
+  #quoteDoc.pdf-force-a4 .q-title{font-size:30px !important;margin:-10mm 0 10px !important}
   .modal-card h2{font-weight:600;margin:0 0 4px;font-size:20px}
   .modal-card .sd{color:var(--muted);font-size:12.5px;margin:0 0 20px}
   .modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
@@ -406,9 +415,22 @@
   </div>
 </div>
 
+<!-- ===================== PDF PREVIEW MODAL ===================== -->
+<div class="modal" id="pdfModal" hidden>
+  <div class="modal-card wide">
+    <h2>Quote PDF</h2>
+    <p class="sd" id="pdfModalSub">Generating…</p>
+    <iframe id="pdfFrame" title="Quote PDF preview"></iframe>
+    <div class="modal-foot">
+      <button class="btn" id="pdfClose">Close</button>
+      <button class="btn primary" id="pdfDownload" disabled>⬇ Download</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 /* =========================================================================
    CONFIG
@@ -844,10 +866,12 @@ function bind(){
     $("#qPmtAmount").value=""; $("#qPmtNote").value="";
     renderQPayments(); render();
   });
-  $("#btnPdf").addEventListener("click", downloadPdf);
+  $("#btnPdf").addEventListener("click", previewPdf);
   $("#btnHome").addEventListener("click", ()=>{ window.location.href='login.html'; });
   $("#btnSaved").addEventListener("click", openSaved);
   $("#savedClose").addEventListener("click", ()=>$("#savedModal").hidden=true);
+  $("#pdfClose").addEventListener("click", closePdfModal);
+  $("#pdfDownload").addEventListener("click", downloadCurrentPdf);
 }
 
 /* ---------- NEW QUOTE ---------- */
@@ -1162,22 +1186,58 @@ async function openSaved(){
   list.querySelectorAll("[data-load]").forEach(b=>b.addEventListener("click",()=>loadQuote(b.dataset.load)));
 }
 
-/* ---------- PDF via native print → Save as PDF ---------- */
+/* ---------- PDF: generated in-browser (html2pdf) and shown embedded ---------- */
 function syncPdfBtn(){
   const b=$("#btnPdf"); if(!b) return;
   b.disabled=!editingKey;
-  b.title=editingKey?"Download PDF":"Save the document first, then download PDF";
+  b.title=editingKey?"View / download PDF":"Save the document first, then download PDF";
 }
-async function downloadPdf(){
-  try{ await document.fonts.ready; }catch(e){}
-  // Suggest the quote number as the saved filename (browsers use document.title)
-  const prevTitle=document.title;
-  document.title=(curQno||"quote").replace(/[\/\\]/g,"-");
-  const restore=()=>{ document.title=prevTitle; window.removeEventListener("afterprint",restore); };
-  window.addEventListener("afterprint",restore);
-  window.print();
-  // Fallback restore in case afterprint never fires (some mobile browsers)
-  setTimeout(restore,1500);
+let curPdfBlob=null, curPdfUrl=null, curPdfName="quote.pdf";
+async function previewPdf(){
+  if(!editingKey) return;
+  const btn=$("#btnPdf"); const prevTxt=btn.textContent;
+  btn.disabled=true; btn.textContent="Generating…";
+  $("#pdfDownload").disabled=true;
+  $("#pdfModalSub").textContent="Generating…";
+  $("#pdfFrame").src="about:blank";
+  $("#pdfModal").hidden=false;
+  const doc=$("#quoteDoc");
+  try{
+    try{ await document.fonts.ready; }catch(e){}
+    // Force the true A4 layout for capture, regardless of current viewport
+    // (mirrors what @media print already does for the old print-based flow).
+    doc.classList.add("pdf-force-a4");
+    curPdfName=(curQno||"quote").replace(/[\/\\]/g,"-")+".pdf";
+    const blob=await html2pdf().set({
+      margin:0, filename:curPdfName,
+      image:{type:"jpeg",quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+      jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+    }).from(doc).outputPdf("blob");
+    if(curPdfUrl) URL.revokeObjectURL(curPdfUrl);
+    curPdfBlob=blob; curPdfUrl=URL.createObjectURL(blob);
+    $("#pdfFrame").src=curPdfUrl;
+    $("#pdfModalSub").textContent=curQno||"";
+    $("#pdfDownload").disabled=false;
+  }catch(e){
+    $("#pdfModalSub").textContent="Could not generate the PDF preview.";
+    toast("PDF generation failed — try again");
+  }finally{
+    doc.classList.remove("pdf-force-a4");
+    btn.disabled=false; btn.textContent=prevTxt;
+  }
+}
+function closePdfModal(){
+  $("#pdfModal").hidden=true;
+  $("#pdfFrame").src="about:blank";
+  if(curPdfUrl){ URL.revokeObjectURL(curPdfUrl); curPdfUrl=null; }
+  curPdfBlob=null;
+}
+function downloadCurrentPdf(){
+  if(!curPdfBlob) return;
+  const a=document.createElement("a");
+  a.href=curPdfUrl; a.download=curPdfName;
+  document.body.appendChild(a); a.click(); a.remove();
 }
 </script>
 </body>
