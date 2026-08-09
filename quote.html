@@ -159,13 +159,20 @@
   .logo-preview img{max-height:42px}
   .qr-preview img{height:80px;border:1px solid var(--line);border-radius:8px;padding:4px;background:#fff;margin:8px 0}
 
-  .saved-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-  .saved-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-size:13px}
-  .saved-item .si-main{flex:1;min-width:0}
-  .saved-item .si-no{color:var(--accent-d);font-weight:600}
-  .saved-item .si-sub{color:var(--muted);font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .saved-item button{padding:6px 10px;font-size:12px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
-  .saved-item button:hover{border-color:var(--accent)}
+  /* Load-quote dropdown (left panel) — replaces the old Saved-quotes modal */
+  .load-quote-wrap{position:relative}
+  .load-quote-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:13px;color:var(--ink);text-align:left}
+  .load-quote-btn:hover{border-color:var(--accent)}
+  .load-quote-btn span:last-child{color:var(--muted2);font-size:11px}
+  .load-quote-panel{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px rgba(20,30,20,.16);max-height:340px;overflow-y:auto;z-index:30;display:none}
+  .load-quote-panel.open{display:block}
+  .lq-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--panel2);cursor:pointer}
+  .lq-item:last-child{border-bottom:none}
+  .lq-item:hover{background:var(--panel2)}
+  .lq-main{flex:1;min-width:0}
+  .lq-no{color:var(--accent-d);font-weight:600;font-size:12.5px}
+  .lq-sub{color:var(--muted);font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lq-paid{flex-shrink:0;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--accent-soft,#eaf4ee);color:var(--accent-d,#2f7d54);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase}
   .empty{color:var(--muted2);font-size:13px;text-align:center;padding:18px}
 
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1d211c;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:60}
@@ -248,9 +255,6 @@
       <button class="btn icon-btn" id="btnHome" title="Home">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.25 7.5 2l5.5 5.25"/><path d="M3.25 6.5V13h8.5V6.5"/><path d="M6 13V9h3v4"/></svg>
       </button>
-      <button class="btn icon-btn quote-only" id="btnSaved" title="Saved Quotes">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 1.75h11a1 1 0 011 1V13l-6.5-2.5L1 13V2.75a1 1 0 011-1z"/></svg>
-      </button>
       <div class="bar-sep quote-only"></div>
       <!-- primary action buttons -->
       <button class="btn quote-only" id="btnNew">+ New</button>
@@ -263,6 +267,17 @@
   <!-- ====== QUOTE BUILDER ====== -->
   <main class="work" id="quoteView">
     <section class="form">
+      <div class="group quote-only">
+        <p class="gh">Load quote</p>
+        <div class="load-quote-wrap">
+          <button type="button" class="load-quote-btn" id="loadQuoteBtn">
+            <span id="loadQuoteBtnLabel">Select a saved quote…</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          <div class="load-quote-panel" id="loadQuotePanel"></div>
+        </div>
+      </div>
+
       <div class="group">
         <p class="gh">Quote details</p>
         <div class="row2">
@@ -396,15 +411,6 @@
 
 
 
-<!-- ===================== SAVED MODAL ===================== -->
-<div class="modal" id="savedModal" hidden>
-  <div class="modal-card">
-    <h2>Saved quotes</h2>
-    <p class="sd">Stored on this device.</p>
-    <div class="saved-list" id="savedList"></div>
-    <div class="modal-foot"><button class="btn" id="savedClose">Close</button></div>
-  </div>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -863,8 +869,11 @@ function bind(){
   });
   $("#btnPdf").addEventListener("click", downloadPdf);
   $("#btnHome").addEventListener("click", ()=>{ window.location.href='login.html'; });
-  $("#btnSaved").addEventListener("click", openSaved);
-  $("#savedClose").addEventListener("click", ()=>$("#savedModal").hidden=true);
+  $("#loadQuoteBtn").addEventListener("click", toggleLoadQuotePanel);
+  document.addEventListener("click", e=>{
+    if(!e.target.closest(".load-quote-wrap")) closeLoadQuotePanel();
+  });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeLoadQuotePanel(); });
 }
 
 /* ---------- NEW QUOTE ---------- */
@@ -879,7 +888,7 @@ function newQuote(){
   qPaymentsDraft=[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
   items=[zoneItem()];
-  renderItems(); render();
+  renderItems(); render(); syncLoadQuoteBtnLabel();
 }
 
 /* ---------- LINE ITEM EDITOR ---------- */
@@ -1096,7 +1105,7 @@ async function saveQuote(silent){
   }
   const all=getQuotes(); const key=editingKey||q.qno; const idx=all.findIndex(x=>x.qno===key);
   if(idx>=0) all[idx]=q; else all.push(q);
-  setQuotes(all); editingKey=q.qno; syncPdfBtn();
+  setQuotes(all); editingKey=q.qno; syncPdfBtn(); syncLoadQuoteBtnLabel(); renderLoadQuotePanel();
   await pushQuotes();
   if(!silent) toast("Quote "+q.qno+" saved");
   if(leadLink && leadLink.id){ await linkQuoteToLead(leadLink.id, q.qno, q.status==='Confirmed'); }
@@ -1118,7 +1127,10 @@ function loadQuote(qno){
   qPaymentsDraft=Array.isArray(q.payments)?q.payments.map(p=>({...p})):[]; $("#qPmtDate").value=todayISOq(); $("#qPmtAmount").value=""; $("#qPmtNote").value="";
   renderQPayments();
   items=(q.items&&q.items.length)? q.items.map(x=>({desc:x.desc||"",sac:x.sac||"",price:x.price||"",qty:(x.qty!=null?x.qty:"1"),gst:(x.gst??FALLBACK_GST)})) : [{desc:"",sac:"",price:"",qty:"1",gst:FALLBACK_GST}];
-  renderItems(); render(); $("#savedModal").hidden=true; toast("Loaded "+q.qno);
+  renderItems(); render(); syncLoadQuoteBtnLabel(); toast("Loaded "+q.qno);
+}
+function syncLoadQuoteBtnLabel(){
+  $("#loadQuoteBtnLabel").textContent = editingKey ? `Loaded: ${editingKey}` : "Select a saved quote…";
 }
 
 /* ---------- SHARE VIA WHATSAPP ---------- */
@@ -1178,19 +1190,48 @@ async function shareQuote(){
   }
 }
 
-async function openSaved(){
-  const list=$("#savedList");
-  // Show modal immediately with a loading state
-  list.innerHTML = `<div class="empty">Loading…</div>`;
-  $("#savedModal").hidden=false;
-  // Always fetch fresh from proxy before rendering
+/* ---------- LOAD-QUOTE DROPDOWN (left panel) ---------- */
+// Grand total / paid total for an arbitrary SAVED quote object — distinct
+// from the live render() calc, which only applies to the quote currently
+// being edited. "Fully paid" here means the same thing as "converted to
+// invoice" per Studio RYST's workflow: payments cover the full total.
+function quoteGrandTotal(q){
+  const items=q.items||[];
+  const sub=items.reduce((s,it)=>s+lineTotal(it),0);
+  const gst=items.reduce((s,it)=>s+lineGst(it),0);
+  const maxDisc=Math.floor(sub*0.10);
+  const discount=Math.min(parseFloat(q.discount)||0, maxDisc);
+  return Math.round(sub+gst-discount);
+}
+function quotePaidTotal(q){ return (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0); }
+function isQuoteFullyPaid(q){ const tot=quoteGrandTotal(q); return tot>0 && quotePaidTotal(q)>=tot; }
+
+function closeLoadQuotePanel(){ $("#loadQuotePanel").classList.remove("open"); }
+async function toggleLoadQuotePanel(){
+  const panel=$("#loadQuotePanel");
+  if(panel.classList.contains("open")){ closeLoadQuotePanel(); return; }
+  panel.classList.add("open");
+  panel.innerHTML = `<div class="empty">Loading…</div>`;
+  // Always fetch fresh from proxy before rendering, so a payment logged
+  // elsewhere (e.g. by a client accepting/paying online) shows PAID here too.
   await fetchQuotesFromProxy();
-  const all=getQuotes().slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
-  list.innerHTML = !all.length ? `<div class="empty">No saved quotes yet.</div>`
-    : all.map(q=>`<div class="saved-item"><div class="si-main"><div class="si-no">${esc(q.qno)}</div>
-        <div class="si-sub">${esc(q.cname||"—")} · ${esc(q.zone||"")} · ${fmtDate(q.date)}</div></div>
-        <button data-load="${esc(q.qno)}">Open</button></div>`).join("");
-  list.querySelectorAll("[data-load]").forEach(b=>b.addEventListener("click",()=>loadQuote(b.dataset.load)));
+  renderLoadQuotePanel();
+}
+function renderLoadQuotePanel(){
+  const panel=$("#loadQuotePanel");
+  if(!panel.classList.contains("open")) return;
+  // Sorted by the quote's own date (newest first) — not save time — per how
+  // it should read as a dated list of quotes to pick from.
+  const all=getQuotes().slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  panel.innerHTML = !all.length ? `<div class="empty">No saved quotes yet.</div>`
+    : all.map(q=>`<div class="lq-item" data-load="${esc(q.qno)}">
+        <div class="lq-main"><div class="lq-no">${esc(q.qno)}</div>
+        <div class="lq-sub">${fmtDate(q.date)} · ${esc(q.cname||"—")} · ${esc(q.zone||"")}</div></div>
+        ${isQuoteFullyPaid(q) ? `<span class="lq-paid">Paid</span>` : ""}
+      </div>`).join("");
+  panel.querySelectorAll("[data-load]").forEach(el=>el.addEventListener("click",()=>{
+    loadQuote(el.dataset.load); closeLoadQuotePanel();
+  }));
 }
 
 /* ---------- PDF via native print → Save as PDF ---------- */
