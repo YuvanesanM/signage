@@ -444,9 +444,25 @@ function showSetup(msg){
 // ── Derived ──
 // A quote-linked lead's real value/payments live on the QUOTE, not the lead's
 // own (now vestigial) fields — that's the single source of truth going forward.
+const normPhone=p=>String(p||'').replace(/\D/g,'').slice(-10);
 function quoteFor(l){ return l.quoteNo ? (QUOTES_CACHE||[]).find(x=>x.qno===l.quoteNo) : null; }
+// All quotes belonging to this lead's customer, matched by phone number —
+// one lead can represent SEVERAL real bookings (repeat customers whose
+// duplicate lead records have been merged into one), so anything counting
+// "this lead's value/payments" needs every matching quote, not just the
+// single quoteNo link. Falls back to the linked quote alone (or none) for
+// leads with no phone number to match on.
+function quotesForLead(l){
+  const p=normPhone(l.phone);
+  const linked=quoteFor(l);
+  if(!p) return linked ? [linked] : [];
+  const matches=(QUOTES_CACHE||[]).filter(q=>normPhone(q.cphone)===p);
+  return matches.length ? matches : (linked ? [linked] : []);
+}
+function quotePaidAmount(q){ return Array.isArray(q.payments) ? q.payments.reduce((s,p)=>s+(Number(p.amount)||0),0) : 0; }
 function leadValue(l){
-  if(l.quoteNo){ const q=quoteFor(l); if(q) return quoteTotal(q); }
+  const qs=quotesForLead(l);
+  if(qs.length) return qs.reduce((s,q)=>s+quoteTotal(q),0);
   return l.stage==='Booked' ? (Number(l.total)||0) : (parseFloat(l.quoteEstimate)||0);
 }
 function monthOf(dstr){
@@ -471,16 +487,19 @@ function updateDueChip(){
   c.style.background=on?'var(--accent)':''; c.style.color=on?'#fff':''; c.style.borderColor=on?'var(--accent)':(n?'var(--s-contacted)':'');
 }
 // ── Payments ──
-// Sum of the payments log; falls back to the old single "advance" number for
-// leads saved before the log existed (so nothing needs re-entering).
+// Sum of payments across every quote matched to this lead's phone number
+// (see quotesForLead); falls back to the lead's own payments log, then the
+// old single "advance" number for leads saved before either existed.
 function paidTotal(l){
-  if(l.quoteNo){ const q=quoteFor(l); if(q && Array.isArray(q.payments)) return q.payments.reduce((s,p)=>s+(Number(p.amount)||0),0); }
+  const qs=quotesForLead(l);
+  if(qs.length) return qs.reduce((s,q)=>s+quotePaidAmount(q),0);
   if(Array.isArray(l.payments) && l.payments.length) return l.payments.reduce((s,p)=>s+(Number(p.amount)||0),0);
   return Number(l.advance)||0;
 }
 function outstanding(l){
   if(l.stage!=='Booked') return 0;
-  if(l.quoteNo){ const q=quoteFor(l); if(q) return Math.max(0, quoteTotal(q)-paidTotal(l)); }
+  const qs=quotesForLead(l);
+  if(qs.length) return Math.max(0, qs.reduce((s,q)=>s+quoteTotal(q),0)-paidTotal(l));
   const total=Number(l.total)||0;
   if(l.paymentStatus==='Completed') return 0;
   return Math.max(0, total-paidTotal(l));
@@ -576,15 +595,24 @@ function hbars(entries,colorFn,fmt){
 }
 
 function renderMonths(){
-  // Collected revenue by month (name) from booking dates — quote-aware,
-  // and matches the "cash collected" definition the top KPI uses (paidTotal,
-  // not the full quoted value).
+  // Collected revenue by month — quote-aware, and matches the "cash
+  // collected" definition the top KPI uses (paidTotal, not the full quoted
+  // value). Distributed PER BOOKING (per matched quote), not per lead — a
+  // lead can represent several real bookings across different months (see
+  // quotesForLead), so lumping its whole paidTotal() onto one date would
+  // both misattribute the month and double up if two leads shared a quote.
   const actual={};
   DOC.leads.filter(l=>l.stage==='Booked').forEach(l=>{
-    const q=quoteFor(l);
-    const dateBasis=(q&&q.sessionDate)?q.sessionDate:(l.bookingDate||l.targetDate);
-    const m=monthOf(dateBasis);
-    if(m) actual[m]=(actual[m]||0)+paidTotal(l);
+    const qs=quotesForLead(l);
+    if(qs.length){
+      qs.forEach(q=>{
+        const m=monthOf(q.sessionDate||q.date||'');
+        if(m) actual[m]=(actual[m]||0)+quotePaidAmount(q);
+      });
+    } else {
+      const m=monthOf(l.bookingDate||l.targetDate);
+      if(m) actual[m]=(actual[m]||0)+paidTotal(l);
+    }
   });
   const rows=(TARGETS||[]).map(t=>({month:t.month, target:Number(t.target)||0, value:actual[t.month.slice(0,3)]||actual[t.month]||0}))
     .filter(r=>r.target>0||r.value>0);
@@ -671,16 +699,22 @@ function renderLeads(){
   const payDotColor={Completed:'var(--s-booked)',Partial:'var(--s-contacted)',Pending:'var(--s-lost)'};
   tb.innerHTML=rows.map(l=>{
     const val=leadValue(l);
+    const bookingCount=quotesForLead(l).length;
     const fiso=followupISO(l);
     const fStyle = (isOpen(l)&&fiso&&fiso<=tISO) ? (fiso<tISO?'color:var(--s-lost);font-weight:700':'color:var(--s-contacted);font-weight:700') : 'color:var(--muted2)';
     const waHref = l.phone ? `https://wa.me/${(normPhone(l.phone).length===10?'91':'')}${normPhone(l.phone)}` : '';
-    const payDot = (l.stage==='Booked' && val>0) ? `<span class="pay-dot" title="Payment: ${esc(l.paymentStatus||'Pending')}" style="background:${payDotColor[l.paymentStatus]||'var(--muted2)'}"></span>` : '';
+    // Payment status is derived from the aggregate paid/value (not the
+    // lead's own stale paymentStatus field), so it stays correct for a
+    // merged lead spanning several quotes/bookings.
+    const payStatus = l.stage==='Booked' ? computedPaymentStatus(val, paidTotal(l)) : '';
+    const payDot = (l.stage==='Booked' && val>0) ? `<span class="pay-dot" title="Payment: ${esc(payStatus)}" style="background:${payDotColor[payStatus]||'var(--muted2)'}"></span>` : '';
+    const bookingsBadge = bookingCount>1 ? `<span class="lead-sub" style="display:block">${bookingCount} bookings</span>` : '';
     return `<tr data-id="${esc(l.id)}">
       <td><div class="lead-nm">${esc(l.company||l.contact||'—')}${isStale(l)?' <span title="Stale — 14+ days untouched">🕸</span>':''}</div><div class="lead-sub">${[l.contact&&l.company?esc(l.contact):'', l.zone?esc(l.zone):''].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
       <td>${l.phone?`<div class="phone-actions"><a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a><a class="wa-link" href="${waHref}" target="_blank" title="WhatsApp" onclick="event.stopPropagation()">💬</a></div>`:'<span class="lead-sub">—</span>'}</td>
       <td><select class="stage-sel qstage" data-id="${esc(l.id)}" style="background-color:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${STAGES.map(s=>`<option value="${s}"${s===(l.stage||'New')?' selected':''}>${s}</option>`).join('')}</select></td>
       <td><div class="fu-cell"><span style="${fStyle};font-size:11.5px">${esc(l.followup||'—')}</span>${isOpen(l)?`<button type="button" class="snooze-btn qsnooze" data-id="${esc(l.id)}" title="Push follow-up out 2 days">+2d</button>`:''}</div></td>
-      <td class="r">${val?money(val):'—'}${payDot}</td>
+      <td class="r">${val?money(val):'—'}${payDot}${bookingsBadge}</td>
       <td><button class="rowbtn edit" title="Edit">✎</button></td>
     </tr>`;
   }).join('');
@@ -733,29 +767,40 @@ async function openCustomer(l){
   $('#custBody').innerHTML='<div class="empty">Loading…</div>';
   $('#custOverlay').className='overlay show';
   await ensureLinks();
-  const nameKey=(l.company||l.contact||'').trim().toLowerCase();
   const linked = l.quoteNo ? QUOTES_CACHE.find(q=>q.qno===l.quoteNo) : null;
-  const related = QUOTES_CACHE.filter(q=> q.qno!==l.quoteNo && nameKey && (q.cname||'').trim().toLowerCase()===nameKey);
-  const quotes = [linked, ...related].filter(Boolean);
+  // Every quote for this customer — matched by phone (reliable, and covers
+  // several real bookings under one merged lead), plus a name-match fallback
+  // for older data where a quote's phone was never filled in.
+  const nameKey=(l.company||l.contact||'').trim().toLowerCase();
+  const byPhone=quotesForLead(l);
+  const byName=nameKey ? QUOTES_CACHE.filter(q=>(q.cname||'').trim().toLowerCase()===nameKey) : [];
+  const seen=new Set(); const quotes=[];
+  [...byPhone, ...byName].forEach(q=>{ if(q && !seen.has(q.qno)){ seen.add(q.qno); quotes.push(q); } });
+  quotes.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const session = l.scheduleId ? SCHED_CACHE.find(s=>s.id===l.scheduleId) : null;
 
   const fact=(k,v)=> v?`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`:'';
   const quotesHtml = quotes.length ? quotes.map(q=>`<div class="cv-line"><span>${esc(q.qno)} · ${esc(q.zone||'')}${q.hours?(' · '+esc(q.hours)+'h'):''} <span style="color:var(--muted2);font-size:12px">${esc(q.date||'')}</span></span><span class="amt">${money(quoteTotal(q))}</span></div>`).join('') : '<div class="k" style="color:var(--muted2)">No quotes yet.</div>';
   let bookingHtml;
   if(l.stage==='Booked'){
-    // Total/payments come from the linked quote when there is one — that's
-    // the single source of truth now, not the lead's own (vestigial) fields.
+    // Total/payments are the sum across EVERY quote matched to this
+    // customer (see quotesForLead) — the single source of truth now, not
+    // the lead's own (vestigial) fields, and not just one linked quote.
     const total=leadValue(l), out=outstanding(l), paid=total-out;
+    const bookingCount=quotes.length;
     const schedLine = session
       ? `<div class="cv-line"><span>🔗 ${esc(session.date||'')} · ${esc(session.start||'')}–${esc(session.end||'')} · ${esc(session.zone||'')}</span><a class="tel" href="set.html">Open schedule →</a></div>`
       : `<div class="cv-line"><span>${esc(l.bookingDate||'')} · ${esc(l.zone||'')}</span><span style="color:var(--muted2);font-size:12px">not on schedule</span></div>`;
     const money2=v=>money(v);
-    const paySource = (l.quoteNo && linked && Array.isArray(linked.payments)) ? linked.payments : (Array.isArray(l.payments)?l.payments:[]);
+    const paySource = quotes.length
+      ? quotes.flatMap(q=>Array.isArray(q.payments)?q.payments.map(p=>({...p, qno:q.qno})):[])
+      : (Array.isArray(l.payments)?l.payments:[]);
     const pays=[...paySource].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     const paysHtml = pays.length
-      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">`+pays.map(p=>`<div class="cv-line" style="font-size:12px;color:var(--muted)"><span>${esc(p.date||'—')}${p.note?' · '+esc(p.note):''}</span><span>${money2(p.amount)}</span></div>`).join('')+`</div>`
+      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">`+pays.map(p=>`<div class="cv-line" style="font-size:12px;color:var(--muted)"><span>${esc(p.date||'—')}${p.qno?' · '+esc(p.qno):''}${p.note?' · '+esc(p.note):''}</span><span>${money2(p.amount)}</span></div>`).join('')+`</div>`
       : '';
-    bookingHtml = schedLine
+    bookingHtml = (bookingCount>1?`<div class="cv-line"><span class="k">Bookings</span><span>${bookingCount}</span></div>`:'')
+      + schedLine
       + (total>0?`<div class="cv-line"><span class="k">Total</span><span class="amt">${money2(total)}</span></div>`:'')
       + (total>0?`<div class="cv-line"><span class="k">Payment</span><span>${money2(paid)} paid${out>0?` · <b style="color:var(--s-lost)">${money2(out)} due</b>`:` · <b style="color:var(--s-booked)">settled</b>`}</span></div>`:'')
       + (l.invoice?`<div class="cv-line"><span class="k">Invoice</span><span>${esc(l.invoice)}</span></div>`:'')
@@ -791,7 +836,6 @@ function fillSelect(sel,vals,val){ sel.innerHTML=vals.map(v=>`<option${v===val?'
 function toISO(d){ if(!d)return''; let m; if((m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(d))) return `${m[3]}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`; if(/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10); return ''; }
 
 function defaultFollowupISO(){ const d=new Date(); d.setDate(d.getDate()+2); return d.toISOString().slice(0,10); }
-const normPhone=p=>String(p||'').replace(/\D/g,'').slice(-10);
 
 async function openLead(l){
   editingId = l ? l.id : null;
