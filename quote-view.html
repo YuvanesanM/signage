@@ -104,7 +104,7 @@
   #pdfGenOverlay{position:fixed;inset:0;background:var(--bg);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
   #pdfGenOverlay .spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
   #pdfGenOverlay span{font-size:13.5px;color:var(--muted);font-weight:600}
-  .quote{width:210mm;min-height:297mm;max-height:297mm;overflow:hidden;background:#fff;color:#1c1c1c;padding:10mm 13mm 9mm;font-family:"Outfit",sans-serif;font-weight:400;position:relative;display:flex;flex-direction:column}
+  .quote{width:210mm;min-height:297mm;background:#fff;color:#1c1c1c;padding:10mm 13mm 9mm;font-family:"Outfit",sans-serif;font-weight:400;position:relative;display:flex;flex-direction:column}
   .q-foot{margin-top:auto;padding-top:10px}
   .q-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
   .q-logo{max-height:200px;max-width:560px;display:block;margin-top:-9mm}
@@ -568,18 +568,23 @@ async function downloadPdf(){
     // without this, html2canvas can run before layout/paint settles.
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     const filename=(CURRENT_QUOTE.qno||'quote').replace(/[\/\\]/g,'-')+'.pdf';
-    // Sub-pixel/mm rounding between the captured canvas and the fixed A4 page
-    // size reliably produces a near-empty trailing 2nd page — strip it rather
-    // than fight the rounding directly.
+    // A long quote (many line items, verbose terms) genuinely needs more
+    // than one A4 page — measure the real content height first so that case
+    // is left alone. Only when content comfortably fits on one page (a few
+    // mm of slack for rounding) do we know any extra page html2pdf produces
+    // is a sub-pixel rounding artifact, not real content, safe to strip.
+    const MM_PER_PX = 25.4/96;
+    const contentMM = doc.scrollHeight * MM_PER_PX;
+    const fitsOnePage = contentMM <= 302;   // 297mm page + ~5mm rounding slack
     const pdf=await html2pdf().set({
       margin:0,
       filename,
       image:{type:'jpeg',quality:0.98},
       html2canvas:{scale:2,useCORS:true},
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['avoid-all']},
+      pagebreak: fitsOnePage ? {mode:['avoid-all']} : {mode:['css','legacy']},
     }).from(doc).toPdf().get('pdf');
-    while(pdf.internal.getNumberOfPages()>1) pdf.deletePage(pdf.internal.getNumberOfPages());
+    if(fitsOnePage){ while(pdf.internal.getNumberOfPages()>1) pdf.deletePage(pdf.internal.getNumberOfPages()); }
     pdf.save(filename);
   }catch(e){
     toast(e.message||'Could not generate the PDF — please try again', true);

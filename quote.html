@@ -701,10 +701,15 @@ async function syncToSchedule(q){
     const sessions=Array.isArray(sched.sessions)?sched.sessions:[];
 
     // Never silently double-book: another session in the same zone on the
-    // same date whose time range overlaps blocks the write — money already
-    // changed hands (if any), so this is flagged for a human to resolve
-    // rather than the payment itself failing.
-    const conflict=sessions.find(s=>s.id!==sid && s.zone===session.zone && s.date===session.date && s.start<session.end && session.start<s.end);
+    // same calendar day (a literal date match, or a weekly recurring
+    // session — days:[...], no date — whose day-of-week matches) whose time
+    // range overlaps blocks the write — money already changed hands (if
+    // any), so this is flagged for a human to resolve rather than the
+    // payment itself failing.
+    const DOW=['sun','mon','tue','wed','thu','fri','sat'];
+    const sessionDow=DOW[new Date(session.date+"T00:00:00Z").getUTCDay()];
+    const sameDay=s=>s.date ? s.date===session.date : (Array.isArray(s.days) && s.days.some(d=>String(d).toLowerCase().slice(0,3)===sessionDow));
+    const conflict=sessions.find(s=>s.id!==sid && s.zone===session.zone && sameDay(s) && s.start<session.end && session.start<s.end);
     if(conflict){
       curScheduleConflict=true;
       updateSchedStatus(`Conflicts with ${conflict.name||conflict.quoteNo||'another booking'} (${conflict.start}–${conflict.end})`);

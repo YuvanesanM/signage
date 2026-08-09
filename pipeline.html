@@ -169,7 +169,7 @@
     <div class="kpi hero"><div class="lbl">Total leads</div><div class="val" id="kTotal">—</div><div class="sub" id="kTotalSub"></div></div>
     <div class="kpi"><div class="lbl">Converted</div><div class="val" id="kWon">—</div><div class="sub" id="kWonSub"></div></div>
     <div class="kpi"><div class="lbl">Open pipeline</div><div class="val" id="kOpen">—</div><div class="sub" id="kOpenSub"></div></div>
-    <div class="kpi"><div class="lbl">Booked revenue</div><div class="val" id="kRev">—</div><div class="sub" id="kRevSub"></div></div>
+    <div class="kpi"><div class="lbl">Revenue collected</div><div class="val" id="kRev">—</div><div class="sub" id="kRevSub"></div></div>
   </div>
 
   <div class="panel">
@@ -214,7 +214,7 @@
           <h2 style="margin:0">Monthly booked vs target</h2>
           <button class="btn ghost" id="editTargets" style="display:none;padding:7px 12px;font-size:12.5px">✎ Edit targets</button>
         </div>
-        <div class="cap">Booked revenue by month against target · <span style="border-left:2px solid var(--ink);padding-left:5px">target</span></div>
+        <div class="cap">Revenue collected by month against target · <span style="border-left:2px solid var(--ink);padding-left:5px">target</span></div>
         <div class="months" id="months"></div>
       </div>
     </div>
@@ -322,7 +322,7 @@
   <div class="modal" style="width:min(440px,100%)">
     <h3>Monthly targets</h3>
     <div class="mbody">
-      <p style="font-size:12.5px;color:var(--muted2);margin:-2px 0 4px">Revenue goal per month. Booked revenue is measured against these.</p>
+      <p style="font-size:12.5px;color:var(--muted2);margin:-2px 0 4px">Revenue goal per month. Collected revenue is measured against these.</p>
       <div id="targetsBody" style="display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto"></div>
       <div class="merr" id="targetsErr"></div>
       <div class="mfoot"><span style="flex:1"></span><div class="right">
@@ -488,7 +488,9 @@ function render(){
   const won=leads.filter(l=>l.stage==='Booked').length;
   const lost=leads.filter(l=>l.stage==='Lost').length;
   const open=leads.filter(l=>['New','Contacted','Quoted'].includes(l.stage)).length;
-  const revenue=leads.filter(l=>l.stage==='Booked').reduce((s,l)=>s+leadValue(l),0);
+  // Actual cash collected, not the full contracted value of each booking —
+  // a ₹50k quote with a ₹5k token advance contributes ₹5k here, not ₹50k.
+  const revenue=leads.filter(l=>l.stage==='Booked').reduce((s,l)=>s+paidTotal(l),0);
   const conv=total? Math.round(won/total*100):0;
   $('#kTotal').textContent=total; $('#kTotalSub').textContent=`${won} won · ${lost} lost`;
   $('#kWon').textContent=won; $('#kWonSub').textContent=conv+'% conversion';
@@ -546,14 +548,15 @@ function hbars(entries,colorFn,fmt){
 }
 
 function renderMonths(){
-  // booked revenue by month (name) from booking dates — quote-aware, same as
-  // leadValue()/outstanding(), so this matches the KPIs above.
+  // Collected revenue by month (name) from booking dates — quote-aware,
+  // and matches the "cash collected" definition the top KPI uses (paidTotal,
+  // not the full quoted value).
   const actual={};
   DOC.leads.filter(l=>l.stage==='Booked').forEach(l=>{
     const q=quoteFor(l);
     const dateBasis=(q&&q.sessionDate)?q.sessionDate:(l.bookingDate||l.targetDate);
     const m=monthOf(dateBasis);
-    if(m) actual[m]=(actual[m]||0)+leadValue(l);
+    if(m) actual[m]=(actual[m]||0)+paidTotal(l);
   });
   const rows=(TARGETS||[]).map(t=>({month:t.month, target:Number(t.target)||0, value:actual[t.month.slice(0,3)]||actual[t.month]||0}))
     .filter(r=>r.target>0||r.value>0);
