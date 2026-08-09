@@ -142,7 +142,7 @@
   <div class="grid">
     <div class="panel full">
       <h2>Monthly sales trend</h2>
-      <div class="cap">Net quoted value (ex-GST) · last 12 months</div>
+      <div class="cap">Net sales value (ex-GST) — quotes + bookings made without one · last 12 months</div>
       <div class="trend" id="trend"></div>
     </div>
 
@@ -170,8 +170,8 @@
     </div>
 
     <div class="panel">
-      <h2>Recent quotes</h2>
-      <div class="cap">Latest 8, newest first</div>
+      <h2>Recent sales</h2>
+      <div class="cap">Latest 8, newest first — includes bookings made without a quote</div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Quote</th><th>Date</th><th>Client</th><th>Zone</th><th style="text-align:right">Net</th></tr></thead>
         <tbody id="recent"></tbody>
@@ -201,7 +201,7 @@ const ZONE_COLORS={Podcast:'var(--z-pod)',Photography:'var(--z-photo)',Culinary:
 const PHYS_ZONES=['Podcast','Photography','Culinary'];
 const zColor=z=>ZONE_COLORS[z]||'var(--muted2)';
 
-let QUOTES=[], SESSIONS=[], PERIOD='this-month', OPHOURS=12;
+let QUOTES=[], SESSIONS=[], LEADS=[], SALES=[], PERIOD='this-month', OPHOURS=12;
 
 // ── Logo (shared with other tools) ──
 (function(){ try{const s=JSON.parse(localStorage.getItem('ryst_quote_settings')||'null'); if(s&&s.logo){$('#logo').src=s.logo;return;}}catch(e){}
@@ -225,12 +225,33 @@ async function api(path){
 async function load(){
   $('#loader').className='';
   try{
-    const [q,s]=await Promise.all([api('/quotes'), api('/schedule')]);
+    const [q,s,l]=await Promise.all([api('/quotes'), api('/schedule'), api('/leads').catch(()=>({leads:[]}))]);
     QUOTES=Array.isArray(q.quotes)?q.quotes:[];
     SESSIONS=Array.isArray(s.sessions)?s.sessions:[];
+    LEADS=Array.isArray(l.leads)?l.leads:[];
+    SALES=buildSaleRecords();
     render();
   }catch(e){ toast(e.message||'Could not load report',true); }
   finally{ $('#loader').className='hide'; }
+}
+
+// ── Unified sales records: quotes + Booked leads that never got a formal
+// quote (bookings made before the team started using the Quote Builder
+// consistently — see the leads.json backfill from the booking register). A
+// Booked lead WITH a linked quote is skipped here since its quote already
+// represents it in QUOTES; only quote-less bookings are synthesized, so
+// nothing is double-counted.
+function leadDateISO(d){ if(!d) return ''; let m;
+  if((m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(d))) return `${m[3]}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`;
+  if(/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10);
+  return ''; }
+function buildSaleRecords(){
+  const fromQuotes = QUOTES.map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, zone:q.zone, net:qNet(q), hasQuote:true}));
+  const fromLeads = LEADS.filter(l=>l.stage==='Booked' && !l.quoteNo).map(l=>({
+    qno:null, date:leadDateISO(l.bookingDate||l.targetDate), cname:l.company||l.contact,
+    zone:l.zone, net:(Number(l.total)||0)/1.18, hasQuote:false,
+  })).filter(r=>r.date);
+  return [...fromQuotes, ...fromLeads];
 }
 
 // ── Quote money helpers (mirror quote.html) ──
@@ -286,11 +307,17 @@ function deltaHTML(cur, prev){
 
 function render(){
   const r=rangeFor(PERIOD,0), rp=rangeFor(PERIOD,1);
+  // "Sales" (KPI + trend + zone) blends quotes with quote-less Booked leads —
+  // see buildSaleRecords(). "Quotes"/"Avg quote value" stay strictly about
+  // formal quotes raised — a different, still-useful pipeline metric.
+  const curS=SALES.filter(x=>inRange(x.date,r));
+  const prevS=SALES.filter(x=>inRange(x.date,rp));
+  const sales=curS.reduce((s,x)=>s+x.net,0), pSales=prevS.reduce((s,x)=>s+x.net,0);
   const curQ=QUOTES.filter(q=>inRange(qDate(q),r));
   const prevQ=QUOTES.filter(q=>inRange(qDate(q),rp));
-  const sales=curQ.reduce((s,q)=>s+qNet(q),0), pSales=prevQ.reduce((s,q)=>s+qNet(q),0);
   const cnt=curQ.length, pCnt=prevQ.length;
-  const avg=cnt?sales/cnt:0, pAvg=pCnt?pSales/pCnt:0;
+  const qSales=curQ.reduce((s,q)=>s+qNet(q),0), pQSales=prevQ.reduce((s,q)=>s+qNet(q),0);
+  const avg=cnt?qSales/cnt:0, pAvg=pCnt?pQSales/pCnt:0;
 
   const book=bookedByZone(r), pBook=bookedByZone(rp);
   const hrsTotal=Object.values(book.hrs).reduce((a,b)=>a+b,0);
@@ -298,7 +325,7 @@ function render(){
 
   // KPI cards
   $('#kSales').textContent=money(sales);
-  $('#kSalesSub').innerHTML=deltaHTML(sales,pSales)+`<span>${cnt} quote${cnt===1?'':'s'}</span>`;
+  $('#kSalesSub').innerHTML=deltaHTML(sales,pSales)+`<span>${curS.length} sale${curS.length===1?'':'s'}</span>`;
   $('#kQuotes').textContent=cnt;
   $('#kQuotesSub').innerHTML=deltaHTML(cnt,pCnt)+'<span>in period</span>';
   $('#kAvg').textContent=money(avg);
@@ -307,7 +334,7 @@ function render(){
   $('#kHoursSub').innerHTML=deltaHTML(hrsTotal,pHrsTotal)+`<span>${Object.values(book.cnt).reduce((a,b)=>a+b,0)} session(s)</span>`;
 
   renderTrend();
-  renderSalesZone(curQ);
+  renderSalesZone(curS);
   renderBookZone(book);
   renderUtil(book, r);
   renderRecent();
@@ -318,7 +345,7 @@ function renderTrend(){
   const now=new Date(), months=[];
   for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(ymd(d.getFullYear(),d.getMonth(),1).slice(0,7)); }
   const curM=ymd(now.getFullYear(),now.getMonth(),1).slice(0,7);
-  const vals=months.map(m=>QUOTES.filter(q=>qMonth(q)===m).reduce((s,q)=>s+qNet(q),0));
+  const vals=months.map(m=>SALES.filter(x=>x.date.slice(0,7)===m).reduce((s,x)=>s+x.net,0));
   const max=Math.max(1,...vals);
   $('#trend').innerHTML=months.map((m,i)=>`
     <div class="mb${m===curM?' cur':''}" title="${esc(monthShort(m))} ${m.slice(0,4)}: ${money(vals[i])}">
@@ -338,9 +365,9 @@ function hbarsHTML(entries, fmt){
       <span class="amt">${fmt(val)}</span>
     </div>`).join('');
 }
-function renderSalesZone(curQ){
+function renderSalesZone(curS){
   const by={};
-  curQ.forEach(q=>{ const z=q.zone||'—'; by[z]=(by[z]||0)+qNet(q); });
+  curS.forEach(x=>{ const z=x.zone||'—'; by[z]=(by[z]||0)+x.net; });
   const entries=Object.entries(by).sort((a,b)=>b[1]-a[1]);
   $('#salesZone').innerHTML=hbarsHTML(entries, money);
 }
@@ -361,14 +388,14 @@ function renderUtil(book, r){
   }).join('');
 }
 function renderRecent(){
-  const rows=[...QUOTES].sort((a,b)=> (qDate(b)||'').localeCompare(qDate(a)||'') || (b.savedAt||0)-(a.savedAt||0)).slice(0,8);
-  if(!rows.length){ $('#recent').innerHTML='<tr><td colspan="5" class="empty">No quotes yet.</td></tr>'; return; }
-  $('#recent').innerHTML=rows.map(q=>`<tr>
-    <td>${esc(q.qno||'—')}</td>
-    <td>${esc(qDate(q)||'—')}</td>
-    <td>${esc(q.cname||'—')}</td>
-    <td><span class="zpill" style="background:${zColor(q.zone)}22;color:${zColor(q.zone)}">${esc(q.zone||'—')}</span></td>
-    <td class="r">${money(qNet(q))}</td></tr>`).join('');
+  const rows=[...SALES].sort((a,b)=> (b.date||'').localeCompare(a.date||'')).slice(0,8);
+  if(!rows.length){ $('#recent').innerHTML='<tr><td colspan="5" class="empty">No sales yet.</td></tr>'; return; }
+  $('#recent').innerHTML=rows.map(x=>`<tr>
+    <td>${x.qno?esc(x.qno):'<span style="color:var(--muted2)">no quote</span>'}</td>
+    <td>${esc(x.date||'—')}</td>
+    <td>${esc(x.cname||'—')}</td>
+    <td><span class="zpill" style="background:${zColor(x.zone)}22;color:${zColor(x.zone)}">${esc(x.zone||'—')}</span></td>
+    <td class="r">${money(x.net)}</td></tr>`).join('');
 }
 
 $('#period').addEventListener('change', e=>{ PERIOD=e.target.value; render(); });
