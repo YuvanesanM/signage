@@ -170,6 +170,7 @@ Account Type: CURRENT</div>
 <div id="toast"></div>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
 const $ = s => document.querySelector(s);
@@ -372,15 +373,33 @@ async function submitDecision(decision){
 $('#btnAccept').addEventListener('click', ()=>submitDecision('Accepted'));
 $('#btnDecline').addEventListener('click', ()=>submitDecision('Declined'));
 
+// Generates a real PDF file client-side (html2pdf) and downloads it directly —
+// no browser print dialog. Temporarily hides the interactive-only sections
+// (pay/decide/status cards, the button itself) so the file matches just the
+// quote content, same set the old @media print rules used to hide.
 async function downloadPdf(){
-  try{ await document.fonts.ready; }catch(e){}
-  // Suggest the quote number as the saved filename (browsers use document.title)
-  const prevTitle=document.title;
-  document.title=((CURRENT_QUOTE&&CURRENT_QUOTE.qno)||"quote").replace(/[\/\\]/g,"-");
-  const restore=()=>{ document.title=prevTitle; window.removeEventListener("afterprint",restore); };
-  window.addEventListener("afterprint",restore);
-  window.print();
-  setTimeout(restore,1500);   // fallback in case afterprint never fires (some mobile browsers)
+  const btn=$('#btnDownloadPdf'); const prevTxt=btn.textContent;
+  const hideEls=['#pdfBtnRow','#payOnlineCard','#decideCard','#statusCard'].map(sel=>$(sel)).filter(Boolean);
+  const prevDisplay=hideEls.map(el=>el.style.display);
+  btn.disabled=true; btn.textContent='Generating…';
+  try{
+    if(typeof html2pdf==='undefined') throw new Error('PDF generator failed to load — check your connection and retry');
+    try{ await document.fonts.ready; }catch(e){}
+    hideEls.forEach(el=>el.style.display='none');
+    const filename=((CURRENT_QUOTE&&CURRENT_QUOTE.qno)||'quote').replace(/[\/\\]/g,'-')+'.pdf';
+    await html2pdf().set({
+      margin:[8,8,8,8],
+      filename,
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#f3f4f1'},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    }).from($('.wrap')).save();
+  }catch(e){
+    toast(e.message||'Could not generate the PDF — please try again', true);
+  }finally{
+    hideEls.forEach((el,i)=>el.style.display=prevDisplay[i]);
+    btn.disabled=false; btn.textContent=prevTxt;
+  }
 }
 $('#btnDownloadPdf').addEventListener('click', downloadPdf);
 
