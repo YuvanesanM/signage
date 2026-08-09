@@ -142,7 +142,7 @@
   <div class="grid">
     <div class="panel full">
       <h2>Monthly sales trend</h2>
-      <div class="cap">Net sales value (ex-GST) — quotes + bookings made without one · last 12 months</div>
+      <div class="cap">Net value (ex-GST) of quotes paid in full · last 12 months</div>
       <div class="trend" id="trend"></div>
     </div>
 
@@ -171,7 +171,7 @@
 
     <div class="panel">
       <h2>Recent sales</h2>
-      <div class="cap">Latest 8, newest first — includes bookings made without a quote</div>
+      <div class="cap">Latest 8 fully-paid quotes, newest first</div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Quote</th><th>Date</th><th>Client</th><th>Zone</th><th style="text-align:right">Net</th></tr></thead>
         <tbody id="recent"></tbody>
@@ -201,7 +201,7 @@ const ZONE_COLORS={Podcast:'var(--z-pod)',Photography:'var(--z-photo)',Culinary:
 const PHYS_ZONES=['Podcast','Photography','Culinary'];
 const zColor=z=>ZONE_COLORS[z]||'var(--muted2)';
 
-let QUOTES=[], SESSIONS=[], LEADS=[], SALES=[], PERIOD='this-month', OPHOURS=12;
+let QUOTES=[], SESSIONS=[], SALES=[], PERIOD='this-month', OPHOURS=12;
 
 // ── Logo (shared with other tools) ──
 (function(){ try{const s=JSON.parse(localStorage.getItem('ryst_quote_settings')||'null'); if(s&&s.logo){$('#logo').src=s.logo;return;}}catch(e){}
@@ -225,41 +225,36 @@ async function api(path){
 async function load(){
   $('#loader').className='';
   try{
-    const [q,s,l]=await Promise.all([api('/quotes'), api('/schedule'), api('/leads').catch(()=>({leads:[]}))]);
+    const [q,s]=await Promise.all([api('/quotes'), api('/schedule')]);
     QUOTES=Array.isArray(q.quotes)?q.quotes:[];
     SESSIONS=Array.isArray(s.sessions)?s.sessions:[];
-    LEADS=Array.isArray(l.leads)?l.leads:[];
     SALES=buildSaleRecords();
     render();
   }catch(e){ toast(e.message||'Could not load report',true); }
   finally{ $('#loader').className='hide'; }
 }
 
-// ── Unified sales records: quotes + Booked leads that never got a formal
-// quote (bookings made before the team started using the Quote Builder
-// consistently — see the leads.json backfill from the booking register). A
-// Booked lead WITH a linked quote is skipped here since its quote already
-// represents it in QUOTES; only quote-less bookings are synthesized, so
-// nothing is double-counted.
-function leadDateISO(d){ if(!d) return ''; let m;
-  if((m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(d))) return `${m[3]}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`;
-  if(/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10);
-  return ''; }
-function buildSaleRecords(){
-  const fromQuotes = QUOTES.map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, zone:q.zone, net:qNet(q), hasQuote:true}));
-  const fromLeads = LEADS.filter(l=>l.stage==='Booked' && !l.quoteNo).map(l=>({
-    qno:null, date:leadDateISO(l.bookingDate||l.targetDate), cname:l.company||l.contact,
-    zone:l.zone, net:(Number(l.total)||0)/1.18, hasQuote:false,
-  })).filter(r=>r.date);
-  return [...fromQuotes, ...fromLeads];
-}
-
 // ── Quote money helpers (mirror quote.html) ──
 function qSub(q){ return (q.items||[]).reduce((s,it)=>s+(parseFloat(it.price)||0)*(parseFloat(it.qty)||0),0); }
 function qGst(q){ return (q.items||[]).reduce((s,it)=>s+((parseFloat(it.price)||0)*(parseFloat(it.qty)||0))*(parseFloat(it.gst)||0)/100,0); }
 function qNet(q){ const sub=qSub(q); const disc=Math.min(parseFloat(q.discount)||0, Math.floor(sub*0.10)); return sub-disc; }
+function qGrandTotal(q){ return Math.round(qNet(q)+qGst(q)); }
 function qDate(q){ return (q.date || (q.savedAt? new Date(q.savedAt).toISOString().slice(0,10):'')) || ''; }
 function qMonth(q){ return qDate(q).slice(0,7); }
+
+// ── Sales records: quotes only, and only the ones actually PAID IN FULL —
+// i.e. converted to an invoice, matching the booking register. An earlier
+// version of this page counted every quote regardless of payment status
+// (wildly overstating "Sales" with never-won quotes) and separately blended
+// in Booked leads without a quote, which double-counted any booking that
+// later also got a formal quote raised for it. Both are gone now: every
+// real booking has a quote (see the leads.json → quotes.json migration this
+// fix shipped with), so quotes are the single source of truth.
+function quotePaid(q){ return (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0); }
+function isQuoteFullyPaid(q){ const t=qGrandTotal(q); return t>0 && quotePaid(q)>=t; }
+function buildSaleRecords(){
+  return QUOTES.filter(isQuoteFullyPaid).map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, zone:q.zone, net:qNet(q)}));
+}
 
 // ── Period ranges (local, no TZ shift) ──
 const pad=n=>String(n).padStart(2,'0');
@@ -307,9 +302,10 @@ function deltaHTML(cur, prev){
 
 function render(){
   const r=rangeFor(PERIOD,0), rp=rangeFor(PERIOD,1);
-  // "Sales" (KPI + trend + zone) blends quotes with quote-less Booked leads —
-  // see buildSaleRecords(). "Quotes"/"Avg quote value" stay strictly about
-  // formal quotes raised — a different, still-useful pipeline metric.
+  // "Sales" (KPI + trend + zone) = fully-paid quotes only — see
+  // buildSaleRecords(). "Quotes"/"Avg quote value" stay based on ALL quotes
+  // raised in the period, paid or not — a different, still-useful pipeline
+  // activity metric (how much is being quoted, not just what's been won).
   const curS=SALES.filter(x=>inRange(x.date,r));
   const prevS=SALES.filter(x=>inRange(x.date,rp));
   const sales=curS.reduce((s,x)=>s+x.net,0), pSales=prevS.reduce((s,x)=>s+x.net,0);
@@ -391,7 +387,7 @@ function renderRecent(){
   const rows=[...SALES].sort((a,b)=> (b.date||'').localeCompare(a.date||'')).slice(0,8);
   if(!rows.length){ $('#recent').innerHTML='<tr><td colspan="5" class="empty">No sales yet.</td></tr>'; return; }
   $('#recent').innerHTML=rows.map(x=>`<tr>
-    <td>${x.qno?esc(x.qno):'<span style="color:var(--muted2)">no quote</span>'}</td>
+    <td>${esc(x.qno||'—')}</td>
     <td>${esc(x.date||'—')}</td>
     <td>${esc(x.cname||'—')}</td>
     <td><span class="zpill" style="background:${zColor(x.zone)}22;color:${zColor(x.zone)}">${esc(x.zone||'—')}</span></td>
