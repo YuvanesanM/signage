@@ -537,9 +537,8 @@ async function sendTemplatedWa(kind){
     msg = fillTemplate(TEMPLATES.welcomeTemplate, vars) || `Hi ${vars.name||'there'}! Looking forward to your session at Studio RYST.`;
   } else {
     // book.ryst.in is the dedicated client-facing domain (see shareQuote's
-    // link above) — feedback.html needs to be deployed there too for this
-    // link to actually resolve; this session doesn't have push access to
-    // that repo (unlike signage, where the file currently lives).
+    // link above) — feedback.html is deployed there (not on signage.ryst.in)
+    // so guests never land on the internal staff tool's domain.
     const link = "https://book.ryst.in/feedback.html?t="+encodeURIComponent(curShareToken);
     msg = fillTemplate(TEMPLATES.feedbackTemplate, {...vars, link}) || `Hi ${vars.name||'there'}! We'd love your feedback: ${link}`;
   }
