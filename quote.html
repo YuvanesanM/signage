@@ -537,14 +537,26 @@ async function sendTemplatedWa(kind){
     msg = fillTemplate(TEMPLATES.welcomeTemplate, vars) || `Hi ${vars.name||'there'}! Looking forward to your session at Studio RYST.`;
   } else {
     // book.ryst.in is the dedicated client-facing domain (see shareQuote's
-    // link above) — feedback.html needs to be deployed there too for this
-    // link to actually resolve; this session doesn't have push access to
-    // that repo (unlike signage, where the file currently lives).
+    // link above) — feedback.html is deployed there (not on signage.ryst.in)
+    // so guests never land on the internal staff tool's domain.
     const link = "https://book.ryst.in/feedback.html?t="+encodeURIComponent(curShareToken);
     msg = fillTemplate(TEMPLATES.feedbackTemplate, {...vars, link}) || `Hi ${vars.name||'there'}! We'd love your feedback: ${link}`;
   }
   window.open(`https://wa.me/91${phone}?text=`+encodeURIComponent(msg), "_blank");
   toast("Opening WhatsApp…");
+  await markWaSent(editingKey, kind);
+}
+// Stamps qno's <kind>SentAt so the home dashboard's reminder cards (and this
+// page, on reload) know the message already went out. Patches only that one
+// field on the stored record — never the live form — so an in-progress
+// unsaved edit can't be persisted as a side effect of tapping Send.
+async function markWaSent(qno, kind){
+  const all = getQuotes();
+  const idx = all.findIndex(x=>x.qno===qno);
+  if(idx<0) return;
+  all[idx] = { ...all[idx], [kind+'SentAt']: new Date().toISOString() };
+  setQuotes(all);
+  await pushQuotes();
 }
 async function fetchQuotesFromProxy(){
   if(!proxyToken) return;
