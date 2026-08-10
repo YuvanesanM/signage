@@ -297,6 +297,10 @@
           <span id="schedStatus" style="font-size:12px;color:var(--muted2)"></span>
         </div>
         <div id="clientRespRow" style="display:none;margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn ghost" type="button" id="btnWelcomeWa" style="font-size:12.5px;padding:8px 12px">👋 Send welcome message</button>
+          <button class="btn ghost" type="button" id="btnFeedbackWa" style="font-size:12.5px;padding:8px 12px">⭐ Send feedback request</button>
+        </div>
       </div>
 
       <div class="group">
@@ -502,6 +506,41 @@ async function fetchRatesFromProxy(){
       try{ localStorage.setItem(K_SET, JSON.stringify(settings)); }catch(e){}
     }
   }catch(e){ console.warn('Could not load rates from proxy', e); }
+}
+
+/* ---------- WHATSAPP TEMPLATES (welcome / feedback) ---------- */
+let TEMPLATES = { welcomeTemplate:'', feedbackTemplate:'', googleReviewUrl:'' };
+async function fetchTemplatesFromProxy(){
+  if(!proxyToken) return;
+  try{
+    const res = await fetch(PROXY_URL+'/templates',{headers:{'X-Token':proxyToken}});
+    if(!res.ok) return;
+    const d = await res.json();
+    TEMPLATES = { welcomeTemplate:d.welcomeTemplate||'', feedbackTemplate:d.feedbackTemplate||'', googleReviewUrl:d.googleReviewUrl||'' };
+  }catch(e){ console.warn('Could not load templates from proxy', e); }
+}
+function fillTemplate(tpl, vars){
+  return (tpl||'').replace(/\{(\w+)\}/g, (m,k)=> vars[k]!=null ? vars[k] : m);
+}
+// Both share the same shape: require a saved quote with a phone number,
+// fill in the studio's editable template, and hand off to WhatsApp — staff
+// still reviews and taps Send there, same as the existing "Share via
+// WhatsApp" quote link. Nothing is sent automatically.
+async function sendTemplatedWa(kind){
+  if(!curQno || !editingKey){ toast("Save the quote first"); return; }
+  const phone = normPhone($("#cphone").value);
+  if(!phone){ toast("Enter the client's WhatsApp/phone number first"); $("#cphone").focus(); return; }
+  const q = collect();
+  const vars = { name:q.cname||'', date:fmtDate(q.sessionDate||q.date||''), zone:q.zone||'' };
+  let msg;
+  if(kind==='welcome'){
+    msg = fillTemplate(TEMPLATES.welcomeTemplate, vars) || `Hi ${vars.name||'there'}! Looking forward to your session at Studio RYST.`;
+  } else {
+    const link = "https://signage.ryst.in/feedback.html?t="+encodeURIComponent(curShareToken);
+    msg = fillTemplate(TEMPLATES.feedbackTemplate, {...vars, link}) || `Hi ${vars.name||'there'}! We'd love your feedback: ${link}`;
+  }
+  window.open(`https://wa.me/91${phone}?text=`+encodeURIComponent(msg), "_blank");
+  toast("Opening WhatsApp…");
 }
 async function fetchQuotesFromProxy(){
   if(!proxyToken) return;
@@ -750,7 +789,7 @@ async function initApp(){
   const res = await fetch(PROXY_URL+'/quotes',{headers:{'X-Token':proxyToken}}).catch(()=>null);
   if(res && res.status===401){ proxyToken=''; localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; return; }
   if(res && res.ok){
-    await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy()]);
+    await Promise.all([fetchRatesFromProxy(), fetchQuotesFromProxy(), fetchTemplatesFromProxy()]);
     setConnected(true);
     // Deep link: quote.html?qno=RYST%2F2026%2F009 opens that saved quote
     // directly (used by the CRM's "open this quote" link).
@@ -861,6 +900,8 @@ function bind(){
   $("#btnNew").addEventListener("click", ()=>{ if(confirm("Start a new blank quote?")) newQuote(); });
   $("#btnSave").addEventListener("click", ()=>saveQuote());
   $("#btnShareHdr").addEventListener("click", shareQuote);
+  $("#btnWelcomeWa").addEventListener("click", ()=>sendTemplatedWa('welcome'));
+  $("#btnFeedbackWa").addEventListener("click", ()=>sendTemplatedWa('feedback'));
   $("#qPmtAdd").addEventListener("click", ()=>{
     const amt=parseFloat($("#qPmtAmount").value)||0;
     if(amt<=0){ toast("Enter a payment amount"); return; }

@@ -117,6 +117,7 @@
 <div class="cfg-tabs">
   <button class="cfg-tab active" data-tab="rate">Rate Card</button>
   <button class="cfg-tab" data-tab="studio">Studio Settings</button>
+  <button class="cfg-tab" data-tab="whatsapp">WhatsApp Templates</button>
   <button class="cfg-tab" data-tab="users">User Access</button>
 </div>
 
@@ -157,6 +158,17 @@
     <label class="f"><span>Quote no. prefix</span><input class="t" id="setPrefix" placeholder="RYST"></label>
     <div class="rc-foot">
       <button class="btn primary" id="setSave">Save settings</button>
+    </div>
+  </div>
+
+  <!-- WhatsApp Templates pane -->
+  <div id="paneWhatsapp" hidden>
+    <p class="sd">Synced for all staff. Used by the "Send welcome message" / "Send feedback request" buttons on a quote — each opens WhatsApp with the text below pre-filled, ready to send. Placeholders: <code>{name}</code>, <code>{date}</code>, <code>{zone}</code>, <code>{link}</code> (feedback form link — feedback template only).</p>
+    <label class="f"><span>Pre-shoot welcome message</span><textarea class="t" id="setWelcomeTpl" rows="4"></textarea></label>
+    <label class="f"><span>Post-shoot feedback request</span><textarea class="t" id="setFeedbackTpl" rows="4"></textarea></label>
+    <label class="f"><span>Google review link <span style="font-weight:400;color:var(--muted2)">(shown to clients who rate 5★)</span></span><input class="t" id="setGoogleUrl" placeholder="https://g.page/r/…/review"></label>
+    <div class="rc-foot">
+      <button class="btn primary" id="tplSave">Save templates</button>
     </div>
   </div>
 
@@ -280,6 +292,7 @@ function normalizeRateCard(card){
 let settings = loadSettings();
 let rcDraft  = [];
 let proxyToken = localStorage.getItem('ryst_proxy_token')||'';
+let TEMPLATES = { welcomeTemplate:'', feedbackTemplate:'', googleReviewUrl:'' };
 
 /* ---------- HEADER LOGO ---------- */
 function applyLogo(){
@@ -353,6 +366,7 @@ async function checkPin(){
 function switchTab(tab){
   document.getElementById("paneRate").hidden    = tab!=="rate";
   document.getElementById("paneStudio").hidden  = tab!=="studio";
+  document.getElementById("paneWhatsapp").hidden= tab!=="whatsapp";
   document.getElementById("paneUsers").hidden   = tab!=="users";
   document.querySelectorAll(".cfg-tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
 }
@@ -384,6 +398,7 @@ async function loadPanel(){
   renderImgPrev("qr","#qrPrev");
   bindSettings();
   loadUsers();
+  loadTemplates();
 }
 
 /* ---------- RATE CARD RENDER ---------- */
@@ -490,6 +505,42 @@ function saveSettings(){
   toast("Settings saved");
 }
 
+/* ---------- WHATSAPP TEMPLATES ---------- */
+async function loadTemplates(){
+  if(!proxyToken) return;
+  try{
+    const res=await fetch(PROXY_URL+'/templates',{headers:{'X-Token':proxyToken}});
+    if(res.ok){
+      const d=await res.json();
+      TEMPLATES={ welcomeTemplate:d.welcomeTemplate||'', feedbackTemplate:d.feedbackTemplate||'', googleReviewUrl:d.googleReviewUrl||'' };
+    }
+  }catch(e){}
+  document.getElementById("setWelcomeTpl").value=TEMPLATES.welcomeTemplate;
+  document.getElementById("setFeedbackTpl").value=TEMPLATES.feedbackTemplate;
+  document.getElementById("setGoogleUrl").value=TEMPLATES.googleReviewUrl;
+}
+async function saveTemplates(){
+  const btn=document.getElementById("tplSave");
+  btn.disabled=true; btn.textContent="Saving…";
+  TEMPLATES={
+    welcomeTemplate: document.getElementById("setWelcomeTpl").value,
+    feedbackTemplate: document.getElementById("setFeedbackTpl").value,
+    googleReviewUrl: document.getElementById("setGoogleUrl").value.trim(),
+  };
+  if(proxyToken){
+    try{
+      const res=await fetch(PROXY_URL+'/templates',{method:'PUT',
+        headers:{'X-Token':proxyToken,'Content-Type':'application/json'},
+        body:JSON.stringify({version:1,...TEMPLATES})});
+      if(res.status===401){ localStorage.removeItem('ryst_proxy_token'); window.location.href='login.html'; return; }
+      if(res.status===403) toast("Admins only");
+      else if(!res.ok) toast("Save failed ("+res.status+")");
+      else toast("Templates saved");
+    }catch(e){ toast("Could not reach the server"); }
+  }
+  btn.disabled=false; btn.textContent="Save templates";
+}
+
 /* ---------- BINDINGS ---------- */
 function bindSettings(){
   document.getElementById("rcAdd").addEventListener("click",()=>{
@@ -501,6 +552,7 @@ function bindSettings(){
   document.getElementById("qrFile").addEventListener("change",e=>pickImage(e,"qr","#qrPrev"));
   document.getElementById("userAdd").addEventListener("click",addUser);
   document.getElementById("usersSave").addEventListener("click",saveUsers);
+  document.getElementById("tplSave").addEventListener("click",saveTemplates);
 }
 
 /* ---------- USER ACCESS ---------- */
