@@ -123,12 +123,12 @@
       <div class="sub" id="kSalesSub"></div>
     </div>
     <div class="kpi">
-      <div class="lbl">Quotes</div>
+      <div class="lbl">Invoices</div>
       <div class="val" id="kQuotes">—</div>
       <div class="sub" id="kQuotesSub"></div>
     </div>
     <div class="kpi">
-      <div class="lbl">Avg quote value</div>
+      <div class="lbl">Average invoice value</div>
       <div class="val" id="kAvg">—</div>
       <div class="sub" id="kAvgSub"></div>
     </div>
@@ -148,14 +148,8 @@
 
     <div class="panel">
       <h2>Sales by zone</h2>
-      <div class="cap" id="salesZoneCap">Selected period</div>
+      <div class="cap" id="salesZoneCap">Net value (ex-GST) and booked hours, selected period</div>
       <div class="hbars" id="salesZone"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Bookings by zone</h2>
-      <div class="cap" id="bookZoneCap">Booked hours in period</div>
-      <div class="hbars" id="bookZone"></div>
     </div>
 
     <div class="panel">
@@ -319,18 +313,16 @@ function deltaHTML(cur, prev){
 
 function render(){
   const r=rangeFor(PERIOD,0), rp=rangeFor(PERIOD,1);
-  // "Sales" (KPI + trend + zone) = fully-paid quotes only — see
-  // buildSaleRecords(). "Quotes"/"Avg quote value" stay based on ALL quotes
-  // raised in the period, paid or not — a different, still-useful pipeline
-  // activity metric (how much is being quoted, not just what's been won).
+  // "Sales", "Invoices" and "Average invoice value" all come from the SAME
+  // set — quotes paid in full (see buildSaleRecords) — since a quote isn't
+  // really an invoice until it's actually paid. Sales is the ex-GST total;
+  // invoice count/average use the GST-inclusive amount, matching what's
+  // actually billed on each invoice.
   const curS=SALES.filter(x=>inRange(x.date,r));
   const prevS=SALES.filter(x=>inRange(x.date,rp));
   const sales=curS.reduce((s,x)=>s+x.net,0), pSales=prevS.reduce((s,x)=>s+x.net,0);
-  const curQ=QUOTES.filter(q=>inRange(qDate(q),r));
-  const prevQ=QUOTES.filter(q=>inRange(qDate(q),rp));
-  const cnt=curQ.length, pCnt=prevQ.length;
-  const qSales=curQ.reduce((s,q)=>s+qNet(q),0), pQSales=prevQ.reduce((s,q)=>s+qNet(q),0);
-  const avg=cnt?qSales/cnt:0, pAvg=pCnt?pQSales/pCnt:0;
+  const cnt=curS.length, pCnt=prevS.length;
+  const avg=cnt?curS.reduce((s,x)=>s+x.gross,0)/cnt:0, pAvg=pCnt?prevS.reduce((s,x)=>s+x.gross,0)/pCnt:0;
 
   const book=bookedByZone(r), pBook=bookedByZone(rp);
   const hrsTotal=Object.values(book.hrs).reduce((a,b)=>a+b,0);
@@ -342,13 +334,12 @@ function render(){
   $('#kQuotes').textContent=cnt;
   $('#kQuotesSub').innerHTML=deltaHTML(cnt,pCnt)+'<span>in period</span>';
   $('#kAvg').textContent=money(avg);
-  $('#kAvgSub').innerHTML=deltaHTML(avg,pAvg)+'<span>per quote</span>';
+  $('#kAvgSub').innerHTML=deltaHTML(avg,pAvg)+'<span>per invoice</span>';
   $('#kHours').textContent=hrsTotal? (Math.round(hrsTotal*10)/10)+' h' : '0 h';
   $('#kHoursSub').innerHTML=deltaHTML(hrsTotal,pHrsTotal)+`<span>${Object.values(book.cnt).reduce((a,b)=>a+b,0)} session(s)</span>`;
 
   renderTrend();
-  renderSalesZone(curS);
-  renderBookZone(book);
+  renderSalesZone(curS, book);
   renderUtil(book, r);
   renderTopCustomers(curS);
   renderInvoices(curS);
@@ -379,15 +370,22 @@ function hbarsHTML(entries, fmt){
       <span class="amt">${fmt(val)}</span>
     </div>`).join('');
 }
-function renderSalesZone(curS){
-  const by={};
-  curS.forEach(x=>{ const z=x.zone||'—'; by[z]=(by[z]||0)+x.net; });
-  const entries=Object.entries(by).sort((a,b)=>b[1]-a[1]);
-  $('#salesZone').innerHTML=hbarsHTML(entries, money);
-}
-function renderBookZone(book){
-  const entries=Object.entries(book.hrs).sort((a,b)=>b[1]-a[1]);
-  $('#bookZone').innerHTML=hbarsHTML(entries, v=> (Math.round(v*10)/10)+' h');
+// Sales and booked hours by zone used to be two separate panels — same
+// dimension (per zone), so merged into one: bar sized/colored by sales
+// value (the primary metric), with booked hours shown alongside each zone.
+function renderSalesZone(curS, book){
+  const salesBy={};
+  curS.forEach(x=>{ const z=x.zone||'—'; salesBy[z]=(salesBy[z]||0)+x.net; });
+  const zones=new Set([...Object.keys(salesBy), ...Object.keys(book.hrs)]);
+  const entries=[...zones].map(z=>({z, val:salesBy[z]||0, hrs:book.hrs[z]||0})).filter(e=>e.val>0||e.hrs>0).sort((a,b)=>b.val-a.val);
+  if(!entries.length){ $('#salesZone').innerHTML='<div class="empty">No data in this period.</div>'; return; }
+  const max=Math.max(1,...entries.map(e=>e.val));
+  $('#salesZone').innerHTML=entries.map(e=>`
+    <div class="hbar">
+      <span class="nm"><span class="dot" style="background:${zColor(e.z)}"></span>${esc(e.z)}${e.hrs?` <span style="color:var(--muted2);font-weight:400">· ${Math.round(e.hrs*10)/10}h</span>`:''}</span>
+      <span class="track"><span class="fill" style="width:${Math.max(2,e.val/max*100)}%;background:${zColor(e.z)}"></span></span>
+      <span class="amt">${money(e.val)}</span>
+    </div>`).join('');
 }
 function renderUtil(book, r){
   const days=daysInRange(r);
