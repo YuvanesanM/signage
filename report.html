@@ -255,7 +255,7 @@ function qMonth(q){ return qDate(q).slice(0,7); }
 function quotePaid(q){ return (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0); }
 function isQuoteFullyPaid(q){ const t=qGrandTotal(q); return t>0 && quotePaid(q)>=t; }
 function buildSaleRecords(){
-  return QUOTES.filter(isQuoteFullyPaid).map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, cphone:q.cphone||'', zone:q.zone, net:qNet(q), gross:qGrandTotal(q)}));
+  return QUOTES.filter(isQuoteFullyPaid).map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, cphone:q.cphone||'', zone:q.zone, net:qNet(q), gross:qGrandTotal(q), invoiceNo:q.invoiceNo||''}));
 }
 const normPhone=p=>String(p||'').replace(/\D/g,'').slice(-10);
 
@@ -405,15 +405,15 @@ function renderUtil(book, r){
 let INVOICE_ROWS=[];
 function renderInvoices(curS){
   INVOICE_ROWS=[...curS].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-  $('#invoicesCap').textContent = `${INVOICE_ROWS.length} quote${INVOICE_ROWS.length===1?'':'s'} paid in full — the quote number doubles as the invoice number`;
+  $('#invoicesCap').textContent = `${INVOICE_ROWS.length} quote${INVOICE_ROWS.length===1?'':'s'} paid in full — click an invoice number to open its quote`;
   applyInvoiceFilter();
 }
 function applyInvoiceFilter(){
   const q=($('#invSearch').value||'').trim().toLowerCase();
-  const rows = q ? INVOICE_ROWS.filter(x=> (x.cname||'').toLowerCase().includes(q) || (x.qno||'').toLowerCase().includes(q)) : INVOICE_ROWS;
+  const rows = q ? INVOICE_ROWS.filter(x=> (x.cname||'').toLowerCase().includes(q) || (x.qno||'').toLowerCase().includes(q) || (x.invoiceNo||'').toLowerCase().includes(q)) : INVOICE_ROWS;
   if(!rows.length){ $('#invoices').innerHTML='<tr><td colspan="5" class="empty">No invoices match.</td></tr>'; return; }
   $('#invoices').innerHTML=rows.map(x=>`<tr>
-    <td>${esc(x.qno||'—')}</td>
+    <td><a href="quote.html?qno=${encodeURIComponent(x.qno)}" target="_blank" style="color:var(--accent-d);font-weight:700;text-decoration:none" title="Open ${esc(x.qno)}">${esc(x.invoiceNo||x.qno||'—')}</a></td>
     <td>${esc(x.date||'—')}</td>
     <td>${esc(x.cname||'—')}</td>
     <td><span class="zpill" style="background:${zColor(x.zone)}22;color:${zColor(x.zone)}">${esc(x.zone||'—')}</span></td>
