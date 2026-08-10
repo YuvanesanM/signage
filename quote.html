@@ -544,6 +544,19 @@ async function sendTemplatedWa(kind){
   }
   window.open(`https://wa.me/91${phone}?text=`+encodeURIComponent(msg), "_blank");
   toast("Opening WhatsApp…");
+  await markWaSent(editingKey, kind);
+}
+// Stamps qno's <kind>SentAt so the home dashboard's reminder cards (and this
+// page, on reload) know the message already went out. Patches only that one
+// field on the stored record — never the live form — so an in-progress
+// unsaved edit can't be persisted as a side effect of tapping Send.
+async function markWaSent(qno, kind){
+  const all = getQuotes();
+  const idx = all.findIndex(x=>x.qno===qno);
+  if(idx<0) return;
+  all[idx] = { ...all[idx], [kind+'SentAt']: new Date().toISOString() };
+  setQuotes(all);
+  await pushQuotes();
 }
 async function fetchQuotesFromProxy(){
   if(!proxyToken) return;

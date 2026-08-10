@@ -45,6 +45,20 @@
 
   .due-banner{display:none;align-items:center;gap:8px;justify-content:center;margin:0 0 16px;padding:11px 18px;border-radius:11px;background:var(--accent-soft);border:1px solid #cfe6d8;color:var(--accent-d);font-size:13.5px;font-weight:600;text-decoration:none}
 
+  /* WhatsApp reminder cards — welcome msg due the day before a session,
+     feedback request due once one has ended */
+  .wa-reminders{display:none;flex-direction:column;gap:8px;margin:0 0 16px}
+  .wa-card{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:0 4px 14px rgba(40,50,40,.04)}
+  .wa-ico{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .wa-info{flex:1;min-width:0}
+  .wa-info b{display:block;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wa-info small{display:block;font-size:11.5px;color:var(--muted2);margin-top:1px}
+  .wa-send{flex-shrink:0;border:none;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent-d);font-family:inherit;cursor:pointer;transition:.15s}
+  .wa-send:hover{background:var(--accent);color:#fff}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:9px;font-size:12.5px;opacity:0;transition:.25s;z-index:20}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
   .dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
   .dash-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;box-shadow:0 8px 24px rgba(40,50,40,.05)}
 
@@ -118,6 +132,7 @@
   </header>
 
   <a id="dueReminder" class="due-banner" href="pipeline.html"></a>
+  <div id="waReminders" class="wa-reminders"></div>
 
   <div class="dash-grid">
     <div class="dash-panel">
@@ -155,6 +170,7 @@
   </div>
 </div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 const PROXY_URL = 'https://ryst-signage-proxy.onrender.com';
@@ -177,6 +193,9 @@ function applyCustomLogo(){
 
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+let toastT;
+function toast(m){ const t=document.getElementById('toast'); if(!t) return; t.textContent=m; t.className='toast show'; clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast',2600); }
+
 function showHome(){
   // Swap views immediately — no network wait
   document.getElementById('loginView').setAttribute('hidden','');
@@ -185,6 +204,7 @@ function showHome(){
   applyRoleView();
   checkFollowups();
   loadHomeCalendar();
+  loadWaReminders();
 }
 
 // Surface leads whose follow-up is due, so nothing slips.
@@ -201,6 +221,117 @@ async function checkFollowups(){
     const el=document.getElementById('dueReminder');
     if(el && due>0){ el.textContent=`⏰ ${due} follow-up${due===1?'':'s'} due — open Leads & Pipeline`; el.style.display='flex'; }
     else if(el){ el.style.display='none'; }
+  }catch(e){}
+}
+
+// ── WhatsApp reminder cards ─────────────────────────────────────────────
+// Same two nudges as the "Send welcome message" / "Send feedback request"
+// buttons on a quote (quote.html), surfaced here so staff see what's due
+// without having to open each booking: a welcome message the day before the
+// session, a feedback request once it has ended. Mirrors quote.html's
+// template-fill + wa.me hand-off — staff still reviews and taps Send in
+// WhatsApp, nothing goes out automatically.
+let WA_TEMPLATES = { welcomeTemplate:'', feedbackTemplate:'' };
+let WA_QUOTES = [];
+// How long a feedback card stays up after a session ends. Staff may not open
+// the dashboard the same day, so give it a few days rather than only the
+// instant the session finishes.
+const WA_FEEDBACK_LOOKBACK_MS = 3*24*60*60*1000;
+
+async function fetchWaTemplates(){
+  if(!proxyToken) return;
+  try{
+    const r = await fetch(PROXY_URL+'/templates', {headers:{'X-Token':proxyToken}});
+    if(!r.ok) return;
+    const d = await r.json();
+    WA_TEMPLATES = { welcomeTemplate:d.welcomeTemplate||'', feedbackTemplate:d.feedbackTemplate||'' };
+  }catch(e){}
+}
+function fillWaTemplate(tpl, vars){
+  return (tpl||'').replace(/\{(\w+)\}/g, (m,k)=> vars[k]!=null ? vars[k] : m);
+}
+function normWaPhone(raw){
+  let d=(raw||'').replace(/\D/g,'');
+  if(d.length>10) d=d.slice(-10);   // strip country code / leading 0s
+  return d.length===10 ? d : '';
+}
+function waFmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function waAddHours(hhmm, h){
+  if(!hhmm) return '';
+  const [H,M]=hhmm.split(':').map(Number);
+  let mins=H*60+M+Math.round((h||1)*60);
+  mins=Math.min(mins,23*60+59);
+  return String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+}
+
+async function loadWaReminders(){
+  const t = localStorage.getItem('ryst_proxy_token'); if(!t) return;
+  try{
+    const [qRes] = await Promise.all([
+      fetch(PROXY_URL+'/quotes', {headers:{'X-Token':t}}),
+      fetchWaTemplates()
+    ]);
+    if(!qRes.ok) return;
+    const d = await qRes.json();
+    WA_QUOTES = Array.isArray(d.quotes) ? d.quotes : [];
+    renderWaReminders();
+  }catch(e){}
+}
+
+function renderWaReminders(){
+  const box = document.getElementById('waReminders'); if(!box) return;
+  const now = new Date();
+  const tomorrowIso = calYmd(new Date(now.getTime()+24*60*60*1000));
+  const cards = [];
+  WA_QUOTES.forEach(q=>{
+    if(!q.sessionDate || !q.sessionStart || !normWaPhone(q.cphone)) return;
+    if(q.sessionDate===tomorrowIso && !q.welcomeSentAt){
+      cards.push({ kind:'welcome', q, sortAt:new Date(`${q.sessionDate}T${q.sessionStart}`) });
+    }
+    const end = new Date(`${q.sessionDate}T${waAddHours(q.sessionStart, parseFloat(q.hours)||1)}`);
+    if(!isNaN(end) && end<=now && (now-end)<=WA_FEEDBACK_LOOKBACK_MS && !q.feedbackSentAt){
+      cards.push({ kind:'feedback', q, sortAt:end });
+    }
+  });
+  cards.sort((a,b)=>b.sortAt-a.sortAt);
+  if(!cards.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='flex';
+  box.innerHTML = cards.map(c=>{
+    const q=c.q, isWelcome=c.kind==='welcome';
+    return `<div class="wa-card">
+      <span class="wa-ico">${isWelcome?'👋':'⭐'}</span>
+      <div class="wa-info"><b>${esc(q.cname||q.qno)}</b><small>${isWelcome?'Session tomorrow':'Session ended'} · ${esc(q.zone||'')} · ${esc(waFmtDate(q.sessionDate))}</small></div>
+      <button type="button" class="wa-send" data-qno="${esc(q.qno)}" data-kind="${c.kind}">${isWelcome?'Send welcome':'Request feedback'}</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.wa-send').forEach(btn=>btn.addEventListener('click', ()=>sendWaReminder(btn.dataset.qno, btn.dataset.kind)));
+}
+
+async function sendWaReminder(qno, kind){
+  const q = WA_QUOTES.find(x=>x.qno===qno); if(!q) return;
+  const phone = normWaPhone(q.cphone); if(!phone) return;
+  const vars = { name:q.cname||'', date:waFmtDate(q.sessionDate), zone:q.zone||'' };
+  let msg;
+  if(kind==='welcome'){
+    msg = fillWaTemplate(WA_TEMPLATES.welcomeTemplate, vars) || `Hi ${vars.name||'there'}! Looking forward to your session at Studio RYST.`;
+  } else {
+    // book.ryst.in is the dedicated client-facing domain feedback.html is
+    // deployed on (see quote.html's sendTemplatedWa) — never signage.ryst.in.
+    const link = "https://book.ryst.in/feedback.html?t="+encodeURIComponent(q.shareToken||'');
+    msg = fillWaTemplate(WA_TEMPLATES.feedbackTemplate, {...vars, link}) || `Hi ${vars.name||'there'}! We'd love your feedback: ${link}`;
+  }
+  window.open(`https://wa.me/91${phone}?text=`+encodeURIComponent(msg), "_blank");
+  toast("Opening WhatsApp…");
+  q[kind+'SentAt'] = new Date().toISOString();
+  renderWaReminders();
+  // Full-array overwrite, same pattern as quote.html's pushQuotes() — a quote
+  // edited elsewhere at the same moment could be raced, but that risk already
+  // exists wherever the app persists quotes today.
+  try{
+    await fetch(PROXY_URL+'/quotes', {
+      method:'PUT', headers:{'X-Token':proxyToken,'Content-Type':'application/json'},
+      body: JSON.stringify({version:1, quotes: WA_QUOTES})
+    });
   }catch(e){}
 }
 
