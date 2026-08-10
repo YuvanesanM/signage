@@ -170,11 +170,19 @@
     </div>
 
     <div class="panel">
-      <h2>Recent sales</h2>
-      <div class="cap">Latest 8 fully-paid quotes, newest first</div>
-      <div style="overflow-x:auto"><table>
-        <thead><tr><th>Quote</th><th>Date</th><th>Client</th><th>Zone</th><th style="text-align:right">Net</th></tr></thead>
-        <tbody id="recent"></tbody>
+      <h2>Top customers</h2>
+      <div class="cap" id="topCustCap">By total invoiced value, selected period</div>
+      <div class="hbars" id="topCust"></div>
+    </div>
+
+    <div class="panel full">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div><h2 style="margin-bottom:2px">Invoices</h2><div class="cap" id="invoicesCap" style="margin-bottom:0">Quotes paid in full — the quote number doubles as the invoice number</div></div>
+        <input class="sel" id="invSearch" placeholder="Search client or quote no…" style="font-weight:400;min-width:200px" />
+      </div>
+      <div style="overflow-x:auto;margin-top:10px"><table>
+        <thead><tr><th>Invoice</th><th>Date</th><th>Client</th><th>Zone</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody id="invoices"></tbody>
       </table></div>
     </div>
   </div>
@@ -253,8 +261,9 @@ function qMonth(q){ return qDate(q).slice(0,7); }
 function quotePaid(q){ return (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0); }
 function isQuoteFullyPaid(q){ const t=qGrandTotal(q); return t>0 && quotePaid(q)>=t; }
 function buildSaleRecords(){
-  return QUOTES.filter(isQuoteFullyPaid).map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, zone:q.zone, net:qNet(q)}));
+  return QUOTES.filter(isQuoteFullyPaid).map(q=>({qno:q.qno, date:qDate(q), cname:q.cname, cphone:q.cphone||'', zone:q.zone, net:qNet(q), gross:qGrandTotal(q)}));
 }
+const normPhone=p=>String(p||'').replace(/\D/g,'').slice(-10);
 
 // ── Period ranges (local, no TZ shift) ──
 const pad=n=>String(n).padStart(2,'0');
@@ -341,7 +350,8 @@ function render(){
   renderSalesZone(curS);
   renderBookZone(book);
   renderUtil(book, r);
-  renderRecent();
+  renderTopCustomers(curS);
+  renderInvoices(curS);
 }
 
 function monthShort(ym){ const [y,m]=ym.split('-'); return new Date(y,m-1,1).toLocaleDateString('en-IN',{month:'short'}); }
@@ -391,15 +401,42 @@ function renderUtil(book, r){
       <div class="track"><span class="fill" style="width:${pct}%"></span></div></div>`;
   }).join('');
 }
-function renderRecent(){
-  const rows=[...SALES].sort((a,b)=> (b.date||'').localeCompare(a.date||'')).slice(0,8);
-  if(!rows.length){ $('#recent').innerHTML='<tr><td colspan="5" class="empty">No sales yet.</td></tr>'; return; }
-  $('#recent').innerHTML=rows.map(x=>`<tr>
+// ── Invoices — every fully-paid quote in the selected period, i.e. the
+// quote number doubles as the invoice number once payment is complete.
+// Client-side search filters what's already loaded (no extra fetch).
+let INVOICE_ROWS=[];
+function renderInvoices(curS){
+  INVOICE_ROWS=[...curS].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  $('#invoicesCap').textContent = `${INVOICE_ROWS.length} quote${INVOICE_ROWS.length===1?'':'s'} paid in full — the quote number doubles as the invoice number`;
+  applyInvoiceFilter();
+}
+function applyInvoiceFilter(){
+  const q=($('#invSearch').value||'').trim().toLowerCase();
+  const rows = q ? INVOICE_ROWS.filter(x=> (x.cname||'').toLowerCase().includes(q) || (x.qno||'').toLowerCase().includes(q)) : INVOICE_ROWS;
+  if(!rows.length){ $('#invoices').innerHTML='<tr><td colspan="5" class="empty">No invoices match.</td></tr>'; return; }
+  $('#invoices').innerHTML=rows.map(x=>`<tr>
     <td>${esc(x.qno||'—')}</td>
     <td>${esc(x.date||'—')}</td>
     <td>${esc(x.cname||'—')}</td>
     <td><span class="zpill" style="background:${zColor(x.zone)}22;color:${zColor(x.zone)}">${esc(x.zone||'—')}</span></td>
-    <td class="r">${money(x.net)}</td></tr>`).join('');
+    <td class="r">${money(x.gross)}</td></tr>`).join('');
+}
+$('#invSearch').addEventListener('input', applyInvoiceFilter);
+
+// ── Top customers — every fully-paid quote in the period, grouped by
+// customer (phone number when known, else the client name), ranked by
+// total invoiced value. Mirrors pipeline.html's phone-based booking
+// aggregation so the two pages agree on "who's a repeat customer".
+function renderTopCustomers(curS){
+  const by={};
+  curS.forEach(x=>{
+    const key = normPhone(x.cphone) || ('name:'+(x.cname||'—').trim().toLowerCase());
+    if(!by[key]) by[key]={ name:x.cname||'—', count:0, value:0 };
+    by[key].count++; by[key].value+=x.gross;
+  });
+  const entries=Object.values(by).sort((a,b)=>b.value-a.value).slice(0,10)
+    .map(c=>[`${c.name} · ${c.count} booking${c.count===1?'':'s'}`, c.value]);
+  $('#topCust').innerHTML = hbarsHTML(entries, money);
 }
 
 $('#period').addEventListener('change', e=>{ PERIOD=e.target.value; render(); });
