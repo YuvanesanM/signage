@@ -530,12 +530,22 @@ async function sendTemplatedWa(kind){
   if(!curQno || !editingKey){ toast("Save the quote first"); return; }
   const phone = normPhone($("#cphone").value);
   if(!phone){ toast("Enter the client's WhatsApp/phone number first"); $("#cphone").focus(); return; }
-  const q = collect();
-  const vars = { name:q.cname||'', date:fmtDate(q.sessionDate||q.date||''), zone:q.zone||'' };
   let msg;
   if(kind==='welcome'){
+    const q = collect();
+    const vars = { name:q.cname||'', date:fmtDate(q.sessionDate||q.date||''), zone:q.zone||'' };
     msg = fillTemplate(TEMPLATES.welcomeTemplate, vars) || `Hi ${vars.name||'there'}! Looking forward to your session at Studio RYST.`;
   } else {
+    // The feedback link is only valid once the SERVER actually has this
+    // quote's shareToken. Quotes saved before shareToken existed get one
+    // generated in-memory on load (see loadQuote()) but it's never written
+    // back unless something re-saves — without this, clicking the button
+    // would silently build a dead link (404 on the feedback page) while
+    // still showing "Opening WhatsApp…" as if it worked. Re-saving here
+    // guarantees the token the link uses is the one the server has.
+    await saveQuote(true);
+    const q = collect();
+    const vars = { name:q.cname||'', date:fmtDate(q.sessionDate||q.date||''), zone:q.zone||'' };
     // book.ryst.in is the dedicated client-facing domain (see shareQuote's
     // link above) — feedback.html is deployed there (not on signage.ryst.in)
     // so guests never land on the internal staff tool's domain.

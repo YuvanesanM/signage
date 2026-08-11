@@ -168,7 +168,7 @@
     <label class="f"><span>Post-shoot feedback request</span><textarea class="t" id="setFeedbackTpl" rows="4"></textarea></label>
     <label class="f"><span>Google review link <span style="font-weight:400;color:var(--muted2)">(shown to clients who rate 5★)</span></span><input class="t" id="setGoogleUrl" placeholder="https://g.page/r/…/review"></label>
     <div class="rc-foot">
-      <button class="btn primary" id="tplSave">Save templates</button>
+      <button class="btn primary" id="tplSave" disabled>Save templates</button>
     </div>
   </div>
 
@@ -508,6 +508,13 @@ function saveSettings(){
 /* ---------- WHATSAPP TEMPLATES ---------- */
 async function loadTemplates(){
   if(!proxyToken) return;
+  // Save stays disabled until this resolves — loadPanel() fires this
+  // unawaited, so without the guard a user who reaches this tab and hits
+  // Save before the fetch returns would have their own typed edit silently
+  // clobbered the moment the (older) server response lands and overwrites
+  // the fields right before saveTemplates() reads them back out.
+  const btn=document.getElementById("tplSave");
+  if(btn) btn.disabled=true;
   try{
     const res=await fetch(PROXY_URL+'/templates',{headers:{'X-Token':proxyToken}});
     if(res.ok){
@@ -518,6 +525,7 @@ async function loadTemplates(){
   document.getElementById("setWelcomeTpl").value=TEMPLATES.welcomeTemplate;
   document.getElementById("setFeedbackTpl").value=TEMPLATES.feedbackTemplate;
   document.getElementById("setGoogleUrl").value=TEMPLATES.googleReviewUrl;
+  if(btn) btn.disabled=false;
 }
 async function saveTemplates(){
   const btn=document.getElementById("tplSave");
