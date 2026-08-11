@@ -120,6 +120,16 @@
       "start": "18:00",
       "end": "20:00",
       "date": "2026-07-01"
+    },
+    {
+      "id": "Smso8gkpa3hv",
+      "quoteNo": "RYST/2026/039",
+      "name": "Arthamandapam Advertising",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "13:00",
+      "date": "2026-08-11",
+      "confirmed": true
     }
   ]
 }
