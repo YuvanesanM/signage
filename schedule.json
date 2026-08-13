@@ -130,6 +130,16 @@
       "end": "14:00",
       "date": "2026-08-11",
       "confirmed": true
+    },
+    {
+      "id": "Smsr0uh8o585",
+      "quoteNo": "RYST/2026/042",
+      "name": "Divine Shakthi",
+      "zone": "podcast",
+      "start": "10:00",
+      "end": "12:00",
+      "date": "2026-08-13",
+      "confirmed": true
     }
   ]
 }
