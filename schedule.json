@@ -150,6 +150,16 @@
       "end": "12:30",
       "date": "2026-08-15",
       "confirmed": true
+    },
+    {
+      "id": "Smsydpd1xf5",
+      "quoteNo": "RYST/2026/044",
+      "name": "Jithin",
+      "zone": "podcast",
+      "start": "14:00",
+      "end": "18:00",
+      "date": "2026-08-18",
+      "confirmed": true
     }
   ]
 }
