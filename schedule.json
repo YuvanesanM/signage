@@ -160,6 +160,16 @@
       "end": "18:00",
       "date": "2026-08-18",
       "confirmed": true
+    },
+    {
+      "id": "Smtcw2ng94qg",
+      "quoteNo": "RYST/2026/046",
+      "name": "Shanif",
+      "zone": "podcast",
+      "start": "17:00",
+      "end": "18:00",
+      "date": "2026-08-28",
+      "confirmed": true
     }
   ]
 }
