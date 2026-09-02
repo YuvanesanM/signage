@@ -170,6 +170,16 @@
       "end": "18:00",
       "date": "2026-08-28",
       "confirmed": true
+    },
+    {
+      "id": "Smtjns81e49g",
+      "quoteNo": "RYST/2026/048",
+      "name": "First Principle Asset Services",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "13:00",
+      "date": "2026-09-02",
+      "confirmed": true
     }
   ]
 }
