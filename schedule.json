@@ -180,6 +180,16 @@
       "end": "14:00",
       "date": "2026-09-02",
       "confirmed": true
+    },
+    {
+      "id": "Smtl8ymij7jt",
+      "quoteNo": "RYST/2026/050",
+      "name": "Little Talks",
+      "zone": "podcast",
+      "start": "14:30",
+      "end": "17:30",
+      "date": "2026-09-03",
+      "confirmed": true
     }
   ]
 }
