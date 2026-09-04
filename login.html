@@ -127,9 +127,6 @@
   .sched-badge.live{background:rgba(192,88,75,.12);color:var(--danger)}
   .sched-badge.upcoming{background:var(--accent-soft);color:var(--accent-d)}
   .sched-badge.done{background:var(--panel);color:var(--muted2)}
-  .sched-del{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
-  .sched-del:hover{border-color:var(--danger);color:var(--danger)}
-  .sched-locked{font-size:10px;font-weight:700;color:var(--muted2);white-space:nowrap;flex-shrink:0}
   .sched-past-wrap{margin-top:14px;border-top:1px solid var(--line);padding-top:2px}
   .sched-past-summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 2px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2)}
   .sched-past-summary::-webkit-details-marker{display:none}
@@ -412,23 +409,21 @@ function applyRoleView(){
   });
 }
 
-// ── Home dashboard: calendar + full session list. View + delete only —
-// adding/editing a booking happens in Quote Builder, which auto-syncs a
-// Confirmed quote to the schedule; this replaces set.html (Schedule
-// Manager), which had no other job left once that became the only way
-// bookings get created. ──
+// ── Home dashboard: calendar + full session list. Strictly view-only — a
+// schedule entry only ever exists because a quote was Confirmed (advance or
+// full payment), synced there automatically, so there's no direct "delete
+// from the schedule" here: that would just fight the quote's own state on
+// the next sync. Removing a booking means declining/cancelling its quote.
+// This replaces set.html (Schedule Manager), which had no other job left
+// once bookings became quote-only. ──
 let calCursor = (()=>{ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
 let HOME_SESSIONS = [];
 let calSelectedISO = null;
 const CAL_DOW = ['sun','mon','tue','wed','thu','fri','sat'];
 const HOME_ZONE_COLORS = {podcast:'#3d9b69', photography:'#c8893d', culinary:'#c0584b', 'multi-zone':'#5b7db1'};
 const HOME_ZONE_EMOJI  = {podcast:'🎙️', photography:'📷', culinary:'🍳', 'multi-zone':'🎬'};
-// Accounts that may not edit/delete a COMPLETED session — mirrors the
-// server-side enforcement in studio-proxy.js's PUT /schedule (the actual
-// guard; this is just so the UI shows why the button's missing instead of
-// a confusing 403 after the fact).
-const SCHEDULE_LOCK_EMAILS = ['studioryst01@gmail.com'];
-const CURRENT_EMAIL = (localStorage.getItem('ryst_user_email')||'').toLowerCase();
+// A one-off session "completed" once its date/end time has passed — used to
+// split the full list into Upcoming vs Past.
 function isCompletedSession(s){
   if(!s || !s.date) return false;
   const now=new Date(), today=now.toISOString().slice(0,10);
@@ -438,7 +433,6 @@ function isCompletedSession(s){
   const hhmm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   return hhmm>=s.end;
 }
-function canModifySession(s){ return !(SCHEDULE_LOCK_EMAILS.includes(CURRENT_EMAIL) && isCompletedSession(s)); }
 // Soft chip background + solid text, from a zone's hex — same look
 // set.html's Booking Calendar uses (translucent tint, full-strength text).
 function hexToRgba(hex, a){
@@ -473,33 +467,6 @@ function goToNewBooking(iso){
 // CRM already uses). Older, pre-quote sessions have no quoteNo and just
 // aren't clickable.
 function quoteHref(s){ return s.quoteNo ? 'quote.html?qno='+encodeURIComponent(s.quoteNo) : ''; }
-// Deletes HOME_SESSIONS[idx] and saves. The server independently re-checks
-// the same completed-session lock (SCHEDULE_LOCK_EMAILS in studio-proxy.js)
-// on the write, so a stale/bypassed client check still can't remove a
-// locked session — this just gives a same-page error instead of a silent
-// network 403.
-async function deleteScheduleSession(idx){
-  const s = HOME_SESSIONS[idx]; if(!s) return;
-  if(!canModifySession(s)){ toast('Completed sessions are locked for your account'); return; }
-  if(!confirm(`Remove "${s.name||'this session'}" from the schedule?`)) return;
-  const prev = HOME_SESSIONS;
-  HOME_SESSIONS = HOME_SESSIONS.filter((x,i)=>i!==idx);
-  renderHomeCalendar();
-  try{
-    const res = await fetch(PROXY_URL+'/schedule', {
-      method:'PUT', headers:{'X-Token':proxyToken,'Content-Type':'application/json'},
-      body: JSON.stringify({ ...HOME_SCHED_DOC, sessions: HOME_SESSIONS })
-    });
-    if(!res.ok){
-      const d = await res.json().catch(()=>({}));
-      throw new Error(d.error || ('HTTP '+res.status));
-    }
-    toast('Session removed');
-  }catch(e){
-    HOME_SESSIONS = prev; renderHomeCalendar();   // roll back on failure
-    toast('Could not remove — '+(e.message||'try again'));
-  }
-}
 
 // Sessions on a given day: one-off (date match), recurring (weekday in days[]),
 // or floating (no date/days → shown on today) — same rule set.html uses.
@@ -516,14 +483,12 @@ function sessionsOnDate(dateObj){
   return out.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
 }
 
-let HOME_SCHED_DOC = {};   // full raw document, so a delete-write preserves any field besides sessions[]
 async function loadHomeCalendar(){
   const t = localStorage.getItem('ryst_proxy_token'); if(!t) return;
   try{
     const r = await fetch(PROXY_URL+'/schedule', {headers:{'X-Token':t}});
     if(!r.ok) return;
     const d = await r.json();
-    HOME_SCHED_DOC = (d && typeof d==='object') ? d : {};
     HOME_SESSIONS = Array.isArray(d.sessions) ? d.sessions : [];
     calSelectedISO = calYmd(new Date());
     renderHomeCalendar();
@@ -574,20 +539,6 @@ function renderHomeCalendar(){
   renderAllSchedule();
 }
 
-// One row's worth of delete-button-or-locked-indicator markup, shared by
-// the day-detail list and the full list below.
-function sessionActionHTML(s, idx){
-  return canModifySession(s)
-    ? `<button type="button" class="sched-del" data-idx="${idx}" title="Remove from schedule" aria-label="Remove from schedule"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>`
-    : `<span class="sched-locked" title="Completed sessions are locked for your account">🔒 Locked</span>`;
-}
-function bindSessionDeleteButtons(root){
-  root.querySelectorAll('.sched-del').forEach(btn=>btn.addEventListener('click', e=>{
-    e.stopPropagation();
-    deleteScheduleSession(+btn.dataset.idx);
-  }));
-}
-
 function renderHomeDay(){
   const box = document.getElementById('homeCalDay'); if(!box || !calSelectedISO) return;
   const d = new Date(calSelectedISO+'T00:00:00');
@@ -595,13 +546,11 @@ function renderHomeDay(){
   const label = d.toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'short'});
   box.innerHTML = `<div class="hcal-day-title">${esc(label)}<a class="hcal-day-add" href="javascript:void(0)" onclick="goToNewBooking('${calSelectedISO}')">+ New booking</a></div>` + (list.length
     ? list.map(s=>{
-        const idx = HOME_SESSIONS.indexOf(s);
         const href = quoteHref(s);
         const openAttr = href ? ` onclick="location.href='${href}'" title="Open quote ${esc(s.quoteNo)} to edit"` : '';
-        return `<div class="hcal-day-item${href?' to-quote':''}"${openAttr}><span class="hcal-day-dot" style="background:${HOME_ZONE_COLORS[s.zone]||'var(--muted2)'}"></span><b>${esc(s.name||'Unnamed')}</b>${todayBadge(s)}<span class="hcal-day-time">${esc(fmt12(s.start))}${s.end?' – '+esc(fmt12(s.end)):''}</span>${sessionActionHTML(s,idx)}</div>`;
+        return `<div class="hcal-day-item${href?' to-quote':''}"${openAttr}><span class="hcal-day-dot" style="background:${HOME_ZONE_COLORS[s.zone]||'var(--muted2)'}"></span><b>${esc(s.name||'Unnamed')}</b>${todayBadge(s)}<span class="hcal-day-time">${esc(fmt12(s.start))}${s.end?' – '+esc(fmt12(s.end)):''}</span></div>`;
       }).join('')
     : `<div class="hcal-day-empty">No sessions.</div>`);
-  bindSessionDeleteButtons(box);
 }
 
 // "All Scheduled Sessions" — Upcoming (grouped by date) · Recurring weekly ·
@@ -617,7 +566,7 @@ function schedDateHead(iso){
   const label = d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   return `<div class="sched-date-head${diff===0?' today':''}">📅 ${esc(label)}${rel?` <span class="rel">· ${rel}</span>`:''}</div>`;
 }
-function schedItemHTML(s, idx, badge, extra){
+function schedItemHTML(s, badge, extra){
   const zoneLabel = ({podcast:'🎙️ Podcast',photography:'📷 Photography',culinary:'🍳 Culinary'}[s.zone]||esc(s.zone||''));
   const dateInfo = s.date?esc(s.date):(s.days?s.days.map(esc).join(', '):'Anytime');
   const auto = badge.includes('Live')?' active-now':extra||'';
@@ -633,38 +582,35 @@ function schedItemHTML(s, idx, badge, extra){
           <span>📅 ${dateInfo}</span>
         </div>
       </div>
-      ${sessionActionHTML(s, idx)}
     </div>`;
 }
 function renderAllSchedule(){
   const el = document.getElementById('allSchedList'); if(!el) return;
   if(!HOME_SESSIONS.length){ el.innerHTML = '<div class="sched-empty">No sessions scheduled yet.</div>'; return; }
   const DOWO = ['mon','tue','wed','thu','fri','sat','sun'];
-  const all = HOME_SESSIONS.map((s,idx)=>({s,idx}));
-  const recurring = all.filter(({s})=>!s.date && s.days && s.days.length);
-  const floating  = all.filter(({s})=>!s.date && !(s.days&&s.days.length));
-  const dated     = all.filter(({s})=>s.date);
-  const upcoming  = dated.filter(({s})=>!isCompletedSession(s)).sort((a,b)=>(a.s.date||'').localeCompare(b.s.date||'')||(a.s.start||'').localeCompare(b.s.start||''));
-  const past      = dated.filter(({s})=> isCompletedSession(s)).sort((a,b)=>(b.s.date||'').localeCompare(a.s.date||'')||(b.s.start||'').localeCompare(a.s.start||''));
-  const recIdx = x => Math.min(...x.s.days.map(d=>{ const i=DOWO.indexOf(d.toLowerCase().slice(0,3)); return i<0?99:i; }));
-  recurring.sort((a,b)=>recIdx(a)-recIdx(b)||(a.s.start||'').localeCompare(b.s.start||''));
+  const recurring = HOME_SESSIONS.filter(s=>!s.date && s.days && s.days.length);
+  const floating  = HOME_SESSIONS.filter(s=>!s.date && !(s.days&&s.days.length));
+  const dated     = HOME_SESSIONS.filter(s=>s.date);
+  const upcoming  = dated.filter(s=>!isCompletedSession(s)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.start||'').localeCompare(b.start||''));
+  const past      = dated.filter(s=> isCompletedSession(s)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.start||'').localeCompare(a.start||''));
+  const recIdx = s => Math.min(...s.days.map(d=>{ const i=DOWO.indexOf(d.toLowerCase().slice(0,3)); return i<0?99:i; }));
+  recurring.sort((a,b)=>recIdx(a)-recIdx(b)||(a.start||'').localeCompare(b.start||''));
 
   let html = '';
   if(upcoming.length){
     html += schedGroupHead('Upcoming', upcoming.length);
     let cur = null;
-    upcoming.forEach(({s,idx})=>{ if(s.date!==cur){ cur=s.date; html+=schedDateHead(cur); } html+=schedItemHTML(s,idx,todayBadge(s),''); });
+    upcoming.forEach(s=>{ if(s.date!==cur){ cur=s.date; html+=schedDateHead(cur); } html+=schedItemHTML(s,todayBadge(s),''); });
   }
-  if(recurring.length){ html += schedGroupHead('Recurring weekly', recurring.length); html += recurring.map(({s,idx})=>schedItemHTML(s,idx,todayBadge(s),'')).join(''); }
-  if(floating.length){ html += schedGroupHead('Anytime', floating.length); html += floating.map(({s,idx})=>schedItemHTML(s,idx,todayBadge(s),'')).join(''); }
+  if(recurring.length){ html += schedGroupHead('Recurring weekly', recurring.length); html += recurring.map(s=>schedItemHTML(s,todayBadge(s),'')).join(''); }
+  if(floating.length){ html += schedGroupHead('Anytime', floating.length); html += floating.map(s=>schedItemHTML(s,todayBadge(s),'')).join(''); }
   if(past.length){
     html += `<details class="sched-past-wrap"><summary class="sched-past-summary"><span>Past sessions</span><span class="sched-gh-count">${past.length}</span></summary><div>`;
     let cur = null;
-    past.forEach(({s,idx})=>{ if(s.date!==cur){ cur=s.date; html+=schedDateHead(cur); } html+=schedItemHTML(s,idx,'',' past'); });
+    past.forEach(s=>{ if(s.date!==cur){ cur=s.date; html+=schedDateHead(cur); } html+=schedItemHTML(s,'',' past'); });
     html += '</div></details>';
   }
   el.innerHTML = html;
-  bindSessionDeleteButtons(el);
 }
 
 document.getElementById('hcalPrev').addEventListener('click', ()=>{ calCursor.setMonth(calCursor.getMonth()-1); renderHomeCalendar(); });
