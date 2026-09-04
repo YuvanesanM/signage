@@ -219,6 +219,7 @@
     </div>
     <div style="overflow-x:auto"><table>
       <thead><tr>
+        <th class="sortable" data-sort="enquiry">Enquiry <span class="arrow">↕</span></th>
         <th class="sortable" data-sort="name">Lead <span class="arrow">↕</span></th>
         <th>Phone</th>
         <th class="sortable" data-sort="stage">Stage <span class="arrow">↕</span></th>
@@ -678,6 +679,11 @@ function sortRows(rows){
     if(fa&&fb) return fa.localeCompare(fb);
     return fa?-1:fb?1:0;
   });
+  if(key==='enquiry') return [...rows].sort((a,b)=>{
+    const ea=a.enqDate||'', eb=b.enqDate||'';
+    if(ea&&eb) return eb.localeCompare(ea);   // newest enquiry first
+    return ea?-1:eb?1:0;
+  });
   // 'priority' (default) — surfaces what actually needs attention today:
   // overdue/due follow-ups first (most overdue at top), then open leads
   // without a follow-up, then Booked, then Lost last.
@@ -694,7 +700,7 @@ function sortRows(rows){
     return (b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);
   });
 }
-const HEADER_SORT_KEY={name:'name',stage:'stage',followup:'followup',value:'value'};
+const HEADER_SORT_KEY={enquiry:'enquiry',name:'name',stage:'stage',followup:'followup',value:'value'};
 function updateSortHeaders(){
   $('#fSort').value = FILTER.sort||'priority';
   $$('th.sortable').forEach(th=>th.classList.toggle('active', HEADER_SORT_KEY[th.dataset.sort]===FILTER.sort));
@@ -704,7 +710,7 @@ function renderLeads(){
   const rows=sortRows(DOC.leads.filter(passFilter));
   $('#leadsCap').textContent=`${rows.length} of ${DOC.leads.length} lead${DOC.leads.length===1?'':'s'}`;
   const tb=$('#leads');
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="empty">No leads match. Click “＋ Add lead”.</td></tr>'; return; }
   const tISO=todayISO();
   const payDotColor={Completed:'var(--s-booked)',Partial:'var(--s-contacted)',Pending:'var(--s-lost)'};
   tb.innerHTML=rows.map(l=>{
@@ -720,6 +726,7 @@ function renderLeads(){
     const payDot = (l.stage==='Booked' && val>0) ? `<span class="pay-dot" title="Payment: ${esc(payStatus)}" style="background:${payDotColor[payStatus]||'var(--muted2)'}"></span>` : '';
     const bookingsBadge = bookingCount>1 ? `<span class="lead-sub" style="display:block">${bookingCount} bookings</span>` : '';
     return `<tr data-id="${esc(l.id)}">
+      <td style="color:var(--muted2);font-size:11.5px">${esc(l.enqDate||'—')}</td>
       <td><div class="lead-nm">${esc(l.company||l.contact||'—')}${isStale(l)?' <span title="Stale — 14+ days untouched">🕸</span>':''}</div><div class="lead-sub">${[l.contact&&l.company?esc(l.contact):'', l.zone?esc(l.zone):'', l.createdAt?`Added ${esc(fmtCreated(l.createdAt))}`:''].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
       <td>${l.phone?`<div class="phone-actions"><a class="tel" href="tel:${esc(l.phone)}">${esc(l.phone)}</a><a class="wa-link" href="${waHref}" target="_blank" title="WhatsApp" onclick="event.stopPropagation()">💬</a></div>`:'<span class="lead-sub">—</span>'}</td>
       <td><select class="stage-sel qstage" data-id="${esc(l.id)}" style="background-color:${STAGE_COLOR[l.stage]||'var(--muted2)'}">${STAGES.map(s=>`<option value="${s}"${s===(l.stage||'New')?' selected':''}>${s}</option>`).join('')}</select></td>
