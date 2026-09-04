@@ -180,11 +180,16 @@ async function load(){
   finally{ $('#loader').className='hide'; }
 }
 
-// A quote counts once its session has actually happened (or feedback is
-// already in flight for it) — a future booking has nothing to review yet.
+function paidTotal(q){ return (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0); }
+
+// A quote counts once its session has actually happened AND it has an
+// actual payment recorded (an unpaid/Pending quote never really happened,
+// so there's nothing to give feedback on) — or feedback is already in
+// flight/collected for it, kept visible regardless so history never
+// disappears if its payment record is later edited.
 function sessions(){
   const today = new Date().toISOString().slice(0,10);
-  return QUOTES.filter(q=> q.sessionDate && (q.sessionDate<=today || q.feedbackSentAt || (q.feedback&&q.feedback.rating)));
+  return QUOTES.filter(q=> q.sessionDate && (q.feedbackSentAt || (q.feedback&&q.feedback.rating) || (q.sessionDate<=today && paidTotal(q)>0)));
 }
 function statusOf(q){
   if(q.feedback && q.feedback.rating) return 'reviewed';
@@ -288,6 +293,7 @@ function render(){
 async function sendRequest(qno){
   const q = QUOTES.find(x=>x.qno===qno); if(!q) return;
   const phone = normPhone(q.cphone); if(!phone) return;
+  if(paidTotal(q)<=0){ toast('Record a payment first — feedback requests are only for paid quotes/invoices','err'); return; }
   const link = "https://book.ryst.in/feedback.html?t="+encodeURIComponent(q.shareToken||'');
   const vars = { name:q.cname||'', date:fmtDate(q.sessionDate), zone:q.zone||'', link };
   const msg = fillTpl(TEMPLATES.feedbackTemplate, vars) || `Hi ${vars.name||'there'}! We'd love your feedback: ${link}`;
