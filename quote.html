@@ -34,6 +34,8 @@
   .bar-actions{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto}
   .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap;cursor:pointer}
   .btn:hover{border-color:var(--accent);color:var(--accent-d)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn:disabled:hover{border-color:var(--line);color:var(--ink)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
   .btn.primary:hover{background:var(--accent-d);color:#fff}
   .btn.primary:disabled{opacity:.38;cursor:not-allowed;background:var(--accent);border-color:var(--accent)}
@@ -530,6 +532,9 @@ async function sendTemplatedWa(kind){
   if(!curQno || !editingKey){ toast("Save the quote first"); return; }
   const phone = normPhone($("#cphone").value);
   if(!phone){ toast("Enter the client's WhatsApp/phone number first"); $("#cphone").focus(); return; }
+  // Feedback is only meaningful once the client has actually paid something —
+  // a Pending quote has no confirmed session to give feedback on.
+  if(kind==='feedback' && quotePaidTotal(collect())<=0){ toast("Record a payment first — feedback requests are only for paid quotes/invoices"); return; }
   let msg;
   if(kind==='welcome'){
     const q = collect();
@@ -723,6 +728,10 @@ function updateQBalance(total){
   badge.textContent = status;
   if(status==="Confirmed"){ badge.style.background="var(--accent-soft,#eaf4ee)"; badge.style.color="var(--accent-d,#2f7d54)"; }
   else { badge.style.background="var(--panel2)"; badge.style.color="var(--muted2)"; }
+  // Feedback is only for paid quotes/invoices — grey the button out rather
+  // than let staff tap it and hit the toast in sendTemplatedWa.
+  const fbBtn=$("#btnFeedbackWa");
+  if(fbBtn){ fbBtn.disabled = paid<=0; fbBtn.title = paid<=0 ? "Record a payment first" : ""; }
   if(!(total>0)){ el.textContent=""; return; }
   const bal=Math.max(0,total-paid);
   el.innerHTML = bal>0

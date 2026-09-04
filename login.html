@@ -335,7 +335,10 @@ function renderWaReminders(){
       cards.push({ kind:'welcome', q, sortAt:new Date(`${q.sessionDate}T${q.sessionStart}`) });
     }
     const end = new Date(`${q.sessionDate}T${waAddHours(q.sessionStart, parseFloat(q.hours)||1)}`);
-    if(!isNaN(end) && end<=now && (now-end)<=WA_FEEDBACK_LOOKBACK_MS && !q.feedbackSentAt){
+    // Feedback only for quotes/invoices with an actual payment recorded —
+    // a Pending quote never really happened as far as feedback goes.
+    const paid = (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
+    if(!isNaN(end) && end<=now && (now-end)<=WA_FEEDBACK_LOOKBACK_MS && !q.feedbackSentAt && paid>0){
       cards.push({ kind:'feedback', q, sortAt:end });
     }
   });
@@ -356,6 +359,7 @@ function renderWaReminders(){
 async function sendWaReminder(qno, kind){
   const q = WA_QUOTES.find(x=>x.qno===qno); if(!q) return;
   const phone = normWaPhone(q.cphone); if(!phone) return;
+  if(kind==='feedback' && (q.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0)<=0){ toast('Record a payment first — feedback requests are only for paid quotes/invoices'); return; }
   const vars = { name:q.cname||'', date:waFmtDate(q.sessionDate), zone:q.zone||'' };
   let msg;
   if(kind==='welcome'){
