@@ -190,6 +190,16 @@
       "end": "17:30",
       "date": "2026-09-03",
       "confirmed": true
+    },
+    {
+      "id": "Smtmhmll23ka",
+      "quoteNo": "RYST/2026/053",
+      "name": "Gyanis",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "13:00",
+      "date": "2026-09-04",
+      "confirmed": true
     }
   ]
 }
