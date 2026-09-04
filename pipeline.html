@@ -174,7 +174,7 @@
     <div class="ttl">Leads &amp; Pipeline<small>Studio RYST · CRM</small></div>
     <div class="spacer"></div>
     <button class="tbtn" onclick="window.location.href='report.html'">📊 Growth</button>
-    <button class="tbtn" onclick="window.location.href='set.html'">🗓 Schedule</button>
+    <button class="tbtn" onclick="window.location.href='login.html'">🗓 Schedule</button>
     <button class="tbtn" onclick="window.location.href='login.html'">⌂ Home</button>
     <button class="tbtn" id="logoutBtn">⎋ Log out</button>
   </header>
@@ -799,7 +799,7 @@ async function openCustomer(l){
     const total=leadValue(l), out=outstanding(l), paid=total-out;
     const bookingCount=quotes.length;
     const schedLine = session
-      ? `<div class="cv-line"><span>🔗 ${esc(session.date||'')} · ${esc(session.start||'')}–${esc(session.end||'')} · ${esc(session.zone||'')}</span><a class="tel" href="set.html">Open schedule →</a></div>`
+      ? `<div class="cv-line"><span>🔗 ${esc(session.date||'')} · ${esc(session.start||'')}–${esc(session.end||'')} · ${esc(session.zone||'')}</span><a class="tel" href="login.html">Open schedule →</a></div>`
       : `<div class="cv-line"><span>${esc(l.bookingDate||'')} · ${esc(l.zone||'')}</span><span style="color:var(--muted2);font-size:12px">not on schedule</span></div>`;
     const money2=v=>money(v);
     const paySource = quotes.length
