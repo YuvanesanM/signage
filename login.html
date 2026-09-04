@@ -83,6 +83,13 @@
   .hcal-cell.today .hcal-daynum{color:var(--accent-d)}
   .hcal-chips{display:flex;flex-direction:column;gap:2px;min-width:0}
   .hcal-chip{font-size:10.5px;font-weight:700;padding:3px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+  /* Applied (alongside the calendar day-select cell, day-detail row, and
+     full-list row) when a session has a quote behind it — click jumps
+     straight to that quote to edit, instead of just being informational. */
+  .to-quote{cursor:pointer}
+  .hcal-chip.to-quote:hover{filter:brightness(.94)}
+  .hcal-day-item.to-quote:hover{background:var(--accent-soft);border-radius:6px}
+  .sched-item.to-quote:hover{border-color:var(--accent)}
   .hcal-chip-more{font-size:9px;font-weight:700;color:var(--muted2);padding-left:1px}
   .hcal-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted2)}
   .hcal-legend span{display:inline-flex;align-items:center;gap:5px}
@@ -460,6 +467,12 @@ function goToNewBooking(iso){
   localStorage.setItem('ryst_quote_prefill', JSON.stringify({ sessionDate: iso }));
   window.location.href='quote.html';
 }
+// A session synced from a quote (which is every session created since
+// bookings only originate in Quote Builder now) carries quoteNo — jumping
+// straight to it is quote.html's own qno= deep link (same one pipeline.html's
+// CRM already uses). Older, pre-quote sessions have no quoteNo and just
+// aren't clickable.
+function quoteHref(s){ return s.quoteNo ? 'quote.html?qno='+encodeURIComponent(s.quoteNo) : ''; }
 // Deletes HOME_SESSIONS[idx] and saves. The server independently re-checks
 // the same completed-session lock (SCHEDULE_LOCK_EMAILS in studio-proxy.js)
 // on the write, so a stale/bypassed client check still can't remove a
@@ -539,8 +552,13 @@ function renderHomeCalendar(){
       const color = HOME_ZONE_COLORS[zone] || '#9aa097';
       const rec = (!s.date && s.days && s.days.length) ? '↻ ' : '';
       const tm = (s.start?fmt12(s.start):'')+(s.end?' – '+fmt12(s.end):'');
-      const tip = (s.name||'Unnamed')+(tm?' · '+tm:'');
-      return `<div class="hcal-chip" style="background:${hexToRgba(color,.15)};color:${color}" title="${esc(tip)}">${HOME_ZONE_EMOJI[zone]||'•'} ${rec}${esc(s.name||'Unnamed')}</div>`;
+      const href = quoteHref(s);
+      const tip = (s.name||'Unnamed')+(tm?' · '+tm:'')+(href?' · open quote':'');
+      // Clicking the day cell (below) selects that day; a chip with a quote
+      // behind it instead jumps straight there for a quick edit — so it
+      // needs to stop that click from also reaching the cell's own handler.
+      const click = href ? ` onclick="event.stopPropagation();location.href='${href}'"` : '';
+      return `<div class="hcal-chip${href?' to-quote':''}"${click} style="background:${hexToRgba(color,.15)};color:${color}" title="${esc(tip)}">${HOME_ZONE_EMOJI[zone]||'•'} ${rec}${esc(s.name||'Unnamed')}</div>`;
     }).join('');
     const more = list.length>3 ? `<div class="hcal-chip-more">+${list.length-3} more</div>` : '';
     html += `<button type="button" class="hcal-cell${inMonth?'':' other'}${iso===todayIso?' today':''}${iso===calSelectedISO?' sel':''}" data-iso="${iso}">
@@ -578,7 +596,9 @@ function renderHomeDay(){
   box.innerHTML = `<div class="hcal-day-title">${esc(label)}<a class="hcal-day-add" href="javascript:void(0)" onclick="goToNewBooking('${calSelectedISO}')">+ New booking</a></div>` + (list.length
     ? list.map(s=>{
         const idx = HOME_SESSIONS.indexOf(s);
-        return `<div class="hcal-day-item"><span class="hcal-day-dot" style="background:${HOME_ZONE_COLORS[s.zone]||'var(--muted2)'}"></span><b>${esc(s.name||'Unnamed')}</b>${todayBadge(s)}<span class="hcal-day-time">${esc(fmt12(s.start))}${s.end?' – '+esc(fmt12(s.end)):''}</span>${sessionActionHTML(s,idx)}</div>`;
+        const href = quoteHref(s);
+        const openAttr = href ? ` onclick="location.href='${href}'" title="Open quote ${esc(s.quoteNo)} to edit"` : '';
+        return `<div class="hcal-day-item${href?' to-quote':''}"${openAttr}><span class="hcal-day-dot" style="background:${HOME_ZONE_COLORS[s.zone]||'var(--muted2)'}"></span><b>${esc(s.name||'Unnamed')}</b>${todayBadge(s)}<span class="hcal-day-time">${esc(fmt12(s.start))}${s.end?' – '+esc(fmt12(s.end)):''}</span>${sessionActionHTML(s,idx)}</div>`;
       }).join('')
     : `<div class="hcal-day-empty">No sessions.</div>`);
   bindSessionDeleteButtons(box);
@@ -602,7 +622,9 @@ function schedItemHTML(s, idx, badge, extra){
   const dateInfo = s.date?esc(s.date):(s.days?s.days.map(esc).join(', '):'Anytime');
   const auto = badge.includes('Live')?' active-now':extra||'';
   const linked = (s.leadId||s.quoteNo) ? `<span title="${s.leadId?'From a CRM lead':'From quote '+esc(s.quoteNo)}" style="color:var(--accent-d)">🔗 </span>` : '';
-  return `<div class="sched-item${auto}">
+  const href = quoteHref(s);
+  const openAttr = href ? ` onclick="location.href='${href}'" title="Open quote ${esc(s.quoteNo)} to edit"` : '';
+  return `<div class="sched-item${auto}${href?' to-quote':''}"${openAttr}>
       <div>
         <div class="sched-name">${linked}${esc(s.name||'Unnamed')} ${badge}</div>
         <div class="sched-meta">
