@@ -200,6 +200,16 @@
       "end": "13:00",
       "date": "2026-09-04",
       "confirmed": true
+    },
+    {
+      "id": "Smtqw7svb2by",
+      "quoteNo": "RYST/2026/054",
+      "name": "Mercury Digital",
+      "zone": "podcast",
+      "start": "12:45",
+      "end": "13:45",
+      "date": "2026-09-07",
+      "confirmed": true
     }
   ]
 }
