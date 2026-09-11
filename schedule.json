@@ -241,6 +241,16 @@
       "date": "2026-09-11",
       "confirmed": true,
       "leadId": "Lmtwhz0gi3l0"
+    },
+    {
+      "id": "Smtx9ckcp6z",
+      "quoteNo": "RYST/2026/068",
+      "name": "Aysha",
+      "zone": "culinary",
+      "start": "11:00",
+      "end": "19:00",
+      "date": "2026-09-12",
+      "confirmed": true
     }
   ]
 }
