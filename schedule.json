@@ -251,6 +251,16 @@
       "end": "19:00",
       "date": "2026-09-12",
       "confirmed": true
+    },
+    {
+      "id": "Smu2jlcnx2n0",
+      "quoteNo": "RYST/2026/065",
+      "name": "Mr. Harish",
+      "zone": "culinary",
+      "start": "16:00",
+      "end": "22:00",
+      "date": "2026-09-15",
+      "confirmed": true
     }
   ]
 }
