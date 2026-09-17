@@ -271,6 +271,16 @@
       "end": "16:00",
       "date": "2026-09-17",
       "confirmed": true
+    },
+    {
+      "id": "Smu5bwh5628h",
+      "quoteNo": "RYST/2026/070",
+      "name": "Ms.Reshmi",
+      "zone": "podcast",
+      "start": "10:00",
+      "end": "12:00",
+      "date": "2026-09-18",
+      "confirmed": true
     }
   ]
 }
