@@ -96,7 +96,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .tun-icon svg{width:22px;height:22px}
 .tun-body{min-width:0;flex:1}
 .tun-label{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--amber);text-transform:uppercase;margin-bottom:4px}
-.tun-empty{font-size:17px;font-weight:300;color:rgba(255,255,255,.5);line-height:1.35}
 .tun-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .tun-name{font-size:21px;font-weight:600;color:rgba(255,255,255,.9)}
 .tun-zone{font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
@@ -523,7 +522,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
         <div class="tun-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
         <div class="tun-body" id="tun-body">
           <div class="tun-label">Up Next</div>
-          <div class="tun-empty" id="tun-empty">No upcoming booking — enjoy the creative flow!</div>
           <div class="tun-row" id="tun-row" style="display:none">
             <div class="tun-name" id="tun-name">—</div>
             <div class="tun-zone" id="tun-zone">—</div>
@@ -981,22 +979,21 @@ function setZoneMsg(zone){
 // ═══════════════════════════════════════════════════
 let _lastUpNextKey = null;
 function updateUpNextPanel(){
-  const emptyEl = document.getElementById('tun-empty');
+  const panelEl = document.getElementById('tmr-upnext');
   const rowEl   = document.getElementById('tun-row');
-  if(!emptyEl || !rowEl) return;
+  if(!panelEl || !rowEl) return;
   const key = nextSession ? (nextSession.startMs+'|'+nextSession.name+'|'+nextSession.zone) : 'none';
   if(key === _lastUpNextKey) return;
   _lastUpNextKey = key;
   if(!nextSession){
-    emptyEl.style.display = 'block';
-    rowEl.style.display = 'none';
+    panelEl.style.display = 'none';
     return;
   }
   const zone = ZONE_MAP[(nextSession.zone||'podcast').toLowerCase()] || {label:(nextSession.zone||'Studio')+' Zone'};
   setEl('tun-name', nextSession.name);
   setEl('tun-zone', zone.label);
   setEl('tun-time', fmt12(new Date(nextSession.startMs)));
-  emptyEl.style.display = 'none';
+  panelEl.style.display = 'flex';
   rowEl.style.display = 'flex';
 }
 
