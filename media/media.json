@@ -49,6 +49,11 @@
       "name": "kitchen area.jpeg",
       "type": "image",
       "url": "/media/kitchen area.jpeg"
+    },
+    {
+      "name": "studio-entrance-dark.jpg",
+      "type": "image",
+      "url": "/media/studio-entrance-dark.jpg"
     }
   ]
 }
