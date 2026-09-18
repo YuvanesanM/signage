@@ -36,42 +36,75 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 /* WELCOME */
 
 /* TIMER */
-#phase-timer{background:var(--deep);display:grid;grid-template-columns:400px 1fr 400px;align-items:stretch}
-.tmr-left{padding:48px 40px;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
-.tmr-logo{width:280px;height:auto;object-fit:contain;mix-blend-mode:screen;opacity:.97}
-.ring-wrap{position:relative;width:220px;height:220px;flex-shrink:0}
-.ring-wrap svg{position:absolute;top:0;left:0;width:220px;height:220px}
+#phase-timer{background:var(--deep);display:flex;flex-direction:column}
+#phase-timer::before{content:'';position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(5px) brightness(.62) saturate(1.05);opacity:0;transition:opacity 1s ease;z-index:0}
+#phase-timer[data-zone="podcast"]::before{background-image:url('media/Podcast zone.jpeg');opacity:1}
+#phase-timer[data-zone="photo"]::before,#phase-timer[data-zone="photography"]::before{background-image:url('media/Studio Photoshoot area.jpeg');opacity:1}
+#phase-timer[data-zone="culinary"]::before,#phase-timer[data-zone="food"]::before{background-image:url('media/kitchen area.jpeg');opacity:1}
+#phase-timer::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,14,.35),rgba(8,10,14,.8));z-index:0}
+#phase-timer>*{position:relative;z-index:1}
 
+.tmr-header{display:flex;align-items:flex-start;justify-content:space-between;padding:36px 56px 0}
+.tmr-header-left{display:flex;align-items:center;gap:22px}
+.tmr-header-logo{width:76px;height:76px;object-fit:contain;border-radius:14px;background:var(--white)}
+.tmr-header-tagline{font-size:14px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.6);text-transform:uppercase;line-height:1.55}
+.tmr-header-rule{width:46px;height:2px;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:2px;margin-top:8px}
+.tmr-header-right{text-align:right;font-size:14px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.6);text-transform:uppercase;line-height:1.55}
+.tmr-header-right .tmr-header-rule{margin-left:auto}
 
+.tmr-body{flex:1;display:grid;grid-template-columns:1fr 400px;align-items:stretch;min-height:0}
+.tmr-main{display:flex;flex-direction:column;justify-content:center;gap:26px;padding:0 32px 0 56px;min-height:0}
+.tmr-toprow{display:flex;align-items:center;gap:8px}
+.tmr-left{flex-shrink:0;width:360px;display:flex;align-items:center;justify-content:center}
+.ring-wrap{position:relative;width:300px;height:300px;flex-shrink:0}
+.ring-wrap svg{position:absolute;top:0;left:0;width:300px;height:300px}
+.ring-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;white-space:nowrap}
+.ring-pct-num{font-family:'Cormorant Garamond',serif;font-size:64px;font-weight:300;color:rgba(255,255,255,.95);line-height:1}
+.ring-pct-lbl{font-size:13px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-top:6px}
 
-.ring-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:300;color:rgba(255,255,255,.9);line-height:1;text-align:center;white-space:nowrap}
-
-.tmr-center{padding:48px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
-.tmr-phase-label{font-size:20px;font-weight:700;letter-spacing:5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:20px}
-.tmr-elapsed{font-family:'Cormorant Garamond',serif;font-size:160px;font-weight:300;line-height:1;color:var(--white);letter-spacing:-4px;text-align:center;white-space:nowrap}
+.tmr-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:0}
+.tmr-live-pill{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;letter-spacing:5px;color:rgba(255,255,255,.85);text-transform:uppercase;margin-bottom:18px}
+.tmr-live-dot{width:10px;height:10px;border-radius:50%;background:#FF5B4E;animation:blink 1.1s ease-in-out infinite;flex-shrink:0}
+.tmr-elapsed{font-family:'Cormorant Garamond',serif;font-size:132px;font-weight:300;line-height:1;color:var(--white);letter-spacing:-3px;text-align:center;white-space:nowrap}
 .tmr-elapsed .colon{animation:blink 1s step-end infinite}
-.tmr-labels{display:flex;gap:0;margin-top:8px;width:516px}
-.tmr-lbl{flex:1;text-align:center;font-size:15px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.2);text-transform:uppercase}
-.tmr-divider{width:80%;height:1px;background:rgba(255,255,255,.06);margin:20px auto}
-.tmr-remain-wrap{text-align:center;margin-top:4px}
-.tmr-remain-label{font-size:16px;font-weight:600;letter-spacing:4px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:6px}
-.tmr-remain{font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:300;color:rgba(255,255,255,.55);letter-spacing:-1px;line-height:1}
+.tmr-labels{display:flex;gap:0;margin-top:8px;width:456px}
+.tmr-lbl{flex:1;text-align:center;font-size:14px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.2);text-transform:uppercase}
+.tmr-divider-grad{width:110px;height:2px;background:linear-gradient(90deg,var(--teal),var(--amber));border-radius:2px;margin:22px auto}
+.tmr-remain-wrap{text-align:center}
+.tmr-remain-label{font-size:14px;font-weight:600;letter-spacing:4px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:6px}
+.tmr-remain{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:300;color:rgba(255,255,255,.55);letter-spacing:-1px;line-height:1}
 .tmr-remain.warning{color:#FFB547;animation:pulseWarning 1s ease-in-out infinite}
 @keyframes pulseWarning{0%,100%{opacity:1}50%{opacity:.5}}
-.tmr-right{height:100%;padding:40px 64px 40px 48px;border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;justify-content:center;gap:16px}
-.tmr-section-label{font-size:14px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.32);text-transform:uppercase;margin-bottom:-6px}
-.tmr-info-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px 28px}
-.tic-label{font-size:15px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:10px}
-.tic-val{font-size:36px;font-weight:600;color:rgba(255,255,255,.88);line-height:1.2}
-.tic-sub{font-size:20px;color:rgba(255,255,255,.5);margin-top:6px;font-weight:300}
-.tmr-upnext{background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.28);border-radius:16px;padding:18px 28px}
-.tun-label{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--amber);text-transform:uppercase;margin-bottom:8px}
-.tun-empty{font-size:19px;font-weight:300;color:rgba(255,255,255,.45);font-style:italic}
-.tun-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-.tun-name{font-size:24px;font-weight:600;color:rgba(255,255,255,.88)}
-.tun-zone{font-size:16px;font-weight:600;color:rgba(255,255,255,.5)}
-.tun-time{font-size:18px;font-weight:300;color:var(--amber);margin-left:auto}
-.tmr-quote{border-left:3px solid rgba(13,122,138,.5);padding:10px 16px;font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;font-weight:300;color:rgba(255,255,255,.4);line-height:1.45;transition:opacity .8s}
+.tmr-tagline{margin-top:20px;font-size:14px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;text-align:center;line-height:1.8}
+
+.tmr-amenities{display:flex;align-items:stretch;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(255,255,255,.03);overflow:hidden}
+.tam-item{flex:1;display:flex;align-items:center;gap:14px;padding:16px 22px;border-right:1px solid rgba(255,255,255,.08)}
+.tam-item:last-child{border-right:none}
+.tam-icon{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.75);flex-shrink:0}
+.tam-icon svg{width:20px;height:20px}
+.tam-label{font-size:13px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase}
+.tam-status{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:600;color:rgba(255,255,255,.85);margin-top:2px}
+.tam-dot{width:7px;height:7px;border-radius:50%;background:#4CD97B;flex-shrink:0}
+
+.tmr-right{height:100%;padding:40px 56px 40px 44px;border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;justify-content:center;gap:14px}
+.tmr-section-label{font-size:13px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.32);text-transform:uppercase;margin-bottom:-2px}
+.tmr-info-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px 22px;display:flex;align-items:center;gap:16px}
+.tic-icon{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.8);flex-shrink:0}
+.tic-icon svg{width:22px;height:22px}
+.tic-body{min-width:0}
+.tic-label{font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:4px}
+.tic-val{font-size:26px;font-weight:600;color:rgba(255,255,255,.9);line-height:1.15}
+.tmr-upnext{background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.28);border-radius:16px;padding:14px 22px;display:flex;align-items:center;gap:16px}
+.tun-icon{width:48px;height:48px;border-radius:50%;background:rgba(245,166,35,.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--amber)}
+.tun-icon svg{width:22px;height:22px}
+.tun-body{min-width:0;flex:1}
+.tun-label{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--amber);text-transform:uppercase;margin-bottom:4px}
+.tun-empty{font-size:17px;font-weight:300;color:rgba(255,255,255,.5);line-height:1.35}
+.tun-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.tun-name{font-size:21px;font-weight:600;color:rgba(255,255,255,.9)}
+.tun-zone{font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
+.tun-time{font-size:16px;font-weight:300;color:var(--amber);margin-left:auto}
+.tmr-quote{border-left:3px solid rgba(13,122,138,.5);padding:8px 14px;font-family:'Cormorant Garamond',serif;font-size:19px;font-style:italic;font-weight:300;color:rgba(255,255,255,.4);line-height:1.4;transition:opacity .8s}
 #warning-overlay{position:fixed;inset:0;border:4px solid #FFB547;pointer-events:none;opacity:0;transition:opacity .5s;z-index:150}
 #warning-overlay.show{opacity:1;animation:warnPulse 2s ease-in-out infinite}
 @keyframes warnPulse{0%,100%{border-color:rgba(255,181,71,.8)}50%{border-color:rgba(255,181,71,.15)}}
@@ -235,7 +268,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 .ty-sep{width:1px;height:46px;background:var(--silver);flex-shrink:0;margin:0 8px;align-self:center}
 
 /* toast notification */
-#toast{position:fixed;top:14px;right:18px;z-index:9999;
+#toast{position:fixed;top:132px;right:18px;z-index:9999;
   background:rgba(14,18,24,.93);color:rgba(255,255,255,.78);
   padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;
   letter-spacing:.2px;opacity:0;pointer-events:none;
@@ -245,16 +278,16 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
 #toast.show{opacity:1}
 
 /* ── Progress ring ── */
-.ring-svg{position:absolute;top:0;left:0;width:220px;height:220px}
-.ring-track{fill:none;stroke:rgba(255,255,255,.08);stroke-width:10}
+.ring-svg{position:absolute;top:0;left:0;width:300px;height:300px}
+.ring-track{fill:none;stroke:rgba(255,255,255,.08);stroke-width:12}
 .ring-prog{
-  fill:none;stroke:url(#ringGrad);stroke-width:10;
+  fill:none;stroke:url(#ringGrad);stroke-width:12;
   stroke-linecap:round;
-  stroke-dasharray:628.3;
-  stroke-dashoffset:628.3;
+  stroke-dasharray:816.8;
+  stroke-dashoffset:816.8;
   transition:stroke-dashoffset .8s ease;
   transform:rotate(-90deg);
-  transform-origin:110px 110px
+  transform-origin:150px 150px
 }
 
 .tmr-clock{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:rgba(255,255,255,.6);line-height:1;text-align:right}
@@ -382,63 +415,130 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--deep);font
       </linearGradient>
     </defs>
   </svg>
-  <div class="tmr-left">
-    <img class="tmr-logo" alt="Studio RYST" src="assets/logo.jpg">
-    <div class="ring-wrap">
-      <svg class="ring-svg" viewBox="0 0 220 220">
-        <circle class="ring-track" cx="110" cy="110" r="100"/>
-        <circle class="ring-prog" id="ring-circle" cx="110" cy="110" r="100"/>
-      </svg>
-      <div class="ring-pct" id="ring-pct">0%</div>
+  <div class="tmr-header">
+    <div class="tmr-header-left">
+      <img class="tmr-header-logo" alt="Studio RYST" src="assets/logo.jpg">
+      <div>
+        <div class="tmr-header-tagline">Create<br>Record<br>Produce<br>Together</div>
+        <div class="tmr-header-rule"></div>
+      </div>
     </div>
-
-  </div>
-  <div class="tmr-center">
-    <div class="tmr-phase-label">Session Live</div>
-    <div class="tmr-elapsed" id="tmr-elapsed">
-      00<span class="colon">:</span>00<span class="colon">:</span>00
-    </div>
-    <div class="tmr-labels">
-      <div class="tmr-lbl">Hours</div>
-      <div class="tmr-lbl">Min</div>
-      <div class="tmr-lbl">Sec</div>
-    </div>
-    <div class="tmr-divider"></div>
-    <div class="tmr-remain-wrap">
-      <div class="tmr-remain-label">Time Remaining</div>
-      <div class="tmr-remain" id="tmr-remain">—</div>
+    <div class="tmr-header-right">
+      <div>A Space<br>For Great<br>Conversations</div>
+      <div class="tmr-header-rule"></div>
     </div>
   </div>
-  <div class="tmr-right">
-    <div class="tmr-section-label">Current Session</div>
-    <div class="tmr-info-card">
-      <div class="tic-label">Guest</div>
-      <div class="tic-val tmr-guest" id="tmr-guest">—</div>
-    </div>
-    <div class="tmr-info-card">
-      <div class="tic-label">Zone</div>
-      <div class="tic-val" id="tmr-zone-label">—</div>
-      <div class="tic-sub" id="tmr-window">—</div>
-    </div>
-    <div class="tmr-info-card">
-      <div class="tic-label">Ends At</div>
-      <div class="tic-val" id="tmr-end-label">—</div>
-    </div>
-    <div class="tmr-upnext" id="tmr-upnext">
-      <div class="tun-label">Up Next</div>
-      <div class="tun-body" id="tun-body">
-        <div class="tun-empty" id="tun-empty">No upcoming booking — enjoy the creative flow!</div>
-        <div class="tun-row" id="tun-row" style="display:none">
-          <div class="tun-name" id="tun-name">—</div>
-          <div class="tun-zone" id="tun-zone">—</div>
-          <div class="tun-time" id="tun-time">—</div>
+  <div class="tmr-body">
+    <div class="tmr-main">
+      <div class="tmr-toprow">
+        <div class="tmr-left">
+          <div class="ring-wrap">
+            <svg class="ring-svg" viewBox="0 0 300 300">
+              <circle class="ring-track" cx="150" cy="150" r="130"/>
+              <circle class="ring-prog" id="ring-circle" cx="150" cy="150" r="130"/>
+            </svg>
+            <div class="ring-pct">
+              <div class="ring-pct-num" id="ring-pct-num">0%</div>
+              <div class="ring-pct-lbl">Complete</div>
+            </div>
+          </div>
+        </div>
+        <div class="tmr-center">
+          <div class="tmr-live-pill"><span class="tmr-live-dot"></span>Session Live</div>
+          <div class="tmr-elapsed" id="tmr-elapsed">
+            00<span class="colon">:</span>00<span class="colon">:</span>00
+          </div>
+          <div class="tmr-labels">
+            <div class="tmr-lbl">Hours</div>
+            <div class="tmr-lbl">Minutes</div>
+            <div class="tmr-lbl">Seconds</div>
+          </div>
+          <div class="tmr-divider-grad"></div>
+          <div class="tmr-remain-wrap">
+            <div class="tmr-remain-label">Time Remaining</div>
+            <div class="tmr-remain" id="tmr-remain">—</div>
+          </div>
+          <div class="tmr-tagline">Good sessions<br>create great things</div>
+        </div>
+      </div>
+      <div class="tmr-amenities">
+        <div class="tam-item">
+          <div class="tam-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
+          <div>
+            <div class="tam-label">Audio</div>
+            <div class="tam-status"><span class="tam-dot"></span>Ready</div>
+          </div>
+        </div>
+        <div class="tam-item">
+          <div class="tam-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.9" y1="19.1" x2="19.1" y2="4.9"/></svg></div>
+          <div>
+            <div class="tam-label">AC</div>
+            <div class="tam-status"><span class="tam-dot"></span>On</div>
+          </div>
+        </div>
+        <div class="tam-item">
+          <div class="tam-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a11 11 0 0 1 14 0"/><path d="M1.5 9a16 16 0 0 1 21 0"/><path d="M8.5 16a6 6 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/></svg></div>
+          <div>
+            <div class="tam-label">Wi-Fi</div>
+            <div class="tam-status"><span class="tam-dot"></span>Connected</div>
+          </div>
+        </div>
+        <div class="tam-item">
+          <div class="tam-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div>
+            <div class="tam-label">Studio</div>
+            <div class="tam-status"><span class="tam-dot"></span>Ready</div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="tmr-quote" id="tmr-quote"></div>
-    <div class="tmr-clock-block">
-      <div class="tmr-clock" id="tmr-clock">—</div>
-      <div class="tmr-date" id="tmr-date"></div>
+    <div class="tmr-right">
+      <div class="tmr-section-label">Current Session</div>
+      <div class="tmr-info-card">
+        <div class="tic-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+        <div class="tic-body">
+          <div class="tic-label">Guest</div>
+          <div class="tic-val tmr-guest" id="tmr-guest">—</div>
+        </div>
+      </div>
+      <div class="tmr-info-card">
+        <div class="tic-icon" id="tmr-zone-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
+        <div class="tic-body">
+          <div class="tic-label">Zone</div>
+          <div class="tic-val" id="tmr-zone-label">—</div>
+        </div>
+      </div>
+      <div class="tmr-info-card">
+        <div class="tic-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></div>
+        <div class="tic-body">
+          <div class="tic-label">Booking Time</div>
+          <div class="tic-val" id="tmr-booking-time">—</div>
+        </div>
+      </div>
+      <div class="tmr-info-card">
+        <div class="tic-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></div>
+        <div class="tic-body">
+          <div class="tic-label">Session Ends At</div>
+          <div class="tic-val" id="tmr-end-label">—</div>
+        </div>
+      </div>
+      <div class="tmr-upnext" id="tmr-upnext">
+        <div class="tun-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <div class="tun-body" id="tun-body">
+          <div class="tun-label">Up Next</div>
+          <div class="tun-empty" id="tun-empty">No upcoming booking — enjoy the creative flow!</div>
+          <div class="tun-row" id="tun-row" style="display:none">
+            <div class="tun-name" id="tun-name">—</div>
+            <div class="tun-zone" id="tun-zone">—</div>
+            <div class="tun-time" id="tun-time">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="tmr-quote" id="tmr-quote"></div>
+      <div class="tmr-clock-block">
+        <div class="tmr-clock" id="tmr-clock">—</div>
+        <div class="tmr-date" id="tmr-date"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -550,17 +650,29 @@ setInterval(rotateQuote, 20000);
 
 // Zone map
 const ZONE_MAP = {
-  podcast:    {label:'Podcast Zone',     icon:'🎙️', zoneClass:'pod',
+  podcast:    {label:'Podcast Zone',     icon:'🎙️', zoneClass:'pod', svgIcon:'mic',
     msg:'Your studio is soundproofed and mic-ready. RØDECaster is set up — just plug in and press record.'},
-  photo:      {label:'Photography Zone', icon:'📷', zoneClass:'pho',
+  photo:      {label:'Photography Zone', icon:'📷', zoneClass:'pho', svgIcon:'camera',
     msg:'Backdrops are prepped and Godox lighting is ready to configure. Set your frame — we have handled the rest.'},
-  photography:{label:'Photography Zone', icon:'📷', zoneClass:'pho',
+  photography:{label:'Photography Zone', icon:'📷', zoneClass:'pho', svgIcon:'camera',
     msg:'Backdrops are prepped and Godox lighting is ready to configure. Set your frame — we have handled the rest.'},
-  culinary:   {label:'Culinary Zone',    icon:'🍳', zoneClass:'cul',
+  culinary:   {label:'Culinary Zone',    icon:'🍳', zoneClass:'cul', svgIcon:'pot',
     msg:'Your kitchen canvas is clean and prepped. Surfaces, props, and camera angle are yours to command.'},
-  food:       {label:'Culinary Zone',    icon:'🍳', zoneClass:'cul',
+  food:       {label:'Culinary Zone',    icon:'🍳', zoneClass:'cul', svgIcon:'pot',
     msg:'Your kitchen canvas is clean and prepped. Surfaces, props, and camera angle are yours to command.'},
 };
+
+// Minimal line-icon set for the session-live screen — kept as raw SVG
+// shape markup (no external icon font) so the TV stays a single self
+// contained file.
+const ICON_SHAPES = {
+  mic:    '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/>',
+  camera: '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.5"/>',
+  pot:    '<path d="M4 10h16v2a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6v-2z"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/><line x1="2" y1="10" x2="22" y2="10"/>',
+};
+function iconSvg(name){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(ICON_SHAPES[name]||ICON_SHAPES.mic)+'</svg>';
+}
 
 // ═══════════════════════════════════════════════════
 //  UTILITIES
@@ -720,7 +832,7 @@ const EL = {};
 window.addEventListener('DOMContentLoaded', () => {
   ['sb-clock','wlc-bigtime','wlc-date','tmr-clock','tmr-date','idle-ldate',
    'wlc-lclock','wlc-ldate','wlc-cdown','cdown-label','tmr-elapsed','tmr-remain',
-   'ring-circle','ring-pct','warning-overlay'].forEach(id => { EL[id] = document.getElementById(id); });
+   'ring-circle','ring-pct-num','warning-overlay'].forEach(id => { EL[id] = document.getElementById(id); });
 });
 const PILL = document.getElementById('phase-pill');
 const PILL_LABEL = document.getElementById('phase-label');
@@ -928,8 +1040,12 @@ function populateSession(s){
   setEl('sc-end-sub',  'Ends at '+fmt12(endD));
   setEl('tmr-guest',      s.name);
   setEl('tmr-zone-label', zone.label);
-  setEl('tmr-window',     fmt12(startD)+' – '+fmt12(endD));
+  const zoneIconEl = document.getElementById('tmr-zone-icon');
+  if(zoneIconEl) zoneIconEl.innerHTML = iconSvg(zone.svgIcon || 'mic');
+  setEl('tmr-booking-time', fmt12(startD)+' – '+fmt12(endD));
   setEl('tmr-end-label',  fmt12(endD));
+  const timerEl = document.getElementById('phase-timer');
+  if(timerEl) timerEl.dataset.zone = (s.zone||'podcast').toLowerCase();
   const tyMsg = document.getElementById('ty-message');
   if(tyMsg){ tyMsg.innerHTML = ''; const t1=document.createTextNode('It was our privilege hosting your session today, '); const strong=document.createElement('strong'); strong.textContent=s.name; const t2=document.createTextNode('.'); const br=document.createElement('br'); const t3=document.createTextNode('We look forward to creating together again.'); tyMsg.append(t1,strong,t2,br,t3); }
   setEl('sb-guest', s.name);
@@ -947,7 +1063,7 @@ function showToast(msg){
 // ═══════════════════════════════════════════════════
 //  MAIN TICK (every second)
 // ═══════════════════════════════════════════════════
-const CIRC = 2*Math.PI*100; // r=100 → 628.3 // 540.35
+const CIRC = 2*Math.PI*130; // r=130 → 816.8
 
 function tick(){
   try { _tick(); } catch(e){ console.error('tick error:', e); }
@@ -1019,7 +1135,7 @@ function _tick(){
     if(rEl){ rEl.textContent = rh+':'+rm+':'+rs; rEl.className='tmr-remain'+(remain<=300?' warning':''); }
     const pct = Math.min(elapsed/totalDur,1);
     if(EL['ring-circle']) EL['ring-circle'].style.strokeDashoffset = CIRC*(1-pct);
-    if(EL['ring-pct']) EL['ring-pct'].textContent = Math.round(pct*100)+'%';
+    if(EL['ring-pct-num']) EL['ring-pct-num'].textContent = Math.round(pct*100)+'%';
     updateUpNextPanel();
     // 5-min warning
     if(remain<=300&&!warningShown){
