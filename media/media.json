@@ -19,6 +19,36 @@
       "name": "kitchen area.jpeg",
       "type": "image",
       "url": "/media/kitchen area.jpeg"
+    },
+    {
+      "name": "1.jpg",
+      "type": "image",
+      "url": "/media/1.jpg"
+    },
+    {
+      "name": "2.jpg",
+      "type": "image",
+      "url": "/media/2.jpg"
+    },
+    {
+      "name": "3.jpg",
+      "type": "image",
+      "url": "/media/3.jpg"
+    },
+    {
+      "name": "4.jpg",
+      "type": "image",
+      "url": "/media/4.jpg"
+    },
+    {
+      "name": "5.jpg",
+      "type": "image",
+      "url": "/media/5.jpg"
+    },
+    {
+      "name": "6.jpg",
+      "type": "image",
+      "url": "/media/6.jpg"
     }
   ]
 }
