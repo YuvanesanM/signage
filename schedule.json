@@ -301,6 +301,16 @@
       "end": "14:00",
       "date": "2026-09-29",
       "confirmed": true
+    },
+    {
+      "id": "Smunl8hja2rd",
+      "quoteNo": "RYST/2026/079",
+      "name": "Rush Brand Consulting Services PVT LTD",
+      "zone": "culinary",
+      "start": "10:00",
+      "end": "12:00",
+      "date": "2026-09-30",
+      "confirmed": true
     }
   ]
 }
