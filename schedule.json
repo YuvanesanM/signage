@@ -311,6 +311,16 @@
       "end": "13:00",
       "date": "2026-09-30",
       "confirmed": true
+    },
+    {
+      "id": "Smuqmu7748u",
+      "quoteNo": "RYST/2026/081",
+      "name": "Anuradha Nair",
+      "zone": "podcast",
+      "start": "15:00",
+      "end": "17:00",
+      "date": "2026-10-02",
+      "confirmed": true
     }
   ]
 }
