@@ -321,6 +321,16 @@
       "end": "17:00",
       "date": "2026-10-02",
       "confirmed": true
+    },
+    {
+      "id": "Smuv5auxefl",
+      "quoteNo": "RYST/2026/082",
+      "name": "Kalyana Malai",
+      "zone": "podcast",
+      "start": "16:00",
+      "end": "18:00",
+      "date": "2026-10-06",
+      "confirmed": true
     }
   ]
 }
