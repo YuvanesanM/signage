@@ -331,6 +331,16 @@
       "end": "18:00",
       "date": "2026-10-06",
       "confirmed": true
+    },
+    {
+      "id": "Smuxnmohy21l",
+      "quoteNo": "RYST/2026/084",
+      "name": "THEINTGEN",
+      "zone": "culinary",
+      "start": "11:00",
+      "end": "15:00",
+      "date": "2026-10-07",
+      "confirmed": true
     }
   ]
 }
