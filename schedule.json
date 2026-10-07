@@ -341,6 +341,16 @@
       "end": "15:00",
       "date": "2026-10-07",
       "confirmed": true
+    },
+    {
+      "id": "Smuxo0s15b8",
+      "quoteNo": "RYST/2026/085",
+      "name": "The reel deal",
+      "zone": "podcast",
+      "start": "18:00",
+      "end": "19:00",
+      "date": "2026-10-07",
+      "confirmed": true
     }
   ]
 }
