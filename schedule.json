@@ -361,6 +361,16 @@
       "end": "12:00",
       "date": "2026-10-14",
       "confirmed": true
+    },
+    {
+      "id": "Smv82skz24ek",
+      "quoteNo": "RYST/2026/090",
+      "name": "Kothari Industrial Corporation",
+      "zone": "podcast",
+      "start": "15:30",
+      "end": "16:30",
+      "date": "2026-10-16",
+      "confirmed": true
     }
   ]
 }
