@@ -351,6 +351,16 @@
       "end": "19:00",
       "date": "2026-10-07",
       "confirmed": true
+    },
+    {
+      "id": "Smv7lazrw3am",
+      "quoteNo": "RYST/2026/087",
+      "name": "Varsha Enterprises",
+      "zone": "podcast",
+      "start": "10:00",
+      "end": "12:00",
+      "date": "2026-10-14",
+      "confirmed": true
     }
   ]
 }
