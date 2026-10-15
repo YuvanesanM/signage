@@ -371,6 +371,16 @@
       "end": "16:30",
       "date": "2026-10-16",
       "confirmed": true
+    },
+    {
+      "id": "Smv9amfci7oj",
+      "quoteNo": "RYST/2026/092",
+      "name": "777 Media Forest Private Limited",
+      "zone": "podcast",
+      "start": "15:00",
+      "end": "17:00",
+      "date": "2026-10-15",
+      "confirmed": true
     }
   ]
 }
