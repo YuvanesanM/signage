@@ -381,6 +381,16 @@
       "end": "17:00",
       "date": "2026-10-15",
       "confirmed": true
+    },
+    {
+      "id": "Smvae15ft5o8",
+      "quoteNo": "RYST/2026/089",
+      "name": "Wisecrack Studio",
+      "zone": "culinary",
+      "start": "09:00",
+      "end": "17:00",
+      "date": "2026-10-16",
+      "confirmed": true
     }
   ]
 }
