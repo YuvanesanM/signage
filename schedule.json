@@ -391,6 +391,16 @@
       "end": "17:00",
       "date": "2026-10-16",
       "confirmed": true
+    },
+    {
+      "id": "Smvanfi0k458",
+      "quoteNo": "RYST/2026/088",
+      "name": "First Principle Assets",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "13:00",
+      "date": "2026-10-22",
+      "confirmed": true
     }
   ]
 }
