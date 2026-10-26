@@ -401,6 +401,16 @@
       "end": "13:00",
       "date": "2026-10-22",
       "confirmed": true
+    },
+    {
+      "id": "Smvp2l81n4uu",
+      "quoteNo": "RYST/2026/098",
+      "name": "Jito Chennai Chapter Foundation",
+      "zone": "podcast",
+      "start": "16:00",
+      "end": "17:00",
+      "date": "2026-10-26",
+      "confirmed": true
     }
   ]
 }
