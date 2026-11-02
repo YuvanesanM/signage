@@ -421,6 +421,16 @@
       "end": "14:00",
       "date": "2026-10-30",
       "confirmed": true
+    },
+    {
+      "id": "Smvylsibk5ij",
+      "quoteNo": "RYST/2026/100",
+      "name": "Born Creative Productions",
+      "zone": "culinary",
+      "start": "08:00",
+      "end": "20:00",
+      "date": "2026-11-01",
+      "confirmed": true
     }
   ]
 }
