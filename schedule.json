@@ -431,6 +431,16 @@
       "end": "13:00",
       "date": "2026-11-05",
       "confirmed": true
+    },
+    {
+      "id": "Smwae3vnf1ap",
+      "quoteNo": "RYST/2026/109",
+      "name": "Zero Degree Digital Marketing Agency",
+      "zone": "podcast",
+      "start": "12:00",
+      "end": "15:00",
+      "date": "2026-11-11",
+      "confirmed": true
     }
   ]
 }
