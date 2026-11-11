@@ -441,6 +441,16 @@
       "end": "15:00",
       "date": "2026-11-11",
       "confirmed": true
+    },
+    {
+      "id": "Smwbphvmb1fw",
+      "quoteNo": "RYST/2026/104",
+      "name": "Reshmi",
+      "zone": "podcast",
+      "start": "14:30",
+      "end": "16:30",
+      "date": "2026-11-05",
+      "confirmed": true
     }
   ]
 }
