@@ -461,6 +461,16 @@
       "end": "16:00",
       "date": "2026-10-26",
       "confirmed": true
+    },
+    {
+      "id": "Smwd63hf13c9",
+      "quoteNo": "RYST/2026/110",
+      "name": "Kalyana Malai Private Limited",
+      "zone": "podcast",
+      "start": "12:00",
+      "end": "13:00",
+      "date": "2026-11-12",
+      "confirmed": true
     }
   ]
 }
