@@ -481,6 +481,16 @@
       "end": "19:00",
       "date": "2026-11-15",
       "confirmed": false
+    },
+    {
+      "id": "Smwkb46x07cp",
+      "quoteNo": "RYST/2026/113",
+      "name": "Sri Kauvery Medical Care (India) Limited",
+      "zone": "podcast",
+      "start": "14:00",
+      "end": "15:00",
+      "date": "2026-11-18",
+      "confirmed": false
     }
   ]
 }
