@@ -501,6 +501,16 @@
       "end": "20:00",
       "date": "2026-11-24",
       "confirmed": false
+    },
+    {
+      "id": "Smwlsqtvs2dm",
+      "quoteNo": "RYST/2026/115",
+      "name": "Gopal",
+      "zone": "podcast",
+      "start": "10:30",
+      "end": "12:30",
+      "date": "2026-11-20",
+      "confirmed": false
     }
   ]
 }
