@@ -491,6 +491,16 @@
       "end": "15:00",
       "date": "2026-11-18",
       "confirmed": true
+    },
+    {
+      "id": "Smwlsgm01m0",
+      "quoteNo": "RYST/2026/114",
+      "name": "Adzangaadi HQ",
+      "zone": "culinary",
+      "start": "08:00",
+      "end": "20:00",
+      "date": "2026-11-24",
+      "confirmed": false
     }
   ]
 }
