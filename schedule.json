@@ -511,6 +511,16 @@
       "end": "12:30",
       "date": "2026-11-20",
       "confirmed": true
+    },
+    {
+      "id": "Smwp0snz8lx",
+      "quoteNo": "RYST/2026/116",
+      "name": "Arra and Co",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "12:00",
+      "date": "2026-11-21",
+      "confirmed": false
     }
   ]
 }
