@@ -1,3 +1,6 @@
 
 # visual-qa screenshots
 qa-shots/
+
+# graphify knowledge graph (built locally with `graphify update .`)
+graphify-out/
