@@ -532,6 +532,17 @@
       "date": "2026-12-05",
       "confirmed": false,
       "leadId": "Lmwultzrv11v"
+    },
+    {
+      "id": "Smwumb0sa2i6",
+      "quoteNo": "RYST/2026/118",
+      "name": "Mayukha G",
+      "zone": "podcast",
+      "start": "11:00",
+      "end": "14:00",
+      "date": "2026-12-06",
+      "confirmed": false,
+      "leadId": "Lmwumaz5f38i"
     }
   ]
 }
