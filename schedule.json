@@ -521,6 +521,17 @@
       "end": "19:00",
       "date": "2026-11-22",
       "confirmed": true
+    },
+    {
+      "id": "Smwulu1oi61t",
+      "quoteNo": "RYST/2026/117",
+      "name": "Mayukha Garimella",
+      "zone": "podcast",
+      "start": "10:30",
+      "end": "14:30",
+      "date": "2026-12-05",
+      "confirmed": false,
+      "leadId": "Lmwultzrv11v"
     }
   ]
 }
