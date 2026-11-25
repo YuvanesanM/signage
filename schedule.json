@@ -543,6 +543,16 @@
       "date": "2026-12-06",
       "confirmed": false,
       "leadId": "Lmwumaz5f38i"
+    },
+    {
+      "id": "Smwvrtg5x1ei",
+      "quoteNo": "RYST/2026/119",
+      "name": "Contango Training and Research Academy",
+      "zone": "podcast",
+      "start": "17:00",
+      "end": "19:00",
+      "date": "2026-11-25",
+      "confirmed": false
     }
   ]
 }
